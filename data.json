@@ -1,15 +1,15 @@
 {
   "categories": [
     {
-      "id": "mmh76o0y66n3",
-      "name": "Général",
-      "color": "#c9a84c",
-      "subcats": []
-    },
-    {
       "id": "mmh7cnz6xska",
       "name": "Energie",
       "color": "#5a8ae0",
+      "subcats": []
+    },
+    {
+      "id": "mmh7d5w832vp",
+      "name": "Géopolitique",
+      "color": "#e06060",
       "subcats": []
     }
   ],
