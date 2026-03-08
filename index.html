@@ -172,10 +172,32 @@
   .form-hint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:5px;letter-spacing:.04em}
   .modal-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border)}
 
-  #viewer-modal .modal{max-width:980px;padding:0;overflow:hidden}
-  #viewer-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;background:var(--surface2)}
-  #viewer-title{font-family:'Playfair Display',serif;font-size:17px;flex:1;color:var(--text)}
-  #viewer-frame{width:100%;height:76vh;border:none;background:white}
+  /* VIEWER — plein écran */
+  #viewer-modal{padding:6px}
+  #viewer-modal .modal{max-width:calc(100vw - 12px);width:calc(100vw - 12px);padding:0;overflow:hidden;border-radius:14px}
+  #viewer-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2);flex-wrap:nowrap}
+  #viewer-title{font-family:'Playfair Display',serif;font-size:16px;flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  #viewer-wrap{width:100%;height:calc(100vh - 100px);overflow:hidden;background:white;position:relative}
+  #viewer-frame{border:none;background:white;display:block;transform-origin:top left}
+
+  /* ZOOM CONTROLS */
+  .zoom-bar{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px 6px;flex-shrink:0}
+  .zoom-btn{width:26px;height:26px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1}
+  .zoom-btn:hover{border-color:var(--gold-dim);color:var(--gold)}
+  #zoom-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);min-width:36px;text-align:center;cursor:pointer}
+  #zoom-val:hover{color:var(--text)}
+
+  /* DRAG & DROP */
+  .drag-handle{cursor:grab;color:var(--text-dim);font-size:13px;padding:0 4px 0 0;flex-shrink:0;opacity:0;transition:opacity .15s;line-height:1;user-select:none}
+  .n1:hover .drag-handle{opacity:1}
+  .n1.dragging{opacity:.35}
+  .n1.drag-over{background:var(--gold-glow)!important;border-left-color:var(--gold)!important}
+  .fiche-card[draggable]{cursor:default}
+  .fiche-card .drag-handle-fiche{position:absolute;top:8px;right:8px;cursor:grab;color:var(--text-dim);font-size:12px;opacity:0;transition:opacity .15s;user-select:none}
+  .fiche-card{position:relative}
+  .fiche-card:hover .drag-handle-fiche{opacity:0.5}
+  .fiche-card.dragging{opacity:.3;border-style:dashed}
+  .fiche-card.drag-over{border-color:var(--gold)!important;border-style:dashed!important;background:var(--gold-glow)!important}
 
   /* TREE MANAGER */
   .tree-node{margin-bottom:5px}
@@ -398,13 +420,21 @@
 
 <!-- MODAL Viewer -->
 <div class="modal-overlay" id="viewer-modal">
-  <div class="modal" style="max-width:980px;padding:0;overflow:hidden">
+  <div class="modal">
     <div id="viewer-header">
       <div id="viewer-title">Fiche</div>
       <div class="hsep"></div>
-      <button class="btn btn-outline btn-sm" onclick="closeModal('viewer-modal')">✕ Fermer</button>
+      <!-- ZOOM BAR -->
+      <div class="zoom-bar">
+        <button class="zoom-btn" onclick="vZoomAdj(-0.1)" title="Zoom arrière">−</button>
+        <span id="zoom-val" onclick="vZoomReset()" title="Réinitialiser le zoom">100%</span>
+        <button class="zoom-btn" onclick="vZoomAdj(+0.1)" title="Zoom avant">+</button>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('viewer-modal')" style="flex-shrink:0">✕ Fermer</button>
     </div>
-    <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+    <div id="viewer-wrap">
+      <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+    </div>
   </div>
 </div>
 
@@ -542,7 +572,8 @@ function renderSidebar(){
     const isSel=state.catId===cat.id;
     const total=cntFiches({catId:cat.id});
     const subs=cat.subcats||[];
-    let h=`<div class="n1 ${isSel&&!state.subcatId?'sel':''}" onclick="goCat('${cat.id}')">
+    let h=`<div class="n1 ${isSel&&!state.subcatId?'sel':''}" draggable="true" data-cat-id="${cat.id}" onclick="goCat('${cat.id}')">
+      <span class="drag-handle" title="Glisser pour réordonner">⠿</span>
       <div class="n1-left"><span class="n1-dot" style="background:${cat.color}"></span><span>${escH(cat.name)}</span></div>
       <div style="display:flex;align-items:center;gap:5px">
         <span class="badge">${total}</span>
@@ -694,7 +725,8 @@ function renderView(){
   if(fichesToShow.length){
     html+=`<div id="fiche-grid">`;
     fichesToShow.forEach(f=>{
-      html+=`<div class="fiche-card">
+      html+=`<div class="fiche-card" draggable="true" data-fiche-id="${f.id}">
+        <span class="drag-handle-fiche" title="Glisser pour réordonner">⠿</span>
         <div class="fiche-path">${buildPath(f)}</div>
         <div class="fiche-title">${escH(f.title)}</div>
         <div class="fiche-date">${fmtDate(f.date)}</div>
@@ -834,11 +866,32 @@ function saveFiche(){
   scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
 }
 
+/* ── ZOOM VIEWER ── */
+let vZoom=1;
+function vZoomSet(z){
+  vZoom=Math.round(Math.max(0.2,Math.min(3,z))*10)/10;
+  const wrap=document.getElementById('viewer-wrap');
+  const frame=document.getElementById('viewer-frame');
+  if(!wrap||!frame)return;
+  const w=wrap.clientWidth,h=wrap.clientHeight;
+  frame.style.width=(w/vZoom)+'px';
+  frame.style.height=(h/vZoom)+'px';
+  frame.style.transform=`scale(${vZoom})`;
+  document.getElementById('zoom-val').textContent=Math.round(vZoom*100)+'%';
+}
+function vZoomAdj(d){vZoomSet(vZoom+d);}
+function vZoomReset(){vZoomSet(1);}
+
 function viewFiche(id){
   const f=db.fiches.find(x=>x.id===id);if(!f)return;
   document.getElementById('viewer-title').textContent=f.title;
-  document.getElementById('viewer-frame').srcdoc=f.html;
+  vZoom=1;document.getElementById('zoom-val').textContent='100%';
+  const frame=document.getElementById('viewer-frame');
+  frame.style.transform='';frame.style.width='100%';frame.style.height='100%';
+  frame.srcdoc=f.html;
   openModal('viewer-modal');
+  // After modal opens, apply correct sizing
+  requestAnimationFrame(()=>vZoomSet(1));
 }
 
 function editFiche(id){
@@ -1032,6 +1085,96 @@ function toast(msg,type=''){const el=document.getElementById('toast');el.textCon
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+/* ================================================================
+   DRAG & DROP — CATEGORIES (sidebar)
+================================================================ */
+let dragCatId=null;
+(function initSidebarDrag(){
+  const el=document.getElementById('sidebar-cats');
+  el.addEventListener('dragstart',e=>{
+    const n1=e.target.closest('[data-cat-id]');
+    if(!n1){e.preventDefault();return;}
+    dragCatId=n1.dataset.catId;
+    requestAnimationFrame(()=>n1.classList.add('dragging'));
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain',dragCatId);
+  });
+  el.addEventListener('dragend',()=>{
+    el.querySelectorAll('.n1').forEach(x=>x.classList.remove('dragging','drag-over'));
+    dragCatId=null;
+  });
+  el.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const n1=e.target.closest('[data-cat-id]');
+    el.querySelectorAll('.n1').forEach(x=>x.classList.remove('drag-over'));
+    if(n1&&n1.dataset.catId!==dragCatId)n1.classList.add('drag-over');
+  });
+  el.addEventListener('dragleave',e=>{
+    if(!el.contains(e.relatedTarget))el.querySelectorAll('.n1').forEach(x=>x.classList.remove('drag-over'));
+  });
+  el.addEventListener('drop',e=>{
+    e.preventDefault();
+    const n1=e.target.closest('[data-cat-id]');
+    el.querySelectorAll('.n1').forEach(x=>x.classList.remove('drag-over','dragging'));
+    if(!n1||!dragCatId||n1.dataset.catId===dragCatId){dragCatId=null;return;}
+    const toId=n1.dataset.catId;
+    const fromIdx=db.categories.findIndex(c=>c.id===dragCatId);
+    let toIdx=db.categories.findIndex(c=>c.id===toId);
+    if(fromIdx<0||toIdx<0){dragCatId=null;return;}
+    const[item]=db.categories.splice(fromIdx,1);
+    toIdx=db.categories.findIndex(c=>c.id===toId);
+    db.categories.splice(fromIdx<toIdx+1?toIdx+1:toIdx,0,item);
+    scheduleSave();renderSidebar();
+    dragCatId=null;
+  });
+})();
+
+/* ================================================================
+   DRAG & DROP — FICHES (grid)
+================================================================ */
+let dragFicheId=null;
+(function initFicheDrag(){
+  const content=document.getElementById('content');
+  content.addEventListener('dragstart',e=>{
+    if(e.target.tagName==='BUTTON'){e.preventDefault();return;}
+    const card=e.target.closest('[data-fiche-id]');
+    if(!card){e.preventDefault();return;}
+    dragFicheId=card.dataset.ficheId;
+    requestAnimationFrame(()=>card.classList.add('dragging'));
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain',dragFicheId);
+  });
+  content.addEventListener('dragend',()=>{
+    content.querySelectorAll('[data-fiche-id]').forEach(x=>x.classList.remove('dragging','drag-over'));
+    dragFicheId=null;
+  });
+  content.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const card=e.target.closest('[data-fiche-id]');
+    content.querySelectorAll('[data-fiche-id]').forEach(x=>x.classList.remove('drag-over'));
+    if(card&&card.dataset.ficheId!==dragFicheId)card.classList.add('drag-over');
+  });
+  content.addEventListener('dragleave',e=>{
+    const card=e.target.closest('[data-fiche-id]');
+    if(card&&!card.contains(e.relatedTarget))card.classList.remove('drag-over');
+  });
+  content.addEventListener('drop',e=>{
+    e.preventDefault();
+    const card=e.target.closest('[data-fiche-id]');
+    content.querySelectorAll('[data-fiche-id]').forEach(x=>x.classList.remove('drag-over','dragging'));
+    if(!card||!dragFicheId||card.dataset.ficheId===dragFicheId){dragFicheId=null;return;}
+    const toId=card.dataset.ficheId;
+    const fromIdx=db.fiches.findIndex(f=>f.id===dragFicheId);
+    let toIdx=db.fiches.findIndex(f=>f.id===toId);
+    if(fromIdx<0||toIdx<0){dragFicheId=null;return;}
+    const[item]=db.fiches.splice(fromIdx,1);
+    toIdx=db.fiches.findIndex(f=>f.id===toId);
+    db.fiches.splice(fromIdx<toIdx+1?toIdx+1:toIdx,0,item);
+    scheduleSave();renderView();
+    dragFicheId=null;
+  });
+})();
 
 init();
 </script>
