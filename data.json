@@ -4,7 +4,13 @@
       "id": "mmh7cnz6xska",
       "name": "Energie",
       "color": "#5a8ae0",
-      "subcats": []
+      "subcats": [
+        {
+          "id": "mmh8duxkwxp9",
+          "name": "Gaz",
+          "subcats": []
+        }
+      ]
     },
     {
       "id": "mmh7d5w832vp",
