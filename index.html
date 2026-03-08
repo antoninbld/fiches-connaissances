@@ -7,370 +7,243 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0d0d14;
-    --surface: #13131e;
-    --surface2: #1a1a2a;
-    --border: #252538;
-    --border2: #32325a;
-    --gold: #c9a84c;
-    --gold-dim: #8a6f30;
-    --gold-glow: rgba(201,168,76,0.15);
-    --text: #e2ddd0;
-    --text-muted: #7a7a9a;
-    --text-dim: #4a4a6a;
-    --red: #e06060;
-    --green: #5aad7a;
-    --blue: #5a8ae0;
-    --purple: #9a6edf;
-    --orange: #e09050;
+    --bg:#0d0d14; --surface:#13131e; --surface2:#1a1a2a;
+    --border:#252538; --border2:#32325a;
+    --gold:#c9a84c; --gold-dim:#8a6f30; --gold-glow:rgba(201,168,76,0.15);
+    --text:#e2ddd0; --text-muted:#7a7a9a; --text-dim:#4a4a6a;
+    --red:#e06060; --green:#5aad7a; --blue:#5a8ae0; --orange:#e09050;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Source Serif 4', Georgia, serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.4;
-  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Source Serif 4',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:0.4}
 
-  /* ─── HEADER ─── */
-  #header {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 64px;
-    background: rgba(13,13,20,0.95);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 24px;
-    gap: 16px;
-    z-index: 1000;
-  }
-  .logo { font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 700; color: var(--gold); cursor: pointer; }
-  .logo-sub { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; }
-  .header-sep { flex: 1; }
+  #header{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(13,13,20,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:14px;z-index:1000}
+  .logo{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--gold);cursor:pointer;white-space:nowrap}
+  .logo-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:.15em;text-transform:uppercase;margin-top:2px}
+  .hsep{flex:1}
+  #search-wrap{position:relative;display:flex;align-items:center}
+  #search-wrap svg{position:absolute;left:11px;color:var(--text-muted);pointer-events:none}
+  #search{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 13px 8px 36px;font-family:'Source Serif 4',serif;font-size:13px;color:var(--text);width:240px;transition:border-color .2s,width .3s;outline:none}
+  #search:focus{border-color:var(--gold-dim);width:300px}
+  #search::placeholder{color:var(--text-dim)}
 
-  #search-wrap { position: relative; display: flex; align-items: center; }
-  #search-wrap svg { position: absolute; left: 12px; color: var(--text-muted); pointer-events: none; }
-  #search {
-    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 14px 8px 38px; font-family: 'Source Serif 4', serif; font-size: 14px;
-    color: var(--text); width: 260px; transition: border-color 0.2s, width 0.3s; outline: none;
-  }
-  #search:focus { border-color: var(--gold-dim); width: 320px; }
-  #search::placeholder { color: var(--text-dim); }
+  #sync-status{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);white-space:nowrap}
+  #sync-status .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  #sync-status.synced{color:var(--green);border-color:rgba(90,173,122,.3)}
+  #sync-status.synced .dot{background:var(--green);box-shadow:0 0 6px var(--green)}
+  #sync-status.syncing{color:var(--orange);border-color:rgba(224,144,80,.3)}
+  #sync-status.syncing .dot{background:var(--orange);animation:pulse .8s infinite}
+  #sync-status.error{color:var(--red);border-color:rgba(224,96,96,.3)}
+  #sync-status.error .dot{background:var(--red)}
+  #sync-status.notoken{color:var(--text-dim)}
+  #sync-status.notoken .dot{background:var(--text-dim)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-  /* ─── SYNC STATUS ─── */
-  #sync-status {
-    display: flex; align-items: center; gap: 8px;
-    font-family: 'JetBrains Mono', monospace; font-size: 10px;
-    padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--surface2); cursor: default; transition: all 0.2s;
-    white-space: nowrap;
-  }
-  #sync-status .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  #sync-status.synced { color: var(--green); border-color: rgba(90,173,122,0.3); }
-  #sync-status.synced .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
-  #sync-status.syncing { color: var(--orange); border-color: rgba(224,144,80,0.3); }
-  #sync-status.syncing .dot { background: var(--orange); animation: pulse 0.8s infinite; }
-  #sync-status.error { color: var(--red); border-color: rgba(224,96,96,0.3); }
-  #sync-status.error .dot { background: var(--red); }
-  #sync-status.notoken { color: var(--text-dim); }
-  #sync-status.notoken .dot { background: var(--text-dim); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .btn{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.07em;text-transform:uppercase;padding:8px 14px;border-radius:7px;border:none;cursor:pointer;transition:all .18s;white-space:nowrap}
+  .btn-gold{background:var(--gold);color:#0d0d14;font-weight:600}
+  .btn-gold:hover{background:#d9b85c;transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,.3)}
+  .btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text-muted)}
+  .btn-outline:hover{border-color:var(--gold-dim);color:var(--gold)}
+  .btn-danger{background:transparent;border:1px solid rgba(224,96,96,.3);color:var(--red)}
+  .btn-danger:hover{background:rgba(224,96,96,.1)}
+  .btn-sm{padding:5px 11px;font-size:10px}
 
-  .btn {
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.07em;
-    text-transform: uppercase; padding: 9px 16px; border-radius: 7px; border: none;
-    cursor: pointer; transition: all 0.18s; white-space: nowrap;
-  }
-  .btn-gold { background: var(--gold); color: #0d0d14; font-weight: 600; }
-  .btn-gold:hover { background: #d9b85c; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,168,76,0.3); }
-  .btn-outline { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
-  .btn-outline:hover { border-color: var(--gold-dim); color: var(--gold); }
-  .btn-danger { background: transparent; border: 1px solid rgba(224,96,96,0.3); color: var(--red); }
-  .btn-danger:hover { background: rgba(224,96,96,0.1); }
-  .btn-sm { padding: 6px 12px; font-size: 10px; }
+  #layout{display:flex;margin-top:64px;min-height:calc(100vh - 64px)}
 
-  /* ─── LAYOUT ─── */
-  #layout { display: flex; margin-top: 64px; min-height: calc(100vh - 64px); }
+  /* SIDEBAR - 3 levels */
+  #sidebar{width:272px;min-width:272px;background:var(--surface);border-right:1px solid var(--border);padding:18px 0;overflow-y:auto;position:sticky;top:64px;height:calc(100vh - 64px)}
+  .sidebar-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);padding:0 16px 8px}
+  .sidebar-divider{border:none;border-top:1px solid var(--border);margin:11px 0}
+  .nav-home{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;font-size:14px;color:var(--text-muted);user-select:none}
+  .nav-home:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border2)}
+  .nav-home.active{background:var(--gold-glow);color:var(--gold);border-left-color:var(--gold)}
 
-  /* ─── SIDEBAR ─── */
-  #sidebar {
-    width: 255px; min-width: 255px; background: var(--surface);
-    border-right: 1px solid var(--border); padding: 20px 0;
-    overflow-y: auto; position: sticky; top: 64px; height: calc(100vh - 64px);
-  }
-  .sidebar-section-title {
-    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--text-dim); padding: 0 18px 8px;
-  }
-  .nav-item {
-    display: flex; align-items: center; gap: 10px; padding: 9px 18px;
-    cursor: pointer; transition: all 0.15s; border-left: 2px solid transparent;
-    font-size: 14px; color: var(--text-muted); user-select: none;
-  }
-  .nav-item:hover { background: var(--surface2); color: var(--text); border-left-color: var(--border2); }
-  .nav-item.active { background: var(--gold-glow); color: var(--gold); border-left-color: var(--gold); }
-  .nav-cat {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 9px 18px; cursor: pointer; transition: all 0.15s;
-    border-left: 2px solid transparent; user-select: none;
-  }
-  .nav-cat:hover { background: var(--surface2); }
-  .nav-cat.active-cat { border-left-color: var(--gold-dim); }
-  .nav-cat-left { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--text); }
-  .nav-cat-badge {
-    font-family: 'JetBrains Mono', monospace; font-size: 10px;
-    color: var(--text-dim); background: var(--surface2); border-radius: 10px; padding: 1px 7px;
-  }
-  .nav-cat-arrow { transition: transform 0.2s; color: var(--text-dim); }
-  .nav-cat-arrow.open { transform: rotate(90deg); }
-  .nav-subcat {
-    padding: 7px 18px 7px 44px; cursor: pointer; font-size: 13px; color: var(--text-muted);
-    transition: all 0.15s; border-left: 2px solid transparent;
-    display: flex; align-items: center; justify-content: space-between; user-select: none;
-  }
-  .nav-subcat:hover { background: var(--surface2); color: var(--text); }
-  .nav-subcat.active { color: var(--gold); background: var(--gold-glow); border-left-color: var(--gold); }
-  .nav-subcat-badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); }
-  .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  /* Level 1 */
+  .n1{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none}
+  .n1:hover{background:var(--surface2)}
+  .n1.sel{border-left-color:var(--gold-dim);background:rgba(201,168,76,.06)}
+  .n1-left{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text);font-weight:500}
+  .n1-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
-  /* ─── MAIN ─── */
-  #main { flex: 1; padding: 32px 36px; min-width: 0; }
+  /* Level 2 */
+  .n2{display:flex;align-items:center;justify-content:space-between;padding:7px 16px 7px 34px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none}
+  .n2:hover{background:var(--surface2)}
+  .n2.sel{background:rgba(201,168,76,.07);border-left-color:var(--gold-dim)}
+  .n2-left{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-muted)}
+  .n2.sel .n2-left{color:var(--text)}
 
-  /* ─── BREADCRUMB ─── */
-  #breadcrumb {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 24px;
-    font-family: 'JetBrains Mono', monospace; font-size: 11px;
-    letter-spacing: 0.08em; color: var(--text-dim);
-  }
-  .crumb { cursor: pointer; transition: color 0.15s; }
-  .crumb:hover { color: var(--gold); }
-  .crumb-sep { opacity: 0.4; }
-  .crumb-current { color: var(--text-muted); }
+  /* Level 3 */
+  .n3{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 6px 54px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none;font-size:12px;color:var(--text-dim)}
+  .n3:hover{background:var(--surface2);color:var(--text-muted)}
+  .n3.sel{color:var(--gold);background:var(--gold-glow);border-left-color:var(--gold)}
 
-  /* ─── HERO ─── */
-  #hero { text-align: center; padding: 16px 0 44px; }
-  #hero h1 { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 400; color: var(--text); margin-bottom: 10px; line-height: 1.2; }
-  #hero h1 span { color: var(--gold); font-style: italic; }
-  #hero p { color: var(--text-muted); font-size: 16px; font-weight: 300; max-width: 460px; margin: 0 auto; }
+  .arrow{transition:transform .2s;color:var(--text-dim);flex-shrink:0;cursor:pointer}
+  .arrow.open{transform:rotate(90deg)}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);background:var(--surface2);border-radius:10px;padding:1px 6px}
 
-  /* ─── STATS ─── */
-  #stats-bar { display: flex; gap: 18px; justify-content: center; margin: 28px 0; flex-wrap: wrap; }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 26px; text-align: center; }
-  .stat-num { font-family: 'Playfair Display', serif; font-size: 30px; color: var(--gold); line-height: 1; }
-  .stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+  /* MAIN */
+  #main{flex:1;padding:30px 34px;min-width:0}
 
-  /* ─── SETUP BANNER ─── */
-  #setup-banner {
-    background: linear-gradient(135deg, rgba(201,168,76,0.08), rgba(90,138,224,0.08));
-    border: 1px solid rgba(201,168,76,0.25);
-    border-radius: 14px; padding: 22px 26px; margin-bottom: 28px;
-    display: flex; align-items: center; gap: 20px;
-  }
-  #setup-banner-icon { font-size: 28px; flex-shrink: 0; }
-  #setup-banner-text h3 { font-family: 'Playfair Display', serif; font-size: 17px; color: var(--gold); margin-bottom: 4px; }
-  #setup-banner-text p { font-size: 13px; color: var(--text-muted); font-weight: 300; }
+  /* BREADCRUMB */
+  #breadcrumb{display:flex;align-items:center;gap:7px;margin-bottom:22px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.07em;color:var(--text-dim);flex-wrap:wrap}
+  .crumb{cursor:pointer;transition:color .15s}
+  .crumb:hover{color:var(--gold)}
+  .crumb-sep{opacity:.4}
+  .crumb-current{color:var(--text-muted)}
 
-  /* ─── CAT GRID ─── */
-  .section-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
-  .section-title { font-family: 'Playfair Display', serif; font-size: 23px; font-weight: 600; color: var(--text); }
-  .section-count { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); letter-spacing: 0.08em; }
+  /* HERO */
+  #hero{text-align:center;padding:14px 0 38px}
+  #hero h1{font-family:'Playfair Display',serif;font-size:38px;font-weight:400;color:var(--text);margin-bottom:9px;line-height:1.2}
+  #hero h1 span{color:var(--gold);font-style:italic}
+  #hero p{color:var(--text-muted);font-size:15px;font-weight:300;max-width:450px;margin:0 auto}
 
-  #cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
-  .cat-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    padding: 20px 22px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
-  }
-  .cat-card::before {
-    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
-    background: var(--cat-color, var(--gold)); opacity: 0.6; transition: opacity 0.2s;
-  }
-  .cat-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.3); }
-  .cat-card:hover::before { opacity: 1; }
-  .cat-card-name { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
-  .cat-card-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.06em; }
-  .cat-card-sub { margin-top: 11px; display: flex; flex-wrap: wrap; gap: 5px; }
-  .sub-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; color: var(--text-muted); }
+  #stats-bar{display:flex;gap:16px;justify-content:center;margin:24px 0;flex-wrap:wrap}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 24px;text-align:center}
+  .stat-num{font-family:'Playfair Display',serif;font-size:28px;color:var(--gold);line-height:1}
+  .stat-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
 
-  /* ─── FICHE GRID ─── */
-  #fiche-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
-  .fiche-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: all 0.2s; }
-  .fiche-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); box-shadow: 0 6px 22px rgba(0,0,0,0.25); }
-  .fiche-cat-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 7px; }
-  .fiche-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 9px; line-height: 1.3; }
-  .fiche-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.05em; margin-bottom: 13px; }
-  .fiche-actions { display: flex; gap: 7px; opacity: 0; transition: opacity 0.2s; }
-  .fiche-card:hover .fiche-actions { opacity: 1; }
-  .fiche-btn {
-    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
-    padding: 5px 10px; border-radius: 5px; border: 1px solid var(--border2);
-    background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s;
-  }
-  .fiche-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
-  .fiche-btn.del:hover { border-color: rgba(224,96,96,0.5); color: var(--red); }
+  #setup-banner{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(90,138,224,.08));border:1px solid rgba(201,168,76,.25);border-radius:14px;padding:20px 24px;margin-bottom:26px;display:flex;align-items:center;gap:18px}
+  #setup-banner h3{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold);margin-bottom:3px}
+  #setup-banner p{font-size:12px;color:var(--text-muted);font-weight:300}
 
-  .empty-state { text-align: center; padding: 70px 20px; color: var(--text-dim); }
-  .empty-state svg { margin-bottom: 14px; opacity: 0.3; }
-  .empty-state p { font-family: 'Source Serif 4', serif; font-style: italic; font-size: 15px; }
+  .section-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:15px}
+  .section-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--text)}
+  .section-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim)}
 
-  /* ─── VIEW HEADER ─── */
-  .view-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; }
-  .view-title { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-  .view-subtitle { font-size: 14px; color: var(--text-muted); font-weight: 300; font-style: italic; }
+  #cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:13px}
+  .cat-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:18px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+  .cat-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cat-color,var(--gold));opacity:.6;transition:opacity .2s}
+  .cat-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+  .cat-card:hover::before{opacity:1}
+  .cat-card-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px}
+  .cat-card-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.05em}
+  .cat-card-sub{margin-top:10px;display:flex;flex-wrap:wrap;gap:4px}
+  .sub-tag{font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 7px;color:var(--text-muted)}
 
-  /* ─── SUBCAT TABS ─── */
-  #subcat-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 26px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-  .subcat-tab {
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-    padding: 6px 13px; border-radius: 6px; border: 1px solid var(--border);
-    background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s;
-  }
-  .subcat-tab:hover { border-color: var(--border2); color: var(--text); }
-  .subcat-tab.active { background: var(--gold-glow); border-color: var(--gold-dim); color: var(--gold); }
+  /* FOLDER GRID */
+  .folder-section-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+  .folder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:11px;margin-bottom:26px}
+  .folder-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px 15px;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:11px}
+  .folder-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 5px 18px rgba(0,0,0,.25)}
+  .folder-icon{font-size:20px;flex-shrink:0}
+  .folder-name{font-size:13px;color:var(--text);font-weight:500;line-height:1.3}
+  .folder-count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:2px}
 
-  /* ─── MODALS ─── */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.78); backdrop-filter: blur(6px);
-    z-index: 2000; align-items: center; justify-content: center; padding: 20px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--surface); border: 1px solid var(--border2); border-radius: 18px;
-    padding: 30px; width: 100%; max-width: 680px; max-height: 90vh;
-    overflow-y: auto; position: relative; animation: modalIn 0.2s ease;
-  }
-  @keyframes modalIn { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: none; } }
-  .modal-title { font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-  .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 26px; font-weight: 300; }
-  .modal-close {
-    position: absolute; top: 18px; right: 18px; background: var(--surface2);
-    border: 1px solid var(--border); border-radius: 8px; width: 30px; height: 30px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--text-muted); transition: all 0.15s; font-size: 13px;
-  }
-  .modal-close:hover { border-color: var(--red); color: var(--red); }
+  /* FICHE GRID */
+  #fiche-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:13px}
+  .fiche-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:17px;transition:all .2s}
+  .fiche-card:hover{border-color:var(--gold-dim);transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,.25)}
+  .fiche-path{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:7px}
+  .fiche-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;line-height:1.3}
+  .fiche-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.05em;margin-bottom:12px}
+  .fiche-actions{display:flex;gap:6px;opacity:0;transition:opacity .2s}
+  .fiche-card:hover .fiche-actions{opacity:1}
+  .fiche-btn{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:4px 9px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s}
+  .fiche-btn:hover{border-color:var(--gold-dim);color:var(--gold)}
+  .fiche-btn.del:hover{border-color:rgba(224,96,96,.5);color:var(--red)}
 
-  .form-group { margin-bottom: 18px; }
-  .form-label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 7px; }
-  .form-input, .form-select, .form-textarea {
-    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 10px 13px; font-family: 'Source Serif 4', serif; font-size: 14px;
-    color: var(--text); outline: none; transition: border-color 0.2s;
-  }
-  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold-dim); }
-  .form-select { appearance: none; cursor: pointer; }
-  .form-select option { background: var(--surface); }
-  .form-textarea { font-family: 'JetBrains Mono', monospace; font-size: 12px; min-height: 190px; resize: vertical; line-height: 1.5; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
-  .form-hint { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); margin-top: 5px; letter-spacing: 0.04em; }
-  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .view-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;gap:16px}
+  .view-title{font-family:'Playfair Display',serif;font-size:27px;font-weight:700;color:var(--text);margin-bottom:3px}
+  .view-subtitle{font-size:13px;color:var(--text-muted);font-weight:300;font-style:italic}
+  .section-sep{border:none;border-top:1px solid var(--border);margin:18px 0}
 
-  /* ─── VIEWER ─── */
-  #viewer-modal .modal { max-width: 980px; padding: 0; overflow: hidden; }
-  #viewer-header { padding: 16px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; background: var(--surface2); }
-  #viewer-title { font-family: 'Playfair Display', serif; font-size: 17px; flex: 1; color: var(--text); }
-  #viewer-frame { width: 100%; height: 75vh; border: none; background: white; }
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text-dim)}
+  .empty-state svg{margin-bottom:13px;opacity:.3}
+  .empty-state p{font-style:italic;font-size:15px}
 
-  /* ─── CAT MANAGER ─── */
-  .cat-list-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 15px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 7px; }
-  .cat-list-item-name { font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 10px; }
-  .color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  /* MODALS */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:2000;align-items:center;justify-content:center;padding:20px}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:28px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;position:relative;animation:modalIn .2s ease}
+  @keyframes modalIn{from{opacity:0;transform:translateY(13px) scale(.97)}to{opacity:1;transform:none}}
+  .modal-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--text);margin-bottom:5px}
+  .modal-sub{font-size:13px;color:var(--text-muted);margin-bottom:22px;font-weight:300}
+  .modal-close{position:absolute;top:16px;right:16px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);transition:all .15s;font-size:12px}
+  .modal-close:hover{border-color:var(--red);color:var(--red)}
 
-  /* ─── GITHUB SETUP MODAL ─── */
-  #github-modal .modal { max-width: 580px; }
-  .github-step {
-    display: flex; gap: 16px; margin-bottom: 20px;
-    padding: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-  }
-  .github-step-num {
-    width: 28px; height: 28px; border-radius: 50%; background: var(--gold-glow);
-    border: 1px solid var(--gold-dim); display: flex; align-items: center; justify-content: center;
-    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--gold); flex-shrink: 0;
-  }
-  .github-step-content h4 { font-size: 14px; color: var(--text); margin-bottom: 4px; font-family: 'Playfair Display', serif; }
-  .github-step-content p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
-  .github-step-content code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--surface2); padding: 1px 6px; border-radius: 4px; color: var(--gold); }
+  .form-group{margin-bottom:16px}
+  .form-label{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+  .form-input,.form-select,.form-textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'Source Serif 4',serif;font-size:14px;color:var(--text);outline:none;transition:border-color .2s}
+  .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--gold-dim)}
+  .form-select{appearance:none;cursor:pointer}
+  .form-select option{background:var(--surface)}
+  .form-textarea{font-family:'JetBrains Mono',monospace;font-size:12px;min-height:180px;resize:vertical;line-height:1.5}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-hint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:5px;letter-spacing:.04em}
+  .modal-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border)}
 
-  .token-input-wrap { position: relative; }
-  .token-input-wrap .form-input { padding-right: 80px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-  .token-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); cursor: pointer; }
-  .token-toggle:hover { color: var(--gold); }
+  #viewer-modal .modal{max-width:980px;padding:0;overflow:hidden}
+  #viewer-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;background:var(--surface2)}
+  #viewer-title{font-family:'Playfair Display',serif;font-size:17px;flex:1;color:var(--text)}
+  #viewer-frame{width:100%;height:76vh;border:none;background:white}
 
-  /* ─── COLOR PICKER ─── */
-  .color-opts { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 5px; }
-  .color-opt { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.15s, border-color 0.15s; }
-  .color-opt:hover { transform: scale(1.2); }
-  .color-opt.selected { border-color: var(--text); }
+  /* TREE MANAGER */
+  .tree-node{margin-bottom:5px}
+  .tree-row{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+  .tree-row.l2{margin-left:20px;border-color:var(--border)}
+  .tree-row.l3{margin-left:40px;border-style:dashed;border-color:var(--border)}
+  .tree-row-name{flex:1;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px}
+  .tree-row-actions{display:flex;gap:5px;flex-shrink:0}
+  .t-toggle{cursor:pointer;transition:transform .2s;color:var(--text-dim)}
+  .t-toggle.open{transform:rotate(90deg)}
+  .inline-add{display:none;gap:7px;align-items:center;margin-top:5px;margin-bottom:5px}
+  .inline-add.l2{margin-left:20px}
+  .inline-add.l3{margin-left:40px}
+  .inline-add .form-input{flex:1;font-size:13px;padding:7px 10px}
 
-  /* ─── SEARCH RESULTS ─── */
-  .search-result-item { display: flex; align-items: center; gap: 13px; padding: 13px 15px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 9px; cursor: pointer; transition: all 0.15s; }
-  .search-result-item:hover { border-color: var(--gold-dim); transform: translateX(3px); }
-  .search-result-title { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--text); margin-bottom: 3px; }
-  .search-result-path { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.05em; }
+  .token-input-wrap{position:relative}
+  .token-input-wrap .form-input{padding-right:75px;font-family:'JetBrains Mono',monospace;font-size:12px}
+  .token-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);cursor:pointer}
+  .token-toggle:hover{color:var(--gold)}
 
-  .highlight { background: rgba(201,168,76,0.2); border-radius: 2px; padding: 0 2px; }
+  .color-opts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .color-opt{width:21px;height:21px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s}
+  .color-opt:hover{transform:scale(1.2)}
+  .color-opt.selected{border-color:var(--text)}
 
-  /* ─── TOAST ─── */
-  #toast { position: fixed; bottom: 28px; right: 28px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 18px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); z-index: 9998; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; max-width: 280px; }
-  #toast.show { opacity: 1; transform: none; }
-  #toast.success { border-color: var(--green); color: var(--green); }
-  #toast.error { border-color: var(--red); color: var(--red); }
-  #toast.warn { border-color: var(--orange); color: var(--orange); }
+  .search-result-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+  .search-result-item:hover{border-color:var(--gold-dim);transform:translateX(3px)}
+  .search-result-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);margin-bottom:3px}
+  .search-result-path{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.05em}
+  .highlight{background:rgba(201,168,76,.2);border-radius:2px;padding:0 2px}
 
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-  #new-cat-inline { display: flex; gap: 8px; margin-top: 10px; align-items: flex-end; }
-  #new-cat-inline .form-input { flex: 1; }
-  .info-banner { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--gold-dim); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--text-muted); margin-bottom: 18px; font-style: italic; }
+  #toast{position:fixed;bottom:26px;right:26px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:11px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);z-index:9998;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;max-width:270px}
+  #toast.show{opacity:1;transform:none}
+  #toast.success{border-color:var(--green);color:var(--green)}
+  #toast.error{border-color:var(--red);color:var(--red)}
+  #toast.warn{border-color:var(--orange);color:var(--orange)}
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header id="header">
   <div onclick="goHome()" style="cursor:pointer">
     <div class="logo">Base de Connaissances</div>
     <div class="logo-sub">antoninbld · GitHub Sync</div>
   </div>
-  <div class="header-sep"></div>
+  <div class="hsep"></div>
   <div id="search-wrap">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input id="search" type="text" placeholder="Rechercher une fiche…" oninput="handleSearch(this.value)">
   </div>
-  <div id="sync-status" class="notoken" title="Cliquer pour configurer GitHub">
-    <div class="dot"></div>
-    <span id="sync-label">GitHub non configuré</span>
-  </div>
-  <button class="btn btn-outline btn-sm" onclick="openGithubModal()" title="Paramètres GitHub">⚙ GitHub</button>
-  <button class="btn btn-outline btn-sm" onclick="openCatManager()">☰ Catégories</button>
+  <div id="sync-status" class="notoken"><div class="dot"></div><span id="sync-label">GitHub non configuré</span></div>
+  <button class="btn btn-outline btn-sm" onclick="openGithubModal()">⚙ GitHub</button>
+  <button class="btn btn-outline btn-sm" onclick="openTreeManager()">📁 Structure</button>
   <button class="btn btn-gold btn-sm" onclick="openAddFiche()">+ Nouvelle fiche</button>
 </header>
 
-<!-- LAYOUT -->
 <div id="layout">
   <nav id="sidebar">
-    <div class="sidebar-section-title">Navigation</div>
-    <div class="nav-item active" id="nav-home" onclick="goHome()">
+    <div class="sidebar-label">Navigation</div>
+    <div class="nav-home" id="nav-home" onclick="goHome()">
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       Accueil
     </div>
-    <hr class="sidebar-divider">
-    <div class="sidebar-section-title">Catégories</div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Catégories</div>
     <div id="sidebar-cats"></div>
   </nav>
   <main id="main">
@@ -379,63 +252,88 @@
   </main>
 </div>
 
-<!-- ─── MODAL: GITHUB SETUP ─── -->
+<!-- MODAL GitHub -->
 <div class="modal-overlay" id="github-modal">
-  <div class="modal" style="max-width:580px">
+  <div class="modal" style="max-width:560px">
     <button class="modal-close" onclick="closeModal('github-modal')">✕</button>
     <div class="modal-title">🔗 Connexion GitHub</div>
-    <div class="modal-sub">Tes fiches sont sauvegardées directement dans ton repository GitHub.</div>
-
+    <div class="modal-sub">Tes fiches sont sauvegardées dans ton repository GitHub.</div>
     <div class="form-group">
       <label class="form-label">Token d'accès personnel (PAT)</label>
       <div class="token-input-wrap">
         <input class="form-input" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
         <span class="token-toggle" onclick="toggleTokenVis()">AFFICHER</span>
       </div>
-      <div class="form-hint">Permissions requises : <code style="font-family:JetBrains Mono,monospace;font-size:10px;background:var(--surface2);padding:1px 5px;border-radius:3px;color:var(--gold)">repo</code> (accès complet aux dépôts)</div>
+      <div class="form-hint">Permission requise : <code style="font-family:JetBrains Mono,monospace;background:var(--surface2);padding:1px 5px;border-radius:3px;color:var(--gold)">repo</code></div>
     </div>
-
-    <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:20px">
-      <div style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px">Repository cible</div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:16px">
+      <div style="font-family:JetBrains Mono,monospace;font-size:9px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px">Repository cible</div>
       <div style="font-family:JetBrains Mono,monospace;font-size:13px;color:var(--gold)">antoninbld / fiches-connaissances</div>
-      <div style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--text-dim);margin-top:4px">Fichier de données : data.json (branche main)</div>
+      <div style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--text-dim);margin-top:3px">data.json · branche main</div>
     </div>
-
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('github-modal')">Fermer</button>
-      <button class="btn btn-outline" onclick="testAndLoad()" style="border-color:rgba(90,173,122,0.4);color:var(--green)">↓ Charger depuis GitHub</button>
-      <button class="btn btn-gold" onclick="saveGithubToken()">Enregistrer le token</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('github-modal')">Fermer</button>
+      <button class="btn btn-outline btn-sm" onclick="testAndLoad()" style="border-color:rgba(90,173,122,.4);color:var(--green)">↓ Charger depuis GitHub</button>
+      <button class="btn btn-gold btn-sm" onclick="saveGithubToken()">Enregistrer</button>
     </div>
   </div>
 </div>
 
-<!-- ─── MODAL: ADD FICHE ─── -->
+<!-- MODAL Structure -->
+<div class="modal-overlay" id="tree-modal">
+  <div class="modal" style="max-width:660px">
+    <button class="modal-close" onclick="closeModal('tree-modal')">✕</button>
+    <div class="modal-title">📁 Gérer la structure</div>
+    <div class="modal-sub">3 niveaux : Catégorie → Sous-catégorie → Thème. Clique sur les boutons + pour ajouter des niveaux enfants.</div>
+    <div id="tree-container" style="max-height:52vh;overflow-y:auto;padding-right:4px"></div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <div class="form-label">Nouvelle catégorie racine</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+        <input class="form-input" id="new-cat-name" placeholder="Nom de la catégorie…" style="flex:1" onkeydown="if(event.key==='Enter')addRootCat()">
+        <div class="color-opts" id="new-cat-colors" style="margin:0"></div>
+        <button class="btn btn-gold btn-sm" onclick="addRootCat()">Ajouter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL Add Fiche -->
 <div class="modal-overlay" id="add-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('add-modal')">✕</button>
     <div class="modal-title">Nouvelle Fiche</div>
-    <div class="modal-sub">Colle le HTML de ta fiche et organise-la dans une catégorie.</div>
+    <div class="modal-sub">Situe ta fiche dans l'arborescence, puis colle son HTML.</div>
     <div class="form-group">
       <label class="form-label">Titre *</label>
       <input class="form-input" id="f-title" type="text" placeholder="ex: TDN ATRD7 — Analyse Fondamentale">
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Catégorie *</label>
-        <select class="form-select" id="f-cat" onchange="populateSubcats()">
-          <option value="">— Sélectionner —</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Sous-catégorie</label>
-        <select class="form-select" id="f-subcat">
-          <option value="">— Aucune —</option>
-        </select>
+    <div class="form-group">
+      <label class="form-label">Catégorie *</label>
+      <select class="form-select" id="f-cat" onchange="onChangeCat('f')"><option value="">— Sélectionner —</option></select>
+    </div>
+    <div id="f-l2-wrap" style="display:none">
+      <div class="form-row" style="margin-bottom:16px">
+        <div>
+          <label class="form-label">Sous-catégorie existante</label>
+          <select class="form-select" id="f-subcat" onchange="onChangeSub('f')"><option value="">— Aucune —</option></select>
+        </div>
+        <div>
+          <label class="form-label">Ou créer une nouvelle</label>
+          <input class="form-input" id="f-new-subcat" type="text" placeholder="Nom…" oninput="onNewSubInput('f')">
+        </div>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Nouvelle sous-catégorie (optionnel)</label>
-      <input class="form-input" id="f-new-subcat" type="text" placeholder="ex: Niveau Expert">
+    <div id="f-l3-wrap" style="display:none">
+      <div class="form-row" style="margin-bottom:16px">
+        <div>
+          <label class="form-label">Thème existant</label>
+          <select class="form-select" id="f-theme"><option value="">— Aucun —</option></select>
+        </div>
+        <div>
+          <label class="form-label">Ou créer un nouveau thème</label>
+          <input class="form-input" id="f-new-theme" type="text" placeholder="Nom…">
+        </div>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Contenu HTML *</label>
@@ -443,13 +341,13 @@
       <div class="form-hint">Le HTML est stocké intégralement et rendu dans un iframe dédié.</div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('add-modal')">Annuler</button>
-      <button class="btn btn-gold" onclick="saveFiche()">Enregistrer</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('add-modal')">Annuler</button>
+      <button class="btn btn-gold btn-sm" onclick="saveFiche()">Enregistrer</button>
     </div>
   </div>
 </div>
 
-<!-- ─── MODAL: EDIT FICHE ─── -->
+<!-- MODAL Edit Fiche -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('edit-modal')">✕</button>
@@ -459,422 +357,347 @@
       <label class="form-label">Titre *</label>
       <input class="form-input" id="ef-title" type="text">
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Catégorie *</label>
-        <select class="form-select" id="ef-cat" onchange="populateEditSubcats()">
-          <option value="">— Sélectionner —</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Sous-catégorie</label>
-        <select class="form-select" id="ef-subcat">
-          <option value="">— Aucune —</option>
-        </select>
+    <div class="form-group">
+      <label class="form-label">Catégorie *</label>
+      <select class="form-select" id="ef-cat" onchange="onChangeCat('ef')"><option value="">— Sélectionner —</option></select>
+    </div>
+    <div id="ef-l2-wrap" style="display:none">
+      <div class="form-row" style="margin-bottom:16px">
+        <div>
+          <label class="form-label">Sous-catégorie existante</label>
+          <select class="form-select" id="ef-subcat" onchange="onChangeSub('ef')"><option value="">— Aucune —</option></select>
+        </div>
+        <div>
+          <label class="form-label">Ou créer une nouvelle</label>
+          <input class="form-input" id="ef-new-subcat" type="text" placeholder="Nom…" oninput="onNewSubInput('ef')">
+        </div>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Nouvelle sous-catégorie</label>
-      <input class="form-input" id="ef-new-subcat" type="text">
+    <div id="ef-l3-wrap" style="display:none">
+      <div class="form-row" style="margin-bottom:16px">
+        <div>
+          <label class="form-label">Thème existant</label>
+          <select class="form-select" id="ef-theme"><option value="">— Aucun —</option></select>
+        </div>
+        <div>
+          <label class="form-label">Ou créer un nouveau thème</label>
+          <input class="form-input" id="ef-new-theme" type="text" placeholder="Nom…">
+        </div>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Contenu HTML</label>
       <textarea class="form-textarea" id="ef-html"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('edit-modal')">Annuler</button>
-      <button class="btn btn-gold" onclick="updateFiche()">Mettre à jour</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('edit-modal')">Annuler</button>
+      <button class="btn btn-gold btn-sm" onclick="updateFiche()">Mettre à jour</button>
     </div>
   </div>
 </div>
 
-<!-- ─── MODAL: VIEWER ─── -->
+<!-- MODAL Viewer -->
 <div class="modal-overlay" id="viewer-modal">
   <div class="modal" style="max-width:980px;padding:0;overflow:hidden">
     <div id="viewer-header">
       <div id="viewer-title">Fiche</div>
-      <div class="header-sep"></div>
+      <div class="hsep"></div>
       <button class="btn btn-outline btn-sm" onclick="closeModal('viewer-modal')">✕ Fermer</button>
     </div>
     <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
   </div>
 </div>
 
-<!-- ─── MODAL: CAT MANAGER ─── -->
-<div class="modal-overlay" id="cat-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('cat-modal')">✕</button>
-    <div class="modal-title">Catégories</div>
-    <div class="modal-sub">Gère tes thématiques. Les sous-catégories sont créées lors de l'ajout de fiches.</div>
-    <div id="cat-list-container"></div>
-    <div style="margin-top:18px">
-      <div class="form-label">Ajouter une catégorie</div>
-      <div id="new-cat-inline">
-        <input class="form-input" id="new-cat-name" placeholder="Nom…" onkeydown="if(event.key==='Enter')addCategory()">
-        <div class="color-opts" id="new-cat-colors" style="margin-top:0;align-self:center"></div>
-        <button class="btn btn-gold btn-sm" onclick="addCategory()" style="align-self:center">Ajouter</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- TOAST -->
 <div id="toast"></div>
 
 <script>
-// ──────────────────────────────────────────────────────────────
-// CONFIG
-// ──────────────────────────────────────────────────────────────
-const GH_OWNER  = 'antoninbld';
-const GH_REPO   = 'fiches-connaissances';
-const GH_FILE   = 'data.json';
-const GH_BRANCH = 'main';
-const PALETTE   = ['#c9a84c','#5a8ae0','#5aad7a','#9a6edf','#e06060','#e07a40','#4ab8c0','#d07aae'];
+/* ================================================================
+   CONFIG
+================================================================ */
+const GH_OWNER='antoninbld',GH_REPO='fiches-connaissances',GH_FILE='data.json',GH_BRANCH='main';
+const PALETTE=['#c9a84c','#5a8ae0','#5aad7a','#9a6edf','#e06060','#e07a40','#4ab8c0','#d07aae'];
 
-// ──────────────────────────────────────────────────────────────
-// LOCAL STATE
-// ──────────────────────────────────────────────────────────────
-let db = { categories: [], fiches: [] };
-let ghSha = null;  // current SHA of data.json on GitHub
-let isSyncing = false;
-let syncQueue = null;
+/*
+  DATA MODEL v2
+  categories: [{id,name,color, subcats:[{id,name, subcats:[{id,name}]}]}]
+  fiches:     [{id,title,catId,subcatId,themeId,html,date}]
+*/
+let db={categories:[],fiches:[]};
+let ghSha=null,isSyncing=false,syncQueue=false,syncTimer=null;
 
-function getToken() { return localStorage.getItem('gh_pat') || ''; }
+const getToken=()=>localStorage.getItem('gh_pat')||'';
+const localSave=()=>localStorage.setItem('kb_v2',JSON.stringify(db));
+const localLoad=()=>{try{return JSON.parse(localStorage.getItem('kb_v2')||'null')}catch(e){return null}};
 
-function localSave() {
-  localStorage.setItem('kb_data_local', JSON.stringify(db));
-}
-
-function localLoad() {
-  try { return JSON.parse(localStorage.getItem('kb_data_local') || 'null'); } catch(e) { return null; }
-}
-
-// ──────────────────────────────────────────────────────────────
-// GITHUB API
-// ──────────────────────────────────────────────────────────────
-async function ghFetch(path, opts = {}) {
-  const token = getToken();
-  const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/${path}`, {
-    ...opts,
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-      ...(opts.headers || {})
-    }
+/* ── GITHUB ── */
+async function ghFetch(path,opts={}){
+  return fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/${path}`,{
+    ...opts,headers:{'Authorization':`Bearer ${getToken()}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json',...(opts.headers||{})}
   });
-  return res;
+}
+async function githubLoad(){
+  const res=await ghFetch(`contents/${GH_FILE}?ref=${GH_BRANCH}`);
+  if(res.status===404)return null;
+  if(!res.ok)throw new Error(`HTTP ${res.status}`);
+  const d=await res.json();ghSha=d.sha;
+  return JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
+}
+async function githubSave(data){
+  if(!getToken())return;
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+  const body={message:`Mise à jour — ${new Date().toLocaleString('fr-FR')}`,content,branch:GH_BRANCH};
+  if(ghSha)body.sha=ghSha;
+  const res=await ghFetch(`contents/${GH_FILE}`,{method:'PUT',body:JSON.stringify(body)});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||`HTTP ${res.status}`);}
+  ghSha=(await res.json()).content.sha;
 }
 
-async function githubLoad() {
-  const res = await ghFetch(`contents/${GH_FILE}?ref=${GH_BRANCH}`);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  const text = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
-  ghSha = data.sha;
-  return JSON.parse(text);
+/* ── SYNC ── */
+function scheduleSave(){localSave();if(!getToken())return;clearTimeout(syncTimer);syncTimer=setTimeout(doSync,1500);}
+async function doSync(){
+  if(isSyncing){syncQueue=true;return;}
+  isSyncing=true;setSyncStatus('syncing','Sauvegarde…');
+  try{await githubSave(db);setSyncStatus('synced','Synchronisé ✓');}
+  catch(e){setSyncStatus('error','Erreur sync ✕');toast('Erreur : '+e.message,'error');}
+  finally{isSyncing=false;if(syncQueue){syncQueue=false;doSync();}}
 }
+function setSyncStatus(cls,label){document.getElementById('sync-status').className=cls;document.getElementById('sync-label').textContent=label;}
 
-async function githubSave(dataToSave) {
-  const token = getToken();
-  if (!token) return;
-
-  const json = JSON.stringify(dataToSave, null, 2);
-  const content = btoa(unescape(encodeURIComponent(json)));
-  const body = {
-    message: `Mise à jour — ${new Date().toLocaleString('fr-FR')}`,
-    content,
-    branch: GH_BRANCH
-  };
-  if (ghSha) body.sha = ghSha;
-
-  const res = await ghFetch(`contents/${GH_FILE}`, {
-    method: 'PUT',
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `HTTP ${res.status}`);
-  }
-  const result = await res.json();
-  ghSha = result.content.sha;
-}
-
-// ──────────────────────────────────────────────────────────────
-// SYNC ENGINE  (debounced — 1.5s après dernier changement)
-// ──────────────────────────────────────────────────────────────
-let syncTimer = null;
-
-function scheduleSave() {
-  localSave();
-  if (!getToken()) return;
-  clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => doSync(), 1500);
-}
-
-async function doSync() {
-  if (isSyncing) { syncQueue = true; return; }
-  isSyncing = true;
-  setSyncStatus('syncing', 'Sauvegarde…');
-  try {
-    await githubSave(db);
-    setSyncStatus('synced', 'Synchronisé ✓');
-  } catch(e) {
-    console.error('Sync error:', e);
-    setSyncStatus('error', 'Erreur sync ✕');
-    toast('Erreur de synchronisation : ' + e.message, 'error');
-  } finally {
-    isSyncing = false;
-    if (syncQueue) { syncQueue = false; doSync(); }
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
-// SYNC STATUS UI
-// ──────────────────────────────────────────────────────────────
-function setSyncStatus(cls, label) {
-  const el = document.getElementById('sync-status');
-  el.className = cls;
-  document.getElementById('sync-label').textContent = label;
-}
-
-// ──────────────────────────────────────────────────────────────
-// INIT
-// ──────────────────────────────────────────────────────────────
-async function init() {
-  const token = getToken();
-  if (token) {
-    document.getElementById('gh-token').value = token;
-    setSyncStatus('syncing', 'Chargement…');
-    try {
-      const remote = await githubLoad();
-      if (remote) {
-        db = remote;
-        localSave();
-        setSyncStatus('synced', 'Synchronisé ✓');
-        toast('Données chargées depuis GitHub ✓', 'success');
-      } else {
-        // Repo vide : pousser les données locales si elles existent
-        const local = localLoad();
-        if (local) db = local;
-        if (db.categories.length === 0) seedDefault();
-        await doSync();
-      }
-    } catch(e) {
-      setSyncStatus('error', 'Erreur connexion');
-      const local = localLoad();
-      if (local) { db = local; toast('GitHub inaccessible — données locales chargées', 'warn'); }
-      else { seedDefault(); }
+/* ── MIGRATION v1 → v2 ── */
+function migrate(raw){
+  if(!raw)return null;
+  (raw.categories||[]).forEach(cat=>{
+    if(!cat.subcats)cat.subcats=[];
+    if(cat.subcats.length&&typeof cat.subcats[0]==='string'){
+      cat.subcats=cat.subcats.map(name=>({id:uid(),name,subcats:[]}));
     }
-  } else {
-    setSyncStatus('notoken', 'GitHub non configuré');
-    const local = localLoad();
-    if (local) db = local;
-    else seedDefault();
+    cat.subcats.forEach(sub=>{if(!sub.subcats)sub.subcats=[];});
+  });
+  (raw.fiches||[]).forEach(f=>{
+    if(f.subcat!==undefined&&f.subcatId===undefined){
+      const cat=(raw.categories||[]).find(c=>c.id===f.catId);
+      const sub=cat?.subcats?.find(s=>s.name===f.subcat);
+      f.subcatId=sub?.id||'';delete f.subcat;
+    }
+    if(!f.subcatId)f.subcatId='';
+    if(!f.themeId)f.themeId='';
+  });
+  return raw;
+}
+
+/* ── INIT ── */
+async function init(){
+  const token=getToken();
+  if(token){
+    document.getElementById('gh-token').value=token;
+    setSyncStatus('syncing','Chargement…');
+    try{
+      let remote=migrate(await githubLoad());
+      if(remote){db=remote;localSave();setSyncStatus('synced','Synchronisé ✓');toast('Données chargées depuis GitHub ✓','success');}
+      else{const local=migrate(localLoad());if(local)db=local;if(!db.categories.length)seedDefault();await doSync();}
+    }catch(e){
+      setSyncStatus('error','Erreur connexion');
+      const local=migrate(localLoad());
+      if(local){db=local;toast('GitHub inaccessible — données locales','warn');}else seedDefault();
+    }
+  }else{
+    setSyncStatus('notoken','GitHub non configuré');
+    const local=migrate(localLoad());if(local)db=local;else seedDefault();
   }
   render();
 }
+function seedDefault(){db.categories.push({id:uid(),name:'Général',color:PALETTE[0],subcats:[]});localSave();}
 
-function seedDefault() {
-  if (db.categories.length === 0) {
-    db.categories.push({ id: uid(), name: 'Général', color: PALETTE[0], subcats: [] });
-    localSave();
-  }
-}
+/* ================================================================
+   NAV STATE
+================================================================ */
+let state={view:'home',catId:null,subcatId:null,themeId:null,search:''};
+let openCats=new Set(),openSubs=new Set();
 
-// ──────────────────────────────────────────────────────────────
-// GITHUB MODAL
-// ──────────────────────────────────────────────────────────────
-function openGithubModal() {
-  const t = getToken();
-  if (t) document.getElementById('gh-token').value = t;
-  openModal('github-modal');
-}
+function goHome(){state={view:'home',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
+function goCat(catId){state={view:'cat',catId,subcatId:null,themeId:null,search:''};openCats.add(catId);render();}
+function goSub(catId,subcatId){state={view:'sub',catId,subcatId,themeId:null,search:''};openCats.add(catId);openSubs.add(subcatId);render();}
+function goTheme(catId,subcatId,themeId){state={view:'theme',catId,subcatId,themeId,search:''};openCats.add(catId);openSubs.add(subcatId);render();}
+function toggleCatOpen(catId,e){e.stopPropagation();openCats.has(catId)?openCats.delete(catId):openCats.add(catId);renderSidebar();}
+function toggleSubOpen(subId,e){e.stopPropagation();openSubs.has(subId)?openSubs.delete(subId):openSubs.add(subId);renderSidebar();}
 
-function toggleTokenVis() {
-  const inp = document.getElementById('gh-token');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-}
+/* ================================================================
+   RENDER
+================================================================ */
+function render(){renderSidebar();renderBreadcrumb();if(state.search)renderSearch();else if(state.view==='home')renderHome();else renderView();}
 
-function saveGithubToken() {
-  const t = document.getElementById('gh-token').value.trim();
-  if (!t) { toast('Token vide.', 'error'); return; }
-  localStorage.setItem('gh_pat', t);
-  closeModal('github-modal');
-  toast('Token enregistré — synchronisation en cours…', 'success');
-  init();
-}
+function cntFiches(f){return db.fiches.filter(x=>{
+  if(f.catId&&x.catId!==f.catId)return false;
+  if(f.subcatId&&x.subcatId!==f.subcatId)return false;
+  if(f.themeId&&x.themeId!==f.themeId)return false;
+  return true;
+}).length;}
 
-async function testAndLoad() {
-  const t = document.getElementById('gh-token').value.trim();
-  if (!t) { toast('Entre d\'abord le token.', 'error'); return; }
-  localStorage.setItem('gh_pat', t);
-  setSyncStatus('syncing', 'Chargement…');
-  try {
-    const remote = await githubLoad();
-    if (remote) {
-      db = remote; localSave(); render();
-      setSyncStatus('synced', 'Synchronisé ✓');
-      toast('Données chargées depuis GitHub ✓', 'success');
-      closeModal('github-modal');
-    } else {
-      toast('Aucune donnée trouvée — les fiches seront créées au premier ajout.', 'warn');
-      setSyncStatus('synced', 'Prêt');
-      closeModal('github-modal');
-    }
-  } catch(e) {
-    setSyncStatus('error', 'Erreur');
-    toast('Erreur : ' + e.message, 'error');
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
-// NAV STATE
-// ──────────────────────────────────────────────────────────────
-let state = { view: 'home', catId: null, subcat: null, search: '' };
-
-function goHome() {
-  state = { view: 'home', catId: null, subcat: null, search: '' };
-  document.getElementById('search').value = '';
-  render();
-}
-function goCategory(catId) { state = { view: 'cat', catId, subcat: null, search: '' }; render(); }
-function goSubcat(catId, subcat) { state = { view: 'cat', catId, subcat, search: '' }; render(); }
-
-// ──────────────────────────────────────────────────────────────
-// RENDER
-// ──────────────────────────────────────────────────────────────
-function render() {
-  renderSidebar();
-  renderBreadcrumb();
-  if (state.search) renderSearch();
-  else if (state.view === 'home') renderHome();
-  else if (state.view === 'cat') renderCat();
-}
-
-function renderSidebar() {
-  const el = document.getElementById('sidebar-cats');
-  document.getElementById('nav-home').classList.toggle('active', state.view === 'home' && !state.search);
-  el.innerHTML = db.categories.map(cat => {
-    const fc = db.fiches.filter(f => f.catId === cat.id);
-    const isOpen = state.catId === cat.id;
-    const subs = cat.subcats || [];
-    return `
-      <div class="nav-cat ${isOpen ? 'active-cat' : ''}" onclick="goCategory('${cat.id}')">
-        <div class="nav-cat-left">
-          <span style="width:8px;height:8px;border-radius:50%;background:${cat.color};display:inline-block;flex-shrink:0"></span>
-          <span>${escHtml(cat.name)}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="nav-cat-badge">${fc.length}</span>
-          ${subs.length ? `<svg class="nav-cat-arrow ${isOpen ? 'open' : ''}" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>` : ''}
-        </div>
+/* SIDEBAR */
+function renderSidebar(){
+  document.getElementById('nav-home').className='nav-home'+(state.view==='home'&&!state.search?' active':'');
+  const el=document.getElementById('sidebar-cats');
+  el.innerHTML=db.categories.map(cat=>{
+    const isOpen=openCats.has(cat.id);
+    const isSel=state.catId===cat.id;
+    const total=cntFiches({catId:cat.id});
+    const subs=cat.subcats||[];
+    let h=`<div class="n1 ${isSel&&!state.subcatId?'sel':''}" onclick="goCat('${cat.id}')">
+      <div class="n1-left"><span class="n1-dot" style="background:${cat.color}"></span><span>${escH(cat.name)}</span></div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="badge">${total}</span>
+        ${subs.length?`<svg class="arrow ${isOpen?'open':''}" onclick="toggleCatOpen('${cat.id}',event)" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`:''}
       </div>
-      ${isOpen ? subs.map(sub => {
-        const cnt = db.fiches.filter(f => f.catId === cat.id && f.subcat === sub).length;
-        return `<div class="nav-subcat ${state.subcat === sub ? 'active' : ''}" onclick="goSubcat('${cat.id}','${escAttr(sub)}')">
-          <span>${escHtml(sub)}</span><span class="nav-subcat-badge">${cnt}</span>
+    </div>`;
+    if(isOpen&&subs.length){
+      subs.forEach(sub=>{
+        const subOpen=openSubs.has(sub.id);
+        const subSel=state.subcatId===sub.id;
+        const subTotal=cntFiches({catId:cat.id,subcatId:sub.id});
+        const themes=sub.subcats||[];
+        h+=`<div class="n2 ${subSel&&!state.themeId?'sel':''}" onclick="goSub('${cat.id}','${sub.id}')">
+          <div class="n2-left"><span style="color:var(--text-dim);margin-right:2px">└</span><span>${escH(sub.name)}</span></div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span class="badge" style="font-size:9px">${subTotal}</span>
+            ${themes.length?`<svg class="arrow ${subOpen?'open':''}" onclick="toggleSubOpen('${sub.id}',event)" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`:''}
+          </div>
         </div>`;
-      }).join('') : ''}`;
+        if(subOpen&&themes.length){
+          themes.forEach(th=>{
+            const thTotal=cntFiches({catId:cat.id,subcatId:sub.id,themeId:th.id});
+            h+=`<div class="n3 ${state.themeId===th.id?'sel':''}" onclick="goTheme('${cat.id}','${sub.id}','${th.id}')">
+              <span>${escH(th.name)}</span><span class="badge" style="font-size:9px">${thTotal}</span>
+            </div>`;
+          });
+        }
+      });
+    }
+    return h;
   }).join('');
 }
 
-function renderBreadcrumb() {
-  const el = document.getElementById('breadcrumb');
-  let h = `<span class="crumb" onclick="goHome()">Accueil</span>`;
-  if (state.search) h += `<span class="crumb-sep">›</span><span class="crumb-current">Recherche</span>`;
-  else if (state.catId) {
-    const cat = getCat(state.catId);
-    if (cat) {
-      h += `<span class="crumb-sep">›</span><span class="crumb" onclick="goCategory('${cat.id}')">${escHtml(cat.name)}</span>`;
-      if (state.subcat) h += `<span class="crumb-sep">›</span><span class="crumb-current">${escHtml(state.subcat)}</span>`;
+/* BREADCRUMB */
+function renderBreadcrumb(){
+  let h=`<span class="crumb" onclick="goHome()">Accueil</span>`;
+  if(state.search){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Recherche</span>`;}
+  else if(state.catId){
+    const cat=getCat(state.catId);
+    if(cat){
+      h+=`<span class="crumb-sep">›</span><span class="crumb" onclick="goCat('${cat.id}')">${escH(cat.name)}</span>`;
+      if(state.subcatId){
+        const sub=getSub(cat,state.subcatId);
+        if(sub){
+          h+=`<span class="crumb-sep">›</span><span class="crumb" onclick="goSub('${cat.id}','${sub.id}')">${escH(sub.name)}</span>`;
+          if(state.themeId){
+            const th=getTh(sub,state.themeId);
+            if(th)h+=`<span class="crumb-sep">›</span><span class="crumb-current">${escH(th.name)}</span>`;
+          }
+        }
+      }
     }
   }
-  el.innerHTML = h;
+  document.getElementById('breadcrumb').innerHTML=h;
 }
 
-function renderHome() {
-  const noToken = !getToken();
-  let html = '';
-  if (noToken) {
-    html += `<div id="setup-banner">
-      <div id="setup-banner-icon">🔗</div>
-      <div id="setup-banner-text">
-        <h3>Configure GitHub pour sauvegarder tes fiches</h3>
-        <p>Tes données seront stockées dans ton repository GitHub et accessibles partout.</p>
-      </div>
-      <button class="btn btn-gold btn-sm" onclick="openGithubModal()" style="flex-shrink:0">Configurer</button>
-    </div>`;
-  }
-
-  html += `<div id="hero">
-    <h1>Votre <span>bibliothèque</span> de connaissances</h1>
-    <p>Organisez et retrouvez rapidement toutes vos fiches thématiques.</p>
-  </div>
+/* HOME */
+function renderHome(){
+  let html='';
+  if(!getToken())html+=`<div id="setup-banner">
+    <div style="font-size:26px">🔗</div>
+    <div><h3>Configure GitHub pour sauvegarder tes fiches</h3><p>Tes données seront stockées dans ton repository GitHub.</p></div>
+    <button class="btn btn-gold btn-sm" onclick="openGithubModal()" style="flex-shrink:0">Configurer</button>
+  </div>`;
+  const nbSubs=db.categories.reduce((n,c)=>n+(c.subcats||[]).length,0);
+  const nbThemes=db.categories.reduce((n,c)=>n+(c.subcats||[]).reduce((m,s)=>m+(s.subcats||[]).length,0),0);
+  html+=`<div id="hero"><h1>Votre <span>bibliothèque</span> de connaissances</h1><p>Organisez et retrouvez rapidement toutes vos fiches thématiques.</p></div>
   <div id="stats-bar">
     <div class="stat-card"><div class="stat-num">${db.fiches.length}</div><div class="stat-label">Fiches</div></div>
     <div class="stat-card"><div class="stat-num">${db.categories.length}</div><div class="stat-label">Catégories</div></div>
-    <div class="stat-card"><div class="stat-num">${db.categories.reduce((n,c)=>n+(c.subcats||[]).length,0)}</div><div class="stat-label">Sous-catégories</div></div>
+    <div class="stat-card"><div class="stat-num">${nbSubs}</div><div class="stat-label">Sous-catégories</div></div>
+    <div class="stat-card"><div class="stat-num">${nbThemes}</div><div class="stat-label">Thèmes</div></div>
   </div>`;
-
-  if (db.categories.length === 0) {
-    html += `<div class="empty-state"><p>Aucune catégorie — commence par en créer une !</p></div>`;
-  } else {
-    html += `<div class="section-header"><div class="section-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
-    db.categories.forEach(cat => {
-      const fiches = db.fiches.filter(f => f.catId === cat.id);
-      const subs = cat.subcats || [];
-      html += `<div class="cat-card" style="--cat-color:${cat.color}" onclick="goCategory('${cat.id}')">
-        <div class="cat-card-name">${escHtml(cat.name)}</div>
-        <div class="cat-card-meta">${fiches.length} fiche${fiches.length!==1?'s':''} · ${subs.length} sous-catégorie${subs.length!==1?'s':''}</div>
-        ${subs.length ? `<div class="cat-card-sub">${subs.map(s=>`<span class="sub-tag">${escHtml(s)}</span>`).join('')}</div>` : ''}
+  if(!db.categories.length){
+    html+=`<div class="empty-state"><p>Aucune catégorie — clique sur <strong>📁 Structure</strong> pour commencer !</p></div>`;
+  }else{
+    html+=`<div class="section-header"><div class="section-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
+    db.categories.forEach(cat=>{
+      const fc=db.fiches.filter(f=>f.catId===cat.id).length;
+      const subs=cat.subcats||[];
+      html+=`<div class="cat-card" style="--cat-color:${cat.color}" onclick="goCat('${cat.id}')">
+        <div class="cat-card-name">${escH(cat.name)}</div>
+        <div class="cat-card-meta">${fc} fiche${fc!==1?'s':''} · ${subs.length} sous-cat.</div>
+        ${subs.length?`<div class="cat-card-sub">${subs.slice(0,4).map(s=>`<span class="sub-tag">${escH(s.name)}</span>`).join('')}${subs.length>4?`<span class="sub-tag">+${subs.length-4}</span>`:''}</div>`:''}
       </div>`;
     });
-    html += `</div>`;
+    html+=`</div>`;
   }
-  document.getElementById('content').innerHTML = html;
+  document.getElementById('content').innerHTML=html;
 }
 
-function renderCat() {
-  const cat = getCat(state.catId);
-  if (!cat) { goHome(); return; }
-  const subs = cat.subcats || [];
-  let fiches = db.fiches.filter(f => f.catId === cat.id);
-  if (state.subcat) fiches = fiches.filter(f => f.subcat === state.subcat);
+/* VIEW (cat / sub / theme) */
+function renderView(){
+  const cat=getCat(state.catId);if(!cat){goHome();return;}
+  const sub=state.subcatId?getSub(cat,state.subcatId):null;
+  const th=sub&&state.themeId?getTh(sub,state.themeId):null;
 
-  let html = `<div class="view-header">
+  let title,subtitle;
+  let fiches=db.fiches.filter(f=>f.catId===cat.id);
+  if(th){title=th.name;subtitle=`${escH(cat.name)} › ${escH(sub.name)}`;fiches=fiches.filter(f=>f.subcatId===sub.id&&f.themeId===th.id);}
+  else if(sub){title=sub.name;subtitle=escH(cat.name);fiches=fiches.filter(f=>f.subcatId===sub.id);}
+  else{title=cat.name;subtitle=`${fiches.length} fiche${fiches.length!==1?'s':''} au total`;}
+
+  let html=`<div class="view-header">
     <div>
-      <div class="view-title" style="border-left:4px solid ${cat.color};padding-left:14px">${escHtml(cat.name)}</div>
-      <div class="view-subtitle">${fiches.length} fiche${fiches.length!==1?'s':''}${state.subcat ? ` — ${escHtml(state.subcat)}` : ''}</div>
+      <div class="view-title" style="border-left:4px solid ${cat.color};padding-left:13px">${escH(title)}</div>
+      <div class="view-subtitle">${subtitle}</div>
     </div>
-    <button class="btn btn-gold btn-sm" onclick="openAddFiche('${cat.id}')">+ Nouvelle fiche</button>
+    <button class="btn btn-gold btn-sm" onclick="openAddFiche('${cat.id}','${sub?.id||''}','${th?.id||''}')">+ Nouvelle fiche</button>
   </div>`;
 
-  if (subs.length) {
-    html += `<div id="subcat-tabs">
-      <button class="subcat-tab ${!state.subcat?'active':''}" onclick="goCategory('${cat.id}')">Tout (${db.fiches.filter(f=>f.catId===cat.id).length})</button>
-      ${subs.map(s => {
-        const cnt = db.fiches.filter(f=>f.catId===cat.id&&f.subcat===s).length;
-        return `<button class="subcat-tab ${state.subcat===s?'active':''}" onclick="goSubcat('${cat.id}','${escAttr(s)}')">${escHtml(s)} (${cnt})</button>`;
-      }).join('')}
-    </div>`;
+  let fichesToShow=fiches;
+
+  if(!sub){
+    // Show subcat folders
+    const subs=cat.subcats||[];
+    if(subs.length){
+      html+=`<div class="folder-section-title">📂 Sous-catégories</div><div class="folder-grid">`;
+      subs.forEach(s=>{
+        const cnt=cntFiches({catId:cat.id,subcatId:s.id});
+        const tCnt=(s.subcats||[]).length;
+        html+=`<div class="folder-card" onclick="goSub('${cat.id}','${s.id}')">
+          <span class="folder-icon">📂</span>
+          <div><div class="folder-name">${escH(s.name)}</div><div class="folder-count">${cnt} fiche${cnt!==1?'s':''} · ${tCnt} thème${tCnt!==1?'s':''}</div></div>
+        </div>`;
+      });
+      html+=`</div>`;
+      fichesToShow=fiches.filter(f=>!f.subcatId);
+      if(fichesToShow.length)html+=`<hr class="section-sep"><div class="folder-section-title">📄 Fiches sans sous-catégorie</div>`;
+    }
+  } else if(!th){
+    // Show theme folders
+    const themes=sub.subcats||[];
+    if(themes.length){
+      html+=`<div class="folder-section-title">🗂 Thèmes</div><div class="folder-grid">`;
+      themes.forEach(t=>{
+        const cnt=cntFiches({catId:cat.id,subcatId:sub.id,themeId:t.id});
+        html+=`<div class="folder-card" onclick="goTheme('${cat.id}','${sub.id}','${t.id}')">
+          <span class="folder-icon">🗂</span>
+          <div><div class="folder-name">${escH(t.name)}</div><div class="folder-count">${cnt} fiche${cnt!==1?'s':''}</div></div>
+        </div>`;
+      });
+      html+=`</div>`;
+      fichesToShow=fiches.filter(f=>!f.themeId);
+      if(fichesToShow.length)html+=`<hr class="section-sep"><div class="folder-section-title">📄 Fiches sans thème</div>`;
+    }
   }
 
-  if (!fiches.length) {
-    html += `<div class="empty-state">
-      <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <p>Aucune fiche — <span style="color:var(--gold);cursor:pointer" onclick="openAddFiche('${cat.id}')">ajoutes-en une !</span></p>
-    </div>`;
-  } else {
-    html += `<div id="fiche-grid">`;
-    fiches.forEach(f => {
-      const subLabel = f.subcat ? `<span style="color:var(--text-dim)"> / ${escHtml(f.subcat)}</span>` : '';
-      html += `<div class="fiche-card">
-        <div class="fiche-cat-tag">${escHtml(cat.name)}${subLabel}</div>
-        <div class="fiche-title">${escHtml(f.title)}</div>
-        <div class="fiche-meta">${formatDate(f.date)}</div>
+  if(fichesToShow.length){
+    html+=`<div id="fiche-grid">`;
+    fichesToShow.forEach(f=>{
+      html+=`<div class="fiche-card">
+        <div class="fiche-path">${buildPath(f)}</div>
+        <div class="fiche-title">${escH(f.title)}</div>
+        <div class="fiche-date">${fmtDate(f.date)}</div>
         <div class="fiche-actions">
           <button class="fiche-btn" onclick="viewFiche('${f.id}');event.stopPropagation()">👁 Voir</button>
           <button class="fiche-btn" onclick="editFiche('${f.id}');event.stopPropagation()">✏ Modifier</button>
@@ -882,245 +705,334 @@ function renderCat() {
         </div>
       </div>`;
     });
-    html += `</div>`;
+    html+=`</div>`;
+  } else if(!html.includes('folder-grid')){
+    html+=`<div class="empty-state">
+      <svg width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p>Aucune fiche ici — <span style="color:var(--gold);cursor:pointer" onclick="openAddFiche('${cat.id}','${sub?.id||''}','${th?.id||''}')">ajoutes-en une !</span></p>
+    </div>`;
   }
-  document.getElementById('content').innerHTML = html;
+  document.getElementById('content').innerHTML=html;
 }
 
-function handleSearch(q) { state.search = q.trim(); render(); }
+function buildPath(f){
+  const cat=getCat(f.catId);
+  const sub=cat?getSub(cat,f.subcatId):null;
+  const th=sub?getTh(sub,f.themeId):null;
+  return [cat?.name,sub?.name,th?.name].filter(Boolean).map(escH).join(' › ');
+}
 
-function renderSearch() {
-  const q = state.search.toLowerCase();
-  const results = db.fiches.filter(f =>
-    f.title.toLowerCase().includes(q) ||
-    (f.subcat||'').toLowerCase().includes(q) ||
-    (getCat(f.catId)?.name||'').toLowerCase().includes(q)
-  );
-  let html = `<div class="section-header">
-    <div class="section-title">Résultats pour <em style="color:var(--gold)">"${escHtml(state.search)}"</em></div>
+/* SEARCH */
+function handleSearch(q){state.search=q.trim();render();}
+function renderSearch(){
+  const q=state.search.toLowerCase();
+  const results=db.fiches.filter(f=>f.title.toLowerCase().includes(q)||buildPath(f).toLowerCase().includes(q));
+  let html=`<div class="section-header">
+    <div class="section-title">Résultats pour <em style="color:var(--gold)">"${escH(state.search)}"</em></div>
     <div class="section-count">${results.length} résultat${results.length!==1?'s':''}</div>
   </div>`;
-  if (!results.length) {
-    html += `<div class="empty-state"><p>Aucune fiche ne correspond.</p></div>`;
-  } else {
-    results.forEach(f => {
-      const cat = getCat(f.catId);
-      const path = [cat?.name, f.subcat].filter(Boolean).join(' › ');
-      html += `<div class="search-result-item" onclick="viewFiche('${f.id}')">
-        <div style="width:8px;height:8px;border-radius:50%;background:${cat?.color||'var(--gold)'};flex-shrink:0"></div>
-        <div style="flex:1">
-          <div class="search-result-title">${highlightText(f.title, state.search)}</div>
-          <div class="search-result-path">${escHtml(path)}</div>
-        </div>
-        <button class="fiche-btn" onclick="editFiche('${f.id}');event.stopPropagation()">✏</button>
-      </div>`;
-    });
-  }
-  document.getElementById('content').innerHTML = html;
+  if(!results.length)html+=`<div class="empty-state"><p>Aucune fiche ne correspond.</p></div>`;
+  else results.forEach(f=>{
+    html+=`<div class="search-result-item" onclick="viewFiche('${f.id}')">
+      <div style="width:8px;height:8px;border-radius:50%;background:${getCat(f.catId)?.color||'var(--gold)'};flex-shrink:0"></div>
+      <div style="flex:1">
+        <div class="search-result-title">${hlText(f.title,state.search)}</div>
+        <div class="search-result-path">${buildPath(f)}</div>
+      </div>
+      <button class="fiche-btn" onclick="editFiche('${f.id}');event.stopPropagation()">✏</button>
+    </div>`;
+  });
+  document.getElementById('content').innerHTML=html;
 }
 
-// ──────────────────────────────────────────────────────────────
-// FICHE CRUD
-// ──────────────────────────────────────────────────────────────
-function openAddFiche(preCatId) {
-  populateCatSelect('f-cat');
-  if (preCatId) { document.getElementById('f-cat').value = preCatId; populateSubcats(); }
-  ['f-title','f-html','f-new-subcat'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('f-subcat').innerHTML = '<option value="">— Aucune —</option>';
+/* ================================================================
+   FICHE CRUD
+================================================================ */
+function openAddFiche(preCatId='',preSubId='',preThId=''){
+  fillCatSel('f-cat');
+  ['f-title','f-html','f-new-subcat','f-new-theme'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f-l2-wrap').style.display='none';
+  document.getElementById('f-l3-wrap').style.display='none';
+  if(preCatId){
+    document.getElementById('f-cat').value=preCatId;
+    fillSubSel('f',preCatId);
+    document.getElementById('f-l2-wrap').style.display='';
+    if(preSubId){
+      document.getElementById('f-subcat').value=preSubId;
+      fillThSel('f',preCatId,preSubId);
+      document.getElementById('f-l3-wrap').style.display='';
+      if(preThId)document.getElementById('f-theme').value=preThId;
+    }
+  }
   openModal('add-modal');
 }
 
-function populateCatSelect(selId) {
-  const sel = document.getElementById(selId);
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">— Sélectionner —</option>' +
-    db.categories.map(c => `<option value="${c.id}" ${c.id===cur?'selected':''}>${escHtml(c.name)}</option>`).join('');
+function onChangeCat(p){
+  const catId=document.getElementById(`${p}-cat`).value;
+  if(catId){fillSubSel(p,catId);document.getElementById(`${p}-l2-wrap`).style.display='';}
+  else document.getElementById(`${p}-l2-wrap`).style.display='none';
+  document.getElementById(`${p}-l3-wrap`).style.display='none';
+  document.getElementById(`${p}-new-subcat`).value='';
+}
+function onChangeSub(p){
+  const catId=document.getElementById(`${p}-cat`).value;
+  const subId=document.getElementById(`${p}-subcat`).value;
+  if(subId){fillThSel(p,catId,subId);document.getElementById(`${p}-l3-wrap`).style.display='';}
+  else document.getElementById(`${p}-l3-wrap`).style.display='none';
+  document.getElementById(`${p}-new-theme`).value='';
+}
+function onNewSubInput(p){
+  if(document.getElementById(`${p}-new-subcat`).value.trim())
+    document.getElementById(`${p}-l3-wrap`).style.display='none';
 }
 
-function populateSubcats() {
-  const cat = getCat(document.getElementById('f-cat').value);
-  const sel = document.getElementById('f-subcat');
-  sel.innerHTML = '<option value="">— Aucune —</option>' +
-    (cat?.subcats||[]).map(s=>`<option value="${escAttr(s)}">${escHtml(s)}</option>`).join('');
+function fillCatSel(selId){
+  const s=document.getElementById(selId),cur=s.value;
+  s.innerHTML='<option value="">— Sélectionner —</option>'+db.categories.map(c=>`<option value="${c.id}" ${c.id===cur?'selected':''}>${escH(c.name)}</option>`).join('');
+}
+function fillSubSel(p,catId){
+  const cat=getCat(catId),s=document.getElementById(`${p}-subcat`);
+  s.innerHTML='<option value="">— Aucune —</option>'+(cat?.subcats||[]).map(x=>`<option value="${x.id}">${escH(x.name)}</option>`).join('');
+}
+function fillThSel(p,catId,subId){
+  const cat=getCat(catId),sub=cat?getSub(cat,subId):null,s=document.getElementById(`${p}-theme`);
+  s.innerHTML='<option value="">— Aucun —</option>'+(sub?.subcats||[]).map(x=>`<option value="${x.id}">${escH(x.name)}</option>`).join('');
 }
 
-function populateEditSubcats() {
-  const cat = getCat(document.getElementById('ef-cat').value);
-  const sel = document.getElementById('ef-subcat');
-  sel.innerHTML = '<option value="">— Aucune —</option>' +
-    (cat?.subcats||[]).map(s=>`<option value="${escAttr(s)}">${escHtml(s)}</option>`).join('');
-}
-
-function saveFiche() {
-  const title = document.getElementById('f-title').value.trim();
-  const catId = document.getElementById('f-cat').value;
-  const html = document.getElementById('f-html').value.trim();
-  let subcat = document.getElementById('f-subcat').value;
-  const newSub = document.getElementById('f-new-subcat').value.trim();
-  if (!title) { toast('Titre requis.', 'error'); return; }
-  if (!catId) { toast('Catégorie requise.', 'error'); return; }
-  if (!html) { toast('Contenu HTML requis.', 'error'); return; }
-  if (newSub) subcat = newSub;
-  if (subcat) {
-    const cat = getCat(catId);
-    if (!cat.subcats) cat.subcats = [];
-    if (!cat.subcats.includes(subcat)) cat.subcats.push(subcat);
+function resolveLoc(p){
+  const catId=document.getElementById(`${p}-cat`).value;
+  if(!catId)return null;
+  const cat=getCat(catId);
+  const newSubName=document.getElementById(`${p}-new-subcat`).value.trim();
+  let subcatId=document.getElementById(`${p}-subcat`).value;
+  if(newSubName){
+    let sub=cat.subcats.find(s=>s.name===newSubName);
+    if(!sub){sub={id:uid(),name:newSubName,subcats:[]};cat.subcats.push(sub);}
+    subcatId=sub.id;
   }
-  db.fiches.push({ id: uid(), title, catId, subcat: subcat||'', html, date: Date.now() });
-  scheduleSave();
-  closeModal('add-modal');
-  toast('Fiche enregistrée — synchronisation…', 'success');
-  render();
+  let themeId='';
+  if(subcatId){
+    const sub=getSub(cat,subcatId);
+    const newThName=document.getElementById(`${p}-new-theme`).value.trim();
+    themeId=document.getElementById(`${p}-theme`).value;
+    if(newThName&&sub){
+      let th=(sub.subcats||[]).find(t=>t.name===newThName);
+      if(!th){th={id:uid(),name:newThName};if(!sub.subcats)sub.subcats=[];sub.subcats.push(th);}
+      themeId=th.id;
+    }
+  }
+  return{catId,subcatId:subcatId||'',themeId:themeId||''};
 }
 
-function viewFiche(id) {
-  const f = db.fiches.find(x => x.id === id);
-  if (!f) return;
-  document.getElementById('viewer-title').textContent = f.title;
-  document.getElementById('viewer-frame').srcdoc = f.html;
+function saveFiche(){
+  const title=document.getElementById('f-title').value.trim();
+  const html=document.getElementById('f-html').value.trim();
+  if(!title){toast('Titre requis.','error');return;}
+  const loc=resolveLoc('f');if(!loc){toast('Catégorie requise.','error');return;}
+  if(!html){toast('Contenu HTML requis.','error');return;}
+  db.fiches.push({id:uid(),title,...loc,html,date:Date.now()});
+  scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
+}
+
+function viewFiche(id){
+  const f=db.fiches.find(x=>x.id===id);if(!f)return;
+  document.getElementById('viewer-title').textContent=f.title;
+  document.getElementById('viewer-frame').srcdoc=f.html;
   openModal('viewer-modal');
 }
 
-function editFiche(id) {
-  const f = db.fiches.find(x => x.id === id);
-  if (!f) return;
-  document.getElementById('ef-id').value = f.id;
-  document.getElementById('ef-title').value = f.title;
-  document.getElementById('ef-html').value = f.html;
-  document.getElementById('ef-new-subcat').value = '';
-  populateCatSelect('ef-cat');
-  document.getElementById('ef-cat').value = f.catId;
-  populateEditSubcats();
-  document.getElementById('ef-subcat').value = f.subcat || '';
+function editFiche(id){
+  const f=db.fiches.find(x=>x.id===id);if(!f)return;
+  document.getElementById('ef-id').value=f.id;
+  document.getElementById('ef-title').value=f.title;
+  document.getElementById('ef-html').value=f.html;
+  ['ef-new-subcat','ef-new-theme'].forEach(i=>document.getElementById(i).value='');
+  fillCatSel('ef-cat');document.getElementById('ef-cat').value=f.catId;
+  document.getElementById('ef-l2-wrap').style.display='';
+  fillSubSel('ef',f.catId);document.getElementById('ef-subcat').value=f.subcatId||'';
+  if(f.subcatId){fillThSel('ef',f.catId,f.subcatId);document.getElementById('ef-l3-wrap').style.display='';document.getElementById('ef-theme').value=f.themeId||'';}
+  else document.getElementById('ef-l3-wrap').style.display='none';
   openModal('edit-modal');
 }
 
-function updateFiche() {
-  const id = document.getElementById('ef-id').value;
-  const f = db.fiches.find(x => x.id === id);
-  if (!f) return;
-  const title = document.getElementById('ef-title').value.trim();
-  const catId = document.getElementById('ef-cat').value;
-  const html = document.getElementById('ef-html').value.trim();
-  let subcat = document.getElementById('ef-subcat').value;
-  const newSub = document.getElementById('ef-new-subcat').value.trim();
-  if (!title || !catId || !html) { toast('Champs requis manquants.', 'error'); return; }
-  if (newSub) subcat = newSub;
-  if (subcat) {
-    const cat = getCat(catId);
-    if (!cat.subcats) cat.subcats = [];
-    if (!cat.subcats.includes(subcat)) cat.subcats.push(subcat);
-  }
-  f.title = title; f.catId = catId; f.subcat = subcat||''; f.html = html;
-  scheduleSave();
-  closeModal('edit-modal');
-  toast('Fiche mise à jour.', 'success');
-  render();
+function updateFiche(){
+  const id=document.getElementById('ef-id').value,f=db.fiches.find(x=>x.id===id);if(!f)return;
+  const title=document.getElementById('ef-title').value.trim(),html=document.getElementById('ef-html').value.trim();
+  if(!title||!html){toast('Champs requis manquants.','error');return;}
+  const loc=resolveLoc('ef');if(!loc){toast('Catégorie requise.','error');return;}
+  Object.assign(f,{title,...loc,html});
+  scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
 }
 
-function deleteFiche(id) {
-  if (!confirm('Supprimer cette fiche définitivement ?')) return;
-  db.fiches = db.fiches.filter(f => f.id !== id);
-  scheduleSave();
-  toast('Fiche supprimée.', 'success');
-  render();
+function deleteFiche(id){
+  if(!confirm('Supprimer cette fiche définitivement ?'))return;
+  db.fiches=db.fiches.filter(f=>f.id!==id);
+  scheduleSave();toast('Fiche supprimée.','success');render();
 }
 
-// ──────────────────────────────────────────────────────────────
-// CATEGORIES
-// ──────────────────────────────────────────────────────────────
-let selectedColor = PALETTE[0];
+/* ================================================================
+   TREE MANAGER
+================================================================ */
+let selColor=PALETTE[0];
+let treeOpen1=new Set(),treeOpen2=new Set();
 
-function openCatManager() {
-  renderCatList();
+function openTreeManager(){
+  treeOpen1=new Set(db.categories.map(c=>c.id));
+  treeOpen2=new Set();
   renderColorPicker('new-cat-colors');
-  openModal('cat-modal');
+  renderTree();
+  openModal('tree-modal');
 }
 
-function renderCatList() {
-  const el = document.getElementById('cat-list-container');
-  if (!db.categories.length) { el.innerHTML = '<div class="info-banner">Aucune catégorie.</div>'; return; }
-  el.innerHTML = db.categories.map(cat => {
-    const cnt = db.fiches.filter(f => f.catId === cat.id).length;
-    return `<div class="cat-list-item">
-      <div class="cat-list-item-name">
-        <span class="color-dot" style="background:${cat.color}"></span>
-        ${escHtml(cat.name)}
-        <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--text-dim)">(${cnt} fiche${cnt!==1?'s':''})</span>
+function renderTree(){
+  const el=document.getElementById('tree-container');
+  if(!db.categories.length){el.innerHTML='<div style="color:var(--text-dim);font-style:italic;font-size:13px;padding:8px 0">Aucune catégorie.</div>';return;}
+  let h='';
+  db.categories.forEach(cat=>{
+    const open1=treeOpen1.has(cat.id);
+    const fc=db.fiches.filter(f=>f.catId===cat.id).length;
+    h+=`<div class="tree-node">
+      <div class="tree-row">
+        <svg class="t-toggle ${open1?'open':''}" onclick="t1toggle('${cat.id}')" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        <div class="tree-row-name"><span class="n1-dot" style="background:${cat.color}"></span><strong>${escH(cat.name)}</strong><span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--text-dim)">${fc} fiche${fc!==1?'s':''}</span></div>
+        <div class="tree-row-actions">
+          <button class="btn btn-outline btn-sm" onclick="showAddSub('${cat.id}')">+ Sous-cat.</button>
+          <button class="btn btn-danger btn-sm" onclick="tDelCat('${cat.id}')">✕</button>
+        </div>
       </div>
-      <button class="btn btn-danger btn-sm" onclick="deleteCat('${cat.id}')">Supprimer</button>
-    </div>`;
-  }).join('');
+      <div class="inline-add l2" id="iadd-sub-${cat.id}">
+        <input class="form-input" id="inew-sub-${cat.id}" placeholder="Nom de la sous-catégorie…" onkeydown="if(event.key==='Enter')confirmSub('${cat.id}')">
+        <button class="btn btn-gold btn-sm" onclick="confirmSub('${cat.id}')">OK</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('iadd-sub-${cat.id}').style.display='none'">✕</button>
+      </div>`;
+    if(open1){
+      (cat.subcats||[]).forEach(sub=>{
+        const open2=treeOpen2.has(sub.id);
+        const sf=db.fiches.filter(f=>f.subcatId===sub.id).length;
+        h+=`<div class="tree-node">
+          <div class="tree-row l2">
+            <svg class="t-toggle ${open2?'open':''}" onclick="t2toggle('${sub.id}')" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="tree-row-name">📂 ${escH(sub.name)} <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--text-dim)">${sf} fiche${sf!==1?'s':''}</span></div>
+            <div class="tree-row-actions">
+              <button class="btn btn-outline btn-sm" onclick="showAddTheme('${cat.id}','${sub.id}')">+ Thème</button>
+              <button class="btn btn-danger btn-sm" onclick="tDelSub('${cat.id}','${sub.id}')">✕</button>
+            </div>
+          </div>
+          <div class="inline-add l3" id="iadd-th-${sub.id}">
+            <input class="form-input" id="inew-th-${sub.id}" placeholder="Nom du thème…" onkeydown="if(event.key==='Enter')confirmTheme('${cat.id}','${sub.id}')">
+            <button class="btn btn-gold btn-sm" onclick="confirmTheme('${cat.id}','${sub.id}')">OK</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('iadd-th-${sub.id}').style.display='none'">✕</button>
+          </div>`;
+        if(open2){
+          (sub.subcats||[]).forEach(th=>{
+            const tf=db.fiches.filter(f=>f.themeId===th.id).length;
+            h+=`<div class="tree-row l3">
+              <div style="width:10px"></div>
+              <div class="tree-row-name">🗂 ${escH(th.name)} <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--text-dim)">${tf} fiche${tf!==1?'s':''}</span></div>
+              <div class="tree-row-actions"><button class="btn btn-danger btn-sm" onclick="tDelTh('${cat.id}','${sub.id}','${th.id}')">✕</button></div>
+            </div>`;
+          });
+        }
+        h+=`</div>`;
+      });
+    }
+    h+=`</div>`;
+  });
+  el.innerHTML=h;
 }
 
-function renderColorPicker(containerId) {
-  const el = document.getElementById(containerId);
-  selectedColor = PALETTE[0];
-  el.innerHTML = PALETTE.map((c,i) =>
-    `<div class="color-opt ${i===0?'selected':''}" style="background:${c}" data-color="${c}" onclick="selectColor(this,'${containerId}')"></div>`
-  ).join('');
+function t1toggle(id){treeOpen1.has(id)?treeOpen1.delete(id):treeOpen1.add(id);renderTree();}
+function t2toggle(id){treeOpen2.has(id)?treeOpen2.delete(id):treeOpen2.add(id);renderTree();}
+
+function showAddSub(catId){treeOpen1.add(catId);renderTree();const el=document.getElementById(`iadd-sub-${catId}`);if(el){el.style.display='flex';document.getElementById(`inew-sub-${catId}`)?.focus();}}
+function confirmSub(catId){
+  const name=document.getElementById(`inew-sub-${catId}`)?.value.trim();if(!name)return;
+  const cat=getCat(catId);
+  if(!cat.subcats.find(s=>s.name===name)){cat.subcats.push({id:uid(),name,subcats:[]});scheduleSave();render();}
+  renderTree();toast('Sous-catégorie créée !','success');
+}
+function showAddTheme(catId,subId){treeOpen1.add(catId);treeOpen2.add(subId);renderTree();const el=document.getElementById(`iadd-th-${subId}`);if(el){el.style.display='flex';document.getElementById(`inew-th-${subId}`)?.focus();}}
+function confirmTheme(catId,subId){
+  const name=document.getElementById(`inew-th-${subId}`)?.value.trim();if(!name)return;
+  const cat=getCat(catId),sub=getSub(cat,subId);
+  if(sub&&!sub.subcats.find(t=>t.name===name)){if(!sub.subcats)sub.subcats=[];sub.subcats.push({id:uid(),name});scheduleSave();render();}
+  renderTree();toast('Thème créé !','success');
+}
+function tDelCat(catId){
+  const cnt=db.fiches.filter(f=>f.catId===catId).length;
+  if(!confirm(`${cnt>0?`${cnt} fiche${cnt>1?'s':''} seront supprimées. `:''}Supprimer cette catégorie ?`))return;
+  db.categories=db.categories.filter(c=>c.id!==catId);
+  db.fiches=db.fiches.filter(f=>f.catId!==catId);
+  scheduleSave();if(state.catId===catId)goHome();else render();renderTree();toast('Catégorie supprimée.','success');
+}
+function tDelSub(catId,subId){
+  const cnt=db.fiches.filter(f=>f.subcatId===subId).length;
+  if(!confirm(`${cnt>0?`${cnt} fiche${cnt>1?'s':''} perdront leur sous-catégorie. `:''}Supprimer ?`))return;
+  const cat=getCat(catId);cat.subcats=cat.subcats.filter(s=>s.id!==subId);
+  db.fiches.filter(f=>f.subcatId===subId).forEach(f=>{f.subcatId='';f.themeId='';});
+  scheduleSave();renderTree();render();toast('Sous-catégorie supprimée.','success');
+}
+function tDelTh(catId,subId,thId){
+  const cnt=db.fiches.filter(f=>f.themeId===thId).length;
+  if(!confirm(`${cnt>0?`${cnt} fiche${cnt>1?'s':''} perdront leur thème. `:''}Supprimer ?`))return;
+  const cat=getCat(catId),sub=getSub(cat,subId);
+  if(sub){sub.subcats=(sub.subcats||[]).filter(t=>t.id!==thId);db.fiches.filter(f=>f.themeId===thId).forEach(f=>f.themeId='');}
+  scheduleSave();renderTree();render();toast('Thème supprimé.','success');
 }
 
-function selectColor(el, containerId) {
-  document.querySelectorAll(`#${containerId} .color-opt`).forEach(d => d.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedColor = el.dataset.color;
+function renderColorPicker(cid){
+  selColor=PALETTE[0];
+  document.getElementById(cid).innerHTML=PALETTE.map((c,i)=>`<div class="color-opt ${i===0?'selected':''}" style="background:${c}" data-color="${c}" onclick="pickColor(this,'${cid}')"></div>`).join('');
+}
+function pickColor(el,cid){document.querySelectorAll(`#${cid} .color-opt`).forEach(d=>d.classList.remove('selected'));el.classList.add('selected');selColor=el.dataset.color;}
+function addRootCat(){
+  const name=document.getElementById('new-cat-name').value.trim();
+  if(!name){toast('Nom requis.','error');return;}
+  if(db.categories.find(c=>c.name===name)){toast('Catégorie déjà existante.','error');return;}
+  db.categories.push({id:uid(),name,color:selColor,subcats:[]});
+  scheduleSave();document.getElementById('new-cat-name').value='';
+  renderTree();render();toast('Catégorie créée !','success');
 }
 
-function addCategory() {
-  const name = document.getElementById('new-cat-name').value.trim();
-  if (!name) { toast('Nom requis.', 'error'); return; }
-  if (db.categories.find(c => c.name === name)) { toast('Catégorie déjà existante.', 'error'); return; }
-  db.categories.push({ id: uid(), name, color: selectedColor, subcats: [] });
-  scheduleSave();
-  document.getElementById('new-cat-name').value = '';
-  renderCatList();
-  render();
-  toast('Catégorie créée !', 'success');
+/* ================================================================
+   GITHUB MODAL
+================================================================ */
+function openGithubModal(){const t=getToken();if(t)document.getElementById('gh-token').value=t;openModal('github-modal');}
+function toggleTokenVis(){const i=document.getElementById('gh-token');i.type=i.type==='password'?'text':'password';}
+function saveGithubToken(){
+  const t=document.getElementById('gh-token').value.trim();
+  if(!t){toast('Token vide.','error');return;}
+  localStorage.setItem('gh_pat',t);closeModal('github-modal');
+  toast('Token enregistré — synchronisation…','success');init();
+}
+async function testAndLoad(){
+  const t=document.getElementById('gh-token').value.trim();
+  if(!t){toast("Entre d'abord le token.",'error');return;}
+  localStorage.setItem('gh_pat',t);setSyncStatus('syncing','Chargement…');
+  try{
+    let remote=migrate(await githubLoad());
+    if(remote){db=remote;localSave();render();setSyncStatus('synced','Synchronisé ✓');toast('Données chargées ✓','success');closeModal('github-modal');}
+    else{toast('Aucune donnée — le fichier sera créé au premier ajout.','warn');setSyncStatus('synced','Prêt');closeModal('github-modal');}
+  }catch(e){setSyncStatus('error','Erreur');toast('Erreur : '+e.message,'error');}
 }
 
-function deleteCat(id) {
-  const cnt = db.fiches.filter(f => f.catId === id).length;
-  if (!confirm(`${cnt > 0 ? `Cette catégorie contient ${cnt} fiche${cnt>1?'s':''}. ` : ''}Supprimer ?`)) return;
-  db.categories = db.categories.filter(c => c.id !== id);
-  db.fiches = db.fiches.filter(f => f.catId !== id);
-  scheduleSave();
-  renderCatList();
-  if (state.catId === id) goHome(); else render();
-  toast('Catégorie supprimée.', 'success');
-}
+/* ================================================================
+   UTILS
+================================================================ */
+function getCat(id){return db.categories.find(c=>c.id===id);}
+function getSub(cat,id){return(cat?.subcats||[]).find(s=>s.id===id);}
+function getTh(sub,id){return(sub?.subcats||[]).find(t=>t.id===id);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(ts){return ts?new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):''}
+function hlText(text,q){return escH(text).replace(new RegExp(`(${escH(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),'<span class="highlight">$1</span>');}
 
-// ──────────────────────────────────────────────────────────────
-// UTILS
-// ──────────────────────────────────────────────────────────────
-function getCat(id) { return db.categories.find(c => c.id === id); }
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function escAttr(s) { return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
-function formatDate(ts) { return ts ? new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}) : ''; }
-function highlightText(text, q) {
-  const esc = escHtml(text);
-  return esc.replace(new RegExp(`(${escHtml(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<span class="highlight">$1</span>');
-}
+let toastTm;
+function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`show ${type}`;clearTimeout(toastTm);toastTm=setTimeout(()=>{el.className=''},3200);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
-let toastTimer;
-function toast(msg, type='') {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = `show ${type}`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.className = ''; }, 3000);
-}
-
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
-
-// ──────────────────────────────────────────────────────────────
-// START
-// ──────────────────────────────────────────────────────────────
 init();
 </script>
 </body>
