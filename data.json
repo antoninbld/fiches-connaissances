@@ -1,6 +1,12 @@
 {
   "categories": [
     {
+      "id": "mmh7d5w832vp",
+      "name": "Géopolitique",
+      "color": "#e06060",
+      "subcats": []
+    },
+    {
       "id": "mmh7cnz6xska",
       "name": "Energie",
       "color": "#5a8ae0",
@@ -26,12 +32,6 @@
           "subcats": []
         }
       ]
-    },
-    {
-      "id": "mmh7d5w832vp",
-      "name": "Géopolitique",
-      "color": "#e06060",
-      "subcats": []
     }
   ],
   "fiches": [
