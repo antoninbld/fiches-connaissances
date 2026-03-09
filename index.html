@@ -174,10 +174,10 @@
 
   /* VIEWER — plein écran */
   #viewer-modal{padding:6px}
-  #viewer-modal .modal{max-width:calc(100vw - 12px);width:calc(100vw - 12px);padding:0;overflow:hidden;border-radius:14px}
-  #viewer-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2);flex-wrap:nowrap}
+  #viewer-modal .modal{max-width:calc(100vw - 12px);width:calc(100vw - 12px);height:calc(100vh - 12px);padding:0;overflow:hidden;border-radius:14px;display:flex;flex-direction:column}
+  #viewer-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2);flex-wrap:nowrap;flex-shrink:0}
   #viewer-title{font-family:'Playfair Display',serif;font-size:16px;flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-  #viewer-wrap{width:100%;height:calc(100vh - 100px);overflow:hidden;background:white;position:relative}
+  #viewer-wrap{width:100%;flex:1;overflow:hidden;background:white;position:relative}
   #viewer-frame{border:none;background:white;display:block;transform-origin:top left}
 
   /* ZOOM CONTROLS */
@@ -251,7 +251,7 @@
   .recent-dot{width:6px;height:6px;border-radius:50%;background:var(--card-color,var(--border2));flex-shrink:0}
 
   /* ── VOIR AUSSI ── */
-  #viewer-links{padding:14px 22px 18px;border-top:1px solid var(--border);background:var(--surface);display:none}
+  #viewer-links{padding:14px 22px 18px;border-top:1px solid var(--border);background:var(--surface);display:none;flex-shrink:0;max-height:160px;overflow-y:auto}
   .voir-aussi-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px}
   .voir-aussi-chips{display:flex;flex-wrap:wrap;gap:8px}
   .voir-aussi-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .18s;max-width:280px}
