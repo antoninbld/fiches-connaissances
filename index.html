@@ -238,6 +238,42 @@
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
+
+  /* ── RÉCEMMENT CONSULTÉES ── */
+  .recent-section{margin-top:32px}
+  .recent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
+  .recent-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:13px 16px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
+  .recent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color,var(--border2));pointer-events:none}
+  .recent-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .recent-card-title{font-family:'Playfair Display',serif;font-size:14px;color:var(--text);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .recent-card-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+  .recent-card-time{color:var(--text-muted);font-size:10px;margin-left:auto;flex-shrink:0}
+  .recent-dot{width:6px;height:6px;border-radius:50%;background:var(--card-color,var(--border2));flex-shrink:0}
+
+  /* ── VOIR AUSSI ── */
+  #viewer-links{padding:14px 22px 18px;border-top:1px solid var(--border);background:var(--surface);display:none}
+  .voir-aussi-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px}
+  .voir-aussi-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .voir-aussi-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .18s;max-width:280px}
+  .voir-aussi-chip:hover{border-color:var(--gold-dim)}
+  .voir-aussi-chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .voir-aussi-chip-text{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .voir-aussi-chip-path{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ── LINK PICKER ── */
+  .link-picker-wrap{border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-top:6px}
+  .link-picker-search{width:100%;background:var(--surface2);border:none;border-bottom:1px solid var(--border);padding:9px 13px;font-size:13px;color:var(--text);outline:none;box-sizing:border-box}
+  .link-picker-search::placeholder{color:var(--text-dim)}
+  .link-picker-list{max-height:140px;overflow-y:auto;background:var(--bg)}
+  .lp-item{display:flex;align-items:center;gap:10px;padding:8px 13px;cursor:pointer;transition:background .12s;font-size:13px;color:var(--text);user-select:none}
+  .lp-item:hover{background:var(--surface2)}
+  .lp-item.sel{background:rgba(201,168,76,.07)}
+  .lp-item input{accent-color:var(--gold);width:14px;height:14px;flex-shrink:0;pointer-events:none}
+  .lp-path{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.04em;margin-left:auto;white-space:nowrap}
+  .link-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .link-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:6px;font-size:12px;color:var(--gold);cursor:pointer}
+  .link-tag:hover{background:rgba(201,168,76,.2)}
+
   /* ── QUIZ NAV ── */
   .nav-quiz{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;font-size:14px;color:var(--text-muted);user-select:none}
   .nav-quiz:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border2)}
@@ -461,6 +497,11 @@
       <textarea class="form-textarea" id="f-html" placeholder="Colle ici le code HTML complet de ta fiche…"></textarea>
       <div class="form-hint">Le HTML est stocké intégralement et rendu dans un iframe dédié.</div>
     </div>
+    <div class="form-group">
+      <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel)</span></label>
+      <div class="link-picker-wrap"><input class="link-picker-search" id="f-lp-search" placeholder="Rechercher une fiche…"><div class="link-picker-list" id="f-lp-list"></div></div>
+      <div class="link-tags" id="f-lp-tags"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('add-modal')">Annuler</button>
       <button class="btn btn-gold btn-sm" onclick="saveFiche()">Enregistrer</button>
@@ -510,6 +551,11 @@
       <label class="form-label">Contenu HTML</label>
       <textarea class="form-textarea" id="ef-html"></textarea>
     </div>
+    <div class="form-group">
+      <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel)</span></label>
+      <div class="link-picker-wrap"><input class="link-picker-search" id="ef-lp-search" placeholder="Rechercher une fiche…"><div class="link-picker-list" id="ef-lp-list"></div></div>
+      <div class="link-tags" id="ef-lp-tags"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('edit-modal')">Annuler</button>
       <button class="btn btn-gold btn-sm" onclick="updateFiche()">Mettre à jour</button>
@@ -534,6 +580,7 @@
     <div id="viewer-wrap">
       <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
     </div>
+    <div id="viewer-links"></div>
   </div>
 </div>
 
@@ -776,10 +823,32 @@ function renderHome(){
     <div class="stat-card"><div class="stat-num">${nbSubs}</div><div class="stat-label">Sous-catégories</div></div>
     <div class="stat-card"><div class="stat-num">${nbThemes}</div><div class="stat-label">Thèmes</div></div>
   </div>`;
+  // Récemment consultées
+  const _recent=getRecent();
+  if(_recent.length){
+    let _rh='<div class="recent-section"><div class="section-header"><div class="section-title">R&eacute;cemment consult&eacute;es</div><div class="section-count">'+_recent.length+' fiche'+(_recent.length>1?'s':'')+'</div></div><div class="recent-grid">';
+    _recent.forEach(function(_r){
+      const _f=db.fiches.find(function(x){return x.id===_r.id;});
+      if(!_f)return;
+      const _c=getCat(_f.catId);
+      const _col=_c?_c.color:'#888';
+      const _ago=timeAgo(_r.viewedAt);
+      const _path=buildPath(_f);
+      _rh+='<div class="recent-card" style="--card-color:'+_col+';cursor:pointer" data-rid="'+_f.id+'">'
+        +'<div class="recent-card-title">'+escH(_f.title)+'</div>'
+        +'<div class="recent-card-meta"><span class="recent-dot"></span>'
+        +(_path?'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_path+'</span>':'')
+        +'<span class="recent-card-time">'+_ago+'</span></div></div>';
+    });
+    _rh+='</div></div>';
+    html+=_rh;
+    // click handler set after innerHTML
+  }
+
   if(!db.categories.length){
     html+=`<div class="empty-state"><p>Aucune catégorie — clique sur <strong>📁 Structure</strong> pour commencer !</p></div>`;
   }else{
-    html+=`<div class="section-header"><div class="section-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
+    html+=`<div class="section-header" style="margin-top:${_recent.length?'28px':'0'}"><div class="section-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
     db.categories.forEach(cat=>{
       const fc=db.fiches.filter(f=>f.catId===cat.id).length;
       const subs=cat.subcats||[];
@@ -792,6 +861,10 @@ function renderHome(){
     html+=`</div>`;
   }
   document.getElementById('content').innerHTML=html;
+  // Recent card clicks
+  document.querySelectorAll('.recent-card[data-rid]').forEach(function(el){
+    el.addEventListener('click',function(){viewFiche(el.dataset.rid);});
+  });
 }
 
 /* ── §7b · Vue catégorie / sous-catégorie / thème ─────────────── */
@@ -926,6 +999,7 @@ function openAddFiche(preCatId='',preSubId='',preThId=''){
       if(preThId)document.getElementById('f-theme').value=preThId;
     }
   }
+  lpInit('f',[]);
   openModal('add-modal');
 }
 
@@ -992,7 +1066,7 @@ function saveFiche(){
   if(!title){toast('Titre requis.','error');return;}
   const loc=resolveLoc('f');if(!loc){toast('Catégorie requise.','error');return;}
   if(!html){toast('Contenu HTML requis.','error');return;}
-  db.fiches.push({id:uid(),title,...loc,html,date:Date.now()});
+  db.fiches.push({id:uid(),title,...loc,html,date:Date.now(),links:lpGet('f')});
   scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
 }
 
@@ -1019,8 +1093,34 @@ function viewFiche(id){
   const frame=document.getElementById('viewer-frame');
   frame.style.transform='';frame.style.width='100%';frame.style.height='100%';
   frame.srcdoc=f.html;
+  // Voir aussi
+  const _linksEl=document.getElementById('viewer-links');
+  _linksEl.innerHTML='';
+  _linksEl.style.display='none';
+  const _linked=(f.links||[]).map(function(lid){return db.fiches.find(function(x){return x.id===lid;});}).filter(Boolean);
+  if(_linked.length){
+    const _label=document.createElement('div');
+    _label.className='voir-aussi-label';
+    _label.textContent='Voir aussi';
+    const _chips=document.createElement('div');
+    _chips.className='voir-aussi-chips';
+    _linked.forEach(function(_lf){
+      const _cat=getCat(_lf.catId);
+      const _col=_cat?_cat.color:'#888';
+      const _chip=document.createElement('div');
+      _chip.className='voir-aussi-chip';
+      _chip.innerHTML='<span class="voir-aussi-chip-dot" style="background:'+_col+'"></span>'
+        +'<div style="min-width:0"><div class="voir-aussi-chip-text">'+escH(_lf.title)+'</div>'
+        +'<div class="voir-aussi-chip-path">'+buildPath(_lf)+'</div></div>';
+      _chip.addEventListener('click',function(){closeModal('viewer-modal');viewFiche(_lf.id);});
+      _chips.appendChild(_chip);
+    });
+    _linksEl.appendChild(_label);
+    _linksEl.appendChild(_chips);
+    _linksEl.style.display='';
+  }
+  trackRecent(id);
   openModal('viewer-modal');
-  // After modal opens, apply correct sizing
   requestAnimationFrame(()=>vZoomSet(1));
 }
 
@@ -1035,6 +1135,7 @@ function editFiche(id){
   fillSubSel('ef',f.catId);document.getElementById('ef-subcat').value=f.subcatId||'';
   if(f.subcatId){fillThSel('ef',f.catId,f.subcatId);document.getElementById('ef-l3-wrap').style.display='';document.getElementById('ef-theme').value=f.themeId||'';}
   else document.getElementById('ef-l3-wrap').style.display='none';
+  lpInit('ef',f.links||[],f.id);
   openModal('edit-modal');
 }
 
@@ -1043,7 +1144,7 @@ function updateFiche(){
   const title=document.getElementById('ef-title').value.trim(),html=document.getElementById('ef-html').value.trim();
   if(!title||!html){toast('Champs requis manquants.','error');return;}
   const loc=resolveLoc('ef');if(!loc){toast('Catégorie requise.','error');return;}
-  Object.assign(f,{title,...loc,html});
+  Object.assign(f,{title,...loc,html,links:lpGet('ef')});
   scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
 }
 
@@ -1222,6 +1323,89 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
+
+
+/* ── §11b · Fiches liées — Link Picker ─────────────────────────── */
+const _lpSel={};
+function lpInit(p,ids,excl){
+  _lpSel[p]=new Set((ids||[]).filter(function(id){return id!==excl;}));
+  const inp=document.getElementById(p+'-lp-search');
+  const list=document.getElementById(p+'-lp-list');
+  const tags=document.getElementById(p+'-lp-tags');
+  if(!inp||!list||!tags)return;
+  inp.value='';
+  inp.oninput=function(){lpRender(p,excl,inp.value);};
+  list.onclick=function(e){
+    const item=e.target.closest('.lp-item[data-fid]');
+    if(!item)return;
+    const sel=_lpSel[p];
+    sel.has(item.dataset.fid)?sel.delete(item.dataset.fid):sel.add(item.dataset.fid);
+    lpRender(p,excl,inp.value);
+    lpTags(p,excl);
+  };
+  tags.onclick=function(e){
+    const tag=e.target.closest('.link-tag[data-fid]');
+    if(!tag)return;
+    _lpSel[p].delete(tag.dataset.fid);
+    lpRender(p,excl,inp.value);
+    lpTags(p,excl);
+  };
+  lpRender(p,excl,'');
+  lpTags(p,excl);
+}
+function lpRender(p,excl,q){
+  const list=document.getElementById(p+'-lp-list');
+  if(!list)return;
+  const sel=_lpSel[p]||new Set();
+  const query=(q||'').toLowerCase();
+  const fiches=db.fiches.filter(function(f){
+    if(f.id===excl)return false;
+    return !query||f.title.toLowerCase().indexOf(query)>=0;
+  }).slice(0,30);
+  if(!fiches.length){list.innerHTML='<div style="padding:9px 13px;font-size:12px;color:var(--text-dim)">'+(query?'Aucun résultat':'Aucune autre fiche')+'</div>';return;}
+  list.innerHTML=fiches.map(function(f){
+    const ck=sel.has(f.id);
+    return '<div class="lp-item'+(ck?' sel':'')+'" data-fid="'+f.id+'">'
+      +'<input type="checkbox"'+(ck?' checked':'')+' readonly>'
+      +'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(f.title)+'</span>'
+      +'<span class="lp-path">'+buildPath(f)+'</span></div>';
+  }).join('');
+}
+function lpTags(p,excl){
+  const tags=document.getElementById(p+'-lp-tags');
+  if(!tags)return;
+  const sel=_lpSel[p]||new Set();
+  tags.innerHTML=Array.from(sel).map(function(id){
+    const f=db.fiches.find(function(x){return x.id===id;});
+    return f?'<span class="link-tag" data-fid="'+id+'">'+escH(f.title)
+      +'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>':'';
+  }).join('');
+}
+function lpGet(p){return Array.from(_lpSel[p]||new Set());}
+
+/* ── §11c · Récemment consultées ───────────────────────────────── */
+function trackRecent(id){
+  try{
+    let r=JSON.parse(localStorage.getItem('kb_recent')||'[]');
+    r=r.filter(function(x){return x.id!==id;});
+    r.unshift({id:id,viewedAt:Date.now()});
+    localStorage.setItem('kb_recent',JSON.stringify(r.slice(0,5)));
+  }catch(e){}
+}
+function getRecent(){
+  try{
+    const r=JSON.parse(localStorage.getItem('kb_recent')||'[]');
+    return r.filter(function(x){return db.fiches.some(function(f){return f.id===x.id;});});
+  }catch(e){return[];}
+}
+function timeAgo(ts){
+  const d=Date.now()-ts,m=Math.floor(d/60000),h=Math.floor(d/3600000),j=Math.floor(d/86400000);
+  if(m<1)return"à l'instant";
+  if(m<60)return'il y a '+m+'min';
+  if(h<24)return'il y a '+h+'h';
+  if(j<7)return'il y a '+j+'j';
+  return fmtDate(ts);
+}
 
 /* ════════════════════════════════════════════════════════════════════
    §12 · DRAG & DROP
