@@ -238,6 +238,42 @@
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
+  /* ── RÉCEMMENT CONSULTÉES ── */
+  .recent-section{margin-top:32px}
+  .recent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
+  .recent-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:13px 16px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
+  .recent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color,var(--border2));opacity:.7}
+  .recent-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .recent-card-title{font-family:'Playfair Display',serif;font-size:14px;color:var(--text);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .recent-card-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+  .recent-card-time{color:var(--text-muted);font-size:10px}
+  .recent-dot{width:6px;height:6px;border-radius:50%;background:var(--card-color,var(--border2));flex-shrink:0}
+
+  /* ── VOIR AUSSI (viewer) ── */
+  #viewer-links{padding:14px 22px 18px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+  .voir-aussi-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px}
+  .voir-aussi-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .voir-aussi-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .18s;max-width:260px}
+  .voir-aussi-chip:hover{border-color:var(--gold-dim);background:var(--gold-glow)}
+  .voir-aussi-chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .voir-aussi-chip-text{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .voir-aussi-chip-path{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ── LINK PICKER (modal) ── */
+  .link-picker{border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-top:6px}
+  .link-picker-search{width:100%;background:var(--surface2);border:none;border-bottom:1px solid var(--border);padding:9px 13px;font-family:'Source Serif 4',serif;font-size:13px;color:var(--text);outline:none}
+  .link-picker-search::placeholder{color:var(--text-dim)}
+  .link-picker-list{max-height:140px;overflow-y:auto;background:var(--bg)}
+  .link-picker-item{display:flex;align-items:center;gap:10px;padding:8px 13px;cursor:pointer;transition:background .12s;font-size:13px;color:var(--text)}
+  .link-picker-item:hover{background:var(--surface2)}
+  .link-picker-item.selected{background:rgba(201,168,76,.08);color:var(--gold)}
+  .link-picker-item input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;flex-shrink:0}
+  .link-picker-item-path{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.04em;margin-left:auto;white-space:nowrap}
+  .link-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:0}
+  .link-tag{display:flex;align-items:center;gap:5px;padding:4px 9px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:6px;font-size:12px;color:var(--gold);cursor:pointer}
+  .link-tag:hover{background:rgba(201,168,76,.18)}
+  .link-tag svg{opacity:.7}
+
   /* ── QUIZ NAV ── */
   .nav-quiz{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;font-size:14px;color:var(--text-muted);user-select:none}
   .nav-quiz:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border2)}
@@ -461,6 +497,14 @@
       <textarea class="form-textarea" id="f-html" placeholder="Colle ici le code HTML complet de ta fiche…"></textarea>
       <div class="form-hint">Le HTML est stocké intégralement et rendu dans un iframe dédié.</div>
     </div>
+    <div class="form-group">
+      <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel — apparaîtront dans "Voir aussi")</span></label>
+      <div class="link-picker" id="f-link-picker">
+        <input class="link-picker-search" placeholder="Rechercher une fiche…" oninput="renderLinkPicker('f',this.value)">
+        <div class="link-picker-list" id="f-link-list"></div>
+      </div>
+      <div class="link-tags" id="f-link-tags"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('add-modal')">Annuler</button>
       <button class="btn btn-gold btn-sm" onclick="saveFiche()">Enregistrer</button>
@@ -510,6 +554,14 @@
       <label class="form-label">Contenu HTML</label>
       <textarea class="form-textarea" id="ef-html"></textarea>
     </div>
+    <div class="form-group">
+      <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel — apparaîtront dans "Voir aussi")</span></label>
+      <div class="link-picker" id="ef-link-picker">
+        <input class="link-picker-search" placeholder="Rechercher une fiche…" oninput="renderLinkPicker('ef',this.value)">
+        <div class="link-picker-list" id="ef-link-list"></div>
+      </div>
+      <div class="link-tags" id="ef-link-tags"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('edit-modal')">Annuler</button>
       <button class="btn btn-gold btn-sm" onclick="updateFiche()">Mettre à jour</button>
@@ -534,6 +586,7 @@
     <div id="viewer-wrap">
       <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
     </div>
+    <div id="viewer-links" style="display:none"></div>
   </div>
 </div>
 
@@ -568,7 +621,8 @@ const PALETTE=['#c9a84c','#5a8ae0','#5aad7a','#9a6edf','#e06060','#e07a40','#4ab
 /*
   DATA MODEL v2
   categories: [{id,name,color, subcats:[{id,name, subcats:[{id,name}]}]}]
-  fiches:     [{id,title,catId,subcatId,themeId,html,date}]
+  fiches:     [{id,title,catId,subcatId,themeId,html,date,links:[ficheId,...]}]
+  localStorage kb_recent: [{id,viewedAt}] — max 5, jamais synchronisé sur GitHub
 */
 let db={categories:[],fiches:[]};
 let ghSha=null,isSyncing=false,syncQueue=false,syncTimer=null;
@@ -776,10 +830,35 @@ function renderHome(){
     <div class="stat-card"><div class="stat-num">${nbSubs}</div><div class="stat-label">Sous-catégories</div></div>
     <div class="stat-card"><div class="stat-num">${nbThemes}</div><div class="stat-label">Thèmes</div></div>
   </div>`;
+
+  // ── Récemment consultées ──
+  const recent=getRecent();
+  if(recent.length){
+    html+=`<div class="recent-section">
+      <div class="section-header"><div class="section-title">Récemment consultées</div><div class="section-count">${recent.length} fiche${recent.length>1?'s':''}</div></div>
+      <div class="recent-grid">`;
+    recent.forEach(({id,viewedAt})=>{
+      const f=db.fiches.find(x=>x.id===id);if(!f)return;
+      const cat=getCat(f.catId);
+      const color=cat?.color||'var(--border2)';
+      const ago=timeAgo(viewedAt);
+      const path=buildPath(f);
+      html+=`<div class="recent-card" style="--card-color:${color}" onclick="viewFiche('${f.id}')">
+        <div class="recent-card-title">${escH(f.title)}</div>
+        <div class="recent-card-meta">
+          <span class="recent-dot"></span>
+          ${path?`<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">${path}</span>`:''}
+          <span class="recent-card-time" style="margin-left:auto;flex-shrink:0">${ago}</span>
+        </div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  }
+
   if(!db.categories.length){
     html+=`<div class="empty-state"><p>Aucune catégorie — clique sur <strong>📁 Structure</strong> pour commencer !</p></div>`;
   }else{
-    html+=`<div class="section-header"><div class="section-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
+    html+=`<div class="section-header" style="margin-top:28px"><div class="section-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
     db.categories.forEach(cat=>{
       const fc=db.fiches.filter(f=>f.catId===cat.id).length;
       const subs=cat.subcats||[];
@@ -926,6 +1005,7 @@ function openAddFiche(preCatId='',preSubId='',preThId=''){
       if(preThId)document.getElementById('f-theme').value=preThId;
     }
   }
+  initLinkPicker('f',[]);
   openModal('add-modal');
 }
 
@@ -992,7 +1072,8 @@ function saveFiche(){
   if(!title){toast('Titre requis.','error');return;}
   const loc=resolveLoc('f');if(!loc){toast('Catégorie requise.','error');return;}
   if(!html){toast('Contenu HTML requis.','error');return;}
-  db.fiches.push({id:uid(),title,...loc,html,date:Date.now()});
+  const links=getLinkPickerSelected('f');
+  db.fiches.push({id:uid(),title,...loc,html,date:Date.now(),links});
   scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
 }
 
@@ -1019,8 +1100,33 @@ function viewFiche(id){
   const frame=document.getElementById('viewer-frame');
   frame.style.transform='';frame.style.width='100%';frame.style.height='100%';
   frame.srcdoc=f.html;
+
+  // ── Voir aussi ──
+  const linksEl=document.getElementById('viewer-links');
+  const linked=(f.links||[]).map(lid=>db.fiches.find(x=>x.id===lid)).filter(Boolean);
+  if(linked.length){
+    let chips=linked.map(lf=>{
+      const cat=getCat(lf.catId);
+      const color=cat?.color||'var(--border2)';
+      const path=buildPath(lf);
+      return `<div class="voir-aussi-chip" onclick="closeModal('viewer-modal');viewFiche('${lf.id}')">
+        <span class="voir-aussi-chip-dot" style="background:${color}"></span>
+        <div style="overflow:hidden">
+          <div class="voir-aussi-chip-text">${escH(lf.title)}</div>
+          ${path?`<div class="voir-aussi-chip-path">${path}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    linksEl.innerHTML=`<div class="voir-aussi-label">Voir aussi</div><div class="voir-aussi-chips">${chips}</div>`;
+    linksEl.style.display='';
+  }else{
+    linksEl.style.display='none';
+  }
+
+  // ── Tracker récent ──
+  trackRecent(id);
+
   openModal('viewer-modal');
-  // After modal opens, apply correct sizing
   requestAnimationFrame(()=>vZoomSet(1));
 }
 
@@ -1035,6 +1141,7 @@ function editFiche(id){
   fillSubSel('ef',f.catId);document.getElementById('ef-subcat').value=f.subcatId||'';
   if(f.subcatId){fillThSel('ef',f.catId,f.subcatId);document.getElementById('ef-l3-wrap').style.display='';document.getElementById('ef-theme').value=f.themeId||'';}
   else document.getElementById('ef-l3-wrap').style.display='none';
+  initLinkPicker('ef', f.links||[], f.id);
   openModal('edit-modal');
 }
 
@@ -1043,7 +1150,8 @@ function updateFiche(){
   const title=document.getElementById('ef-title').value.trim(),html=document.getElementById('ef-html').value.trim();
   if(!title||!html){toast('Champs requis manquants.','error');return;}
   const loc=resolveLoc('ef');if(!loc){toast('Catégorie requise.','error');return;}
-  Object.assign(f,{title,...loc,html});
+  const links=getLinkPickerSelected('ef');
+  Object.assign(f,{title,...loc,html,links});
   scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
 }
 
@@ -1205,15 +1313,97 @@ async function testAndLoad(){
 }
 
 
-/* ════════════════════════════════════════════════════════════════════
-   §11 · UTILITAIRES — helpers, toast, modales
-════════════════════════════════════════════════════════════════════ */
-function getCat(id){return db.categories.find(c=>c.id===id);}
-function getSub(cat,id){return(cat?.subcats||[]).find(s=>s.id===id);}
-function getTh(sub,id){return(sub?.subcats||[]).find(t=>t.id===id);}
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
-function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function fmtDate(ts){return ts?new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):''}
+/* ── §11a · Fiches liées — Link picker ─────────────────────────── */
+// selectedLinks[prefix] = Set of fiche IDs
+const selectedLinks={};
+
+function initLinkPicker(p, initialIds=[], excludeId=''){
+  selectedLinks[p]=new Set(initialIds.filter(id=>id!==excludeId));
+  renderLinkPicker(p,'');
+  renderLinkTags(p,excludeId);
+}
+
+function renderLinkPicker(p, query='', excludeId=''){
+  // Detect excludeId from hidden field if in edit mode
+  if(!excludeId&&p==='ef') excludeId=document.getElementById('ef-id')?.value||'';
+  const sel=selectedLinks[p]||new Set();
+  const q=(query||'').toLowerCase().trim();
+  const fiches=db.fiches.filter(f=>{
+    if(f.id===excludeId)return false;
+    if(!q)return true;
+    return f.title.toLowerCase().includes(q)||(buildPath(f)||'').toLowerCase().includes(q);
+  }).slice(0,20);
+  const list=document.getElementById(`${p}-link-list`);
+  if(!list)return;
+  if(!fiches.length){
+    list.innerHTML=`<div style="padding:10px 13px;font-size:12px;color:var(--text-dim)">${q?'Aucun résultat':'Aucune autre fiche disponible'}</div>`;
+    return;
+  }
+  list.innerHTML=fiches.map(f=>{
+    const checked=sel.has(f.id);
+    const path=buildPath(f);
+    return `<label class="link-picker-item${checked?' selected':''}">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleLink('${p}','${f.id}','${excludeId}')">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escH(f.title)}</span>
+      ${path?`<span class="link-picker-item-path">${path}</span>`:''}
+    </label>`;
+  }).join('');
+}
+
+function toggleLink(p, ficheId, excludeId=''){
+  const sel=selectedLinks[p]||(selectedLinks[p]=new Set());
+  sel.has(ficheId)?sel.delete(ficheId):sel.add(ficheId);
+  renderLinkPicker(p, document.querySelector(`#${p}-link-picker .link-picker-search`)?.value||'', excludeId);
+  renderLinkTags(p, excludeId);
+}
+
+function renderLinkTags(p, excludeId=''){
+  const sel=selectedLinks[p]||new Set();
+  const container=document.getElementById(`${p}-link-tags`);
+  if(!container)return;
+  if(!sel.size){container.innerHTML='';return;}
+  container.innerHTML=[...sel].map(id=>{
+    const f=db.fiches.find(x=>x.id===id);
+    if(!f)return'';
+    return `<span class="link-tag" onclick="toggleLink('${p}','${id}','${excludeId}')">
+      ${escH(f.title)}
+      <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </span>`;
+  }).join('');
+}
+
+function getLinkPickerSelected(p){
+  return [...(selectedLinks[p]||new Set())];
+}
+
+/* ── §11b · Récemment consultées ───────────────────────────────── */
+function trackRecent(ficheId){
+  let recent=getRecent();
+  recent=recent.filter(x=>x.id!==ficheId);
+  recent.unshift({id:ficheId,viewedAt:Date.now()});
+  recent=recent.slice(0,5);
+  localStorage.setItem('kb_recent',JSON.stringify(recent));
+}
+
+function getRecent(){
+  try{
+    const r=JSON.parse(localStorage.getItem('kb_recent')||'[]');
+    // Filtrer les fiches qui n'existent plus
+    return r.filter(x=>db.fiches.some(f=>f.id===x.id));
+  }catch(e){return[];}
+}
+
+function timeAgo(ts){
+  const diff=Date.now()-ts;
+  const min=Math.floor(diff/60000);
+  const h=Math.floor(diff/3600000);
+  const d=Math.floor(diff/86400000);
+  if(min<1)return'à l\'instant';
+  if(min<60)return`il y a ${min} min`;
+  if(h<24)return`il y a ${h}h`;
+  if(d<7)return`il y a ${d}j`;
+  return fmtDate(ts);
+}
 function hlText(text,q){return escH(text).replace(new RegExp(`(${escH(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),'<span class="highlight">$1</span>');}
 
 let toastTm;
