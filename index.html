@@ -177,7 +177,7 @@
   #viewer-modal .modal{max-width:calc(100vw - 12px);width:calc(100vw - 12px);height:calc(100vh - 12px);padding:0;overflow:hidden;border-radius:14px;display:flex;flex-direction:column}
   #viewer-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2);flex-wrap:nowrap;flex-shrink:0}
   #viewer-title{font-family:'Playfair Display',serif;font-size:16px;flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-  #viewer-wrap{width:100%;flex:1;overflow:hidden;background:white;position:relative}
+  #viewer-wrap{width:100%;flex:1;min-height:0;overflow:hidden;background:white;position:relative}
   #viewer-frame{border:none;background:white;display:block;transform-origin:top left}
 
   /* ZOOM CONTROLS */
@@ -1088,6 +1088,7 @@ function vZoomReset(){vZoomSet(1);}
 
 function viewFiche(id){
   const f=db.fiches.find(x=>x.id===id);if(!f)return;
+  console.log('[viewFiche] id='+id+' title='+f.title+' links='+JSON.stringify(f.links));
   document.getElementById('viewer-title').textContent=f.title;
   vZoom=1;document.getElementById('zoom-val').textContent='100%';
   const frame=document.getElementById('viewer-frame');
@@ -1095,9 +1096,15 @@ function viewFiche(id){
   frame.srcdoc=f.html;
   // Voir aussi
   const _linksEl=document.getElementById('viewer-links');
+  console.log('[viewFiche] _linksEl='+_linksEl+' links array='+(f.links||[]).length);
   _linksEl.innerHTML='';
   _linksEl.style.display='none';
-  const _linked=(f.links||[]).map(function(lid){return db.fiches.find(function(x){return x.id===lid;});}).filter(Boolean);
+  const _linked=(f.links||[]).map(function(lid){
+    const found=db.fiches.find(function(x){return x.id===lid;});
+    console.log('[viewFiche] lid='+lid+' found='+(found?found.title:'NOT FOUND'));
+    return found;
+  }).filter(Boolean);
+  console.log('[viewFiche] _linked.length='+_linked.length);
   if(_linked.length){
     const _label=document.createElement('div');
     _label.className='voir-aussi-label';
@@ -1118,6 +1125,7 @@ function viewFiche(id){
     _linksEl.appendChild(_label);
     _linksEl.appendChild(_chips);
     _linksEl.style.display='block';
+    console.log('[viewFiche] viewer-links display set to block, innerHTML length='+_linksEl.innerHTML.length);
   }
   trackRecent(id);
   openModal('viewer-modal');
