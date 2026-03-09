@@ -1313,6 +1313,16 @@ async function testAndLoad(){
 }
 
 
+/* ════════════════════════════════════════════════════════════════════
+   §11 · UTILITAIRES — helpers, toast, modales
+════════════════════════════════════════════════════════════════════ */
+function getCat(id){return db.categories.find(c=>c.id===id);}
+function getSub(cat,id){return(cat?.subcats||[]).find(s=>s.id===id);}
+function getTh(sub,id){return(sub?.subcats||[]).find(t=>t.id===id);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(ts){return ts?new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):''}
+
 /* ── §11a · Fiches liées — Link picker ─────────────────────────── */
 // selectedLinks[prefix] = Set of fiche IDs
 const selectedLinks={};
