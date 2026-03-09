@@ -238,11 +238,12 @@
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
+
   /* ── RÉCEMMENT CONSULTÉES ── */
   .recent-section{margin-top:32px}
   .recent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
   .recent-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:13px 16px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
-  .recent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color,var(--border2));opacity:.7}
+  .recent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color,var(--border2));opacity:.7;pointer-events:none}
   .recent-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
   .recent-card-title{font-family:'Playfair Display',serif;font-size:14px;color:var(--text);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .recent-card-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.04em;display:flex;align-items:center;gap:8px}
@@ -250,7 +251,7 @@
   .recent-dot{width:6px;height:6px;border-radius:50%;background:var(--card-color,var(--border2));flex-shrink:0}
 
   /* ── VOIR AUSSI (viewer) ── */
-  #viewer-links{padding:14px 22px 18px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+  #viewer-links{padding:14px 22px 18px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;display:none}
   .voir-aussi-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px}
   .voir-aussi-chips{display:flex;flex-wrap:wrap;gap:8px}
   .voir-aussi-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .18s;max-width:260px}
@@ -261,18 +262,16 @@
 
   /* ── LINK PICKER (modal) ── */
   .link-picker{border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-top:6px}
-  .link-picker-search{width:100%;background:var(--surface2);border:none;border-bottom:1px solid var(--border);padding:9px 13px;font-family:'Source Serif 4',serif;font-size:13px;color:var(--text);outline:none}
+  .link-picker-search{width:100%;background:var(--surface2);border:none;border-bottom:1px solid var(--border);padding:9px 13px;font-family:'Source Serif 4',serif;font-size:13px;color:var(--text);outline:none;box-sizing:border-box}
   .link-picker-search::placeholder{color:var(--text-dim)}
   .link-picker-list{max-height:140px;overflow-y:auto;background:var(--bg)}
-  .link-picker-item{display:flex;align-items:center;gap:10px;padding:8px 13px;cursor:pointer;transition:background .12s;font-size:13px;color:var(--text)}
+  .link-picker-item{display:flex;align-items:center;gap:10px;padding:8px 13px;cursor:pointer;transition:background .12s;font-size:13px;color:var(--text);user-select:none}
   .link-picker-item:hover{background:var(--surface2)}
-  .link-picker-item.selected{background:rgba(201,168,76,.08);color:var(--gold)}
-  .link-picker-item input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;flex-shrink:0}
+  .link-picker-item input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;flex-shrink:0;cursor:pointer}
   .link-picker-item-path{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.04em;margin-left:auto;white-space:nowrap}
-  .link-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:0}
-  .link-tag{display:flex;align-items:center;gap:5px;padding:4px 9px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:6px;font-size:12px;color:var(--gold);cursor:pointer}
-  .link-tag:hover{background:rgba(201,168,76,.18)}
-  .link-tag svg{opacity:.7}
+  .link-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .link-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:6px;font-size:12px;color:var(--gold);cursor:pointer}
+  .link-tag:hover{background:rgba(201,168,76,.2)}
 
   /* ── QUIZ NAV ── */
   .nav-quiz{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;font-size:14px;color:var(--text-muted);user-select:none}
@@ -498,9 +497,9 @@
       <div class="form-hint">Le HTML est stocké intégralement et rendu dans un iframe dédié.</div>
     </div>
     <div class="form-group">
-      <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel — apparaîtront dans "Voir aussi")</span></label>
+      <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel)</span></label>
       <div class="link-picker" id="f-link-picker">
-        <input class="link-picker-search" placeholder="Rechercher une fiche…" oninput="renderLinkPicker('f',this.value)">
+        <input class="link-picker-search" id="f-link-search" placeholder="Rechercher une fiche…">
         <div class="link-picker-list" id="f-link-list"></div>
       </div>
       <div class="link-tags" id="f-link-tags"></div>
@@ -555,9 +554,9 @@
       <textarea class="form-textarea" id="ef-html"></textarea>
     </div>
     <div class="form-group">
-      <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel — apparaîtront dans "Voir aussi")</span></label>
+      <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel)</span></label>
       <div class="link-picker" id="ef-link-picker">
-        <input class="link-picker-search" placeholder="Rechercher une fiche…" oninput="renderLinkPicker('ef',this.value)">
+        <input class="link-picker-search" id="ef-link-search" placeholder="Rechercher une fiche…">
         <div class="link-picker-list" id="ef-link-list"></div>
       </div>
       <div class="link-tags" id="ef-link-tags"></div>
@@ -586,7 +585,7 @@
     <div id="viewer-wrap">
       <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
     </div>
-    <div id="viewer-links" style="display:none"></div>
+    <div id="viewer-links"></div>
   </div>
 </div>
 
@@ -830,35 +829,33 @@ function renderHome(){
     <div class="stat-card"><div class="stat-num">${nbSubs}</div><div class="stat-label">Sous-catégories</div></div>
     <div class="stat-card"><div class="stat-num">${nbThemes}</div><div class="stat-label">Thèmes</div></div>
   </div>`;
-
-  // ── Récemment consultées ──
+  // Récemment consultées
   const recent=getRecent();
   if(recent.length){
-    html+=`<div class="recent-section">
-      <div class="section-header"><div class="section-title">Récemment consultées</div><div class="section-count">${recent.length} fiche${recent.length>1?'s':''}</div></div>
-      <div class="recent-grid">`;
-    recent.forEach(({id,viewedAt})=>{
-      const f=db.fiches.find(x=>x.id===id);if(!f)return;
+    html+=`<div class="recent-section"><div class="section-header"><div class="section-title">Récemment consultées</div><div class="section-count">${recent.length} fiche${recent.length>1?'s':''}</div></div><div class="recent-grid">`;
+    recent.forEach(function(r){
+      const f=db.fiches.find(function(x){return x.id===r.id;});if(!f)return;
       const cat=getCat(f.catId);
-      const color=cat?.color||'var(--border2)';
-      const ago=timeAgo(viewedAt);
+      const color=cat?cat.color:'var(--border2)';
+      const ago=timeAgo(r.viewedAt);
       const path=buildPath(f);
-      html+=`<div class="recent-card" style="--card-color:${color}" onclick="viewFiche('${f.id}')">
-        <div class="recent-card-title">${escH(f.title)}</div>
-        <div class="recent-card-meta">
-          <span class="recent-dot"></span>
-          ${path?`<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">${path}</span>`:''}
-          <span class="recent-card-time" style="margin-left:auto;flex-shrink:0">${ago}</span>
-        </div>
-      </div>`;
+      const _rc=document.createElement('div');
+      _rc.className='recent-card';
+      _rc.setAttribute('style','--card-color:'+color);
+      _rc.setAttribute('onclick','viewFiche("'+f.id+'")');
+      _rc.innerHTML='<div class="recent-card-title">'+escH(f.title)+'</div>'
+        +'<div class="recent-card-meta"><span class="recent-dot"></span>'
+        +(path?'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+path+'</span>':'')
+        +'<span class="recent-card-time" style="margin-left:auto;flex-shrink:0">'+ago+'</span>'
+        +'</div>';
+      html+=_rc.outerHTML;
     });
     html+=`</div></div>`;
-  }
 
   if(!db.categories.length){
     html+=`<div class="empty-state"><p>Aucune catégorie — clique sur <strong>📁 Structure</strong> pour commencer !</p></div>`;
   }else{
-    html+=`<div class="section-header" style="margin-top:28px"><div class="section-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
+    html+=`<div class="section-header" style="margin-top:${recent.length?'28px':'0'}"><div class="section-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
     db.categories.forEach(cat=>{
       const fc=db.fiches.filter(f=>f.catId===cat.id).length;
       const subs=cat.subcats||[];
@@ -1072,7 +1069,7 @@ function saveFiche(){
   if(!title){toast('Titre requis.','error');return;}
   const loc=resolveLoc('f');if(!loc){toast('Catégorie requise.','error');return;}
   if(!html){toast('Contenu HTML requis.','error');return;}
-  const links=getLinkPickerSelected('f');
+  const links=getSelectedLinks('f');
   db.fiches.push({id:uid(),title,...loc,html,date:Date.now(),links});
   scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
 }
@@ -1094,40 +1091,40 @@ function vZoomAdj(d){vZoomSet(vZoom+d);}
 function vZoomReset(){vZoomSet(1);}
 
 function viewFiche(id){
-  const f=db.fiches.find(x=>x.id===id);if(!f)return;
+  const f=db.fiches.find(function(x){return x.id===id;});if(!f)return;
   document.getElementById('viewer-title').textContent=f.title;
   vZoom=1;document.getElementById('zoom-val').textContent='100%';
   const frame=document.getElementById('viewer-frame');
   frame.style.transform='';frame.style.width='100%';frame.style.height='100%';
   frame.srcdoc=f.html;
-
-  // ── Voir aussi ──
+  // Voir aussi
   const linksEl=document.getElementById('viewer-links');
-  const linked=(f.links||[]).map(lid=>db.fiches.find(x=>x.id===lid)).filter(Boolean);
+  const linked=(f.links||[]).map(function(lid){return db.fiches.find(function(x){return x.id===lid;});}).filter(Boolean);
   if(linked.length){
-    let chips=linked.map(lf=>{
+    linksEl.innerHTML='<div class="voir-aussi-label">Voir aussi</div><div class="voir-aussi-chips"></div>';
+    const chipsEl=linksEl.querySelector('.voir-aussi-chips');
+    linked.forEach(function(lf){
       const cat=getCat(lf.catId);
-      const color=cat?.color||'var(--border2)';
+      const color=cat?cat.color:'var(--border2)';
       const path=buildPath(lf);
-      return `<div class="voir-aussi-chip" onclick="closeModal('viewer-modal');viewFiche('${lf.id}')">
-        <span class="voir-aussi-chip-dot" style="background:${color}"></span>
-        <div style="overflow:hidden">
-          <div class="voir-aussi-chip-text">${escH(lf.title)}</div>
-          ${path?`<div class="voir-aussi-chip-path">${path}</div>`:''}
-        </div>
-      </div>`;
-    }).join('');
-    linksEl.innerHTML=`<div class="voir-aussi-label">Voir aussi</div><div class="voir-aussi-chips">${chips}</div>`;
+      const chip=document.createElement('div');
+      chip.className='voir-aussi-chip';
+      chip.dataset.targetId=lf.id;
+      chip.innerHTML='<span class="voir-aussi-chip-dot" style="background:'+color+'"></span>'
+        +'<div style="overflow:hidden"><div class="voir-aussi-chip-text">'+escH(lf.title)+'</div>'
+        +(path?'<div class="voir-aussi-chip-path">'+path+'</div>':'')
+        +'</div>';
+      chip.addEventListener('click',function(){closeModal('viewer-modal');viewFiche(lf.id);});
+      chipsEl.appendChild(chip);
+    });
     linksEl.style.display='';
   }else{
+    linksEl.innerHTML='';
     linksEl.style.display='none';
   }
-
-  // ── Tracker récent ──
   trackRecent(id);
-
   openModal('viewer-modal');
-  requestAnimationFrame(()=>vZoomSet(1));
+  requestAnimationFrame(function(){vZoomSet(1);});
 }
 
 function editFiche(id){
@@ -1141,7 +1138,7 @@ function editFiche(id){
   fillSubSel('ef',f.catId);document.getElementById('ef-subcat').value=f.subcatId||'';
   if(f.subcatId){fillThSel('ef',f.catId,f.subcatId);document.getElementById('ef-l3-wrap').style.display='';document.getElementById('ef-theme').value=f.themeId||'';}
   else document.getElementById('ef-l3-wrap').style.display='none';
-  initLinkPicker('ef', f.links||[], f.id);
+  initLinkPicker('ef',f.links||[],f.id);
   openModal('edit-modal');
 }
 
@@ -1150,7 +1147,7 @@ function updateFiche(){
   const title=document.getElementById('ef-title').value.trim(),html=document.getElementById('ef-html').value.trim();
   if(!title||!html){toast('Champs requis manquants.','error');return;}
   const loc=resolveLoc('ef');if(!loc){toast('Catégorie requise.','error');return;}
-  const links=getLinkPickerSelected('ef');
+  const links=getSelectedLinks('ef');
   Object.assign(f,{title,...loc,html,links});
   scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
 }
@@ -1322,98 +1319,6 @@ function getTh(sub,id){return(sub?.subcats||[]).find(t=>t.id===id);}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(ts){return ts?new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):''}
-
-/* ── §11a · Fiches liées — Link picker ─────────────────────────── */
-// selectedLinks[prefix] = Set of fiche IDs
-const selectedLinks={};
-
-function initLinkPicker(p, initialIds=[], excludeId=''){
-  selectedLinks[p]=new Set(initialIds.filter(id=>id!==excludeId));
-  renderLinkPicker(p,'');
-  renderLinkTags(p,excludeId);
-}
-
-function renderLinkPicker(p, query='', excludeId=''){
-  // Detect excludeId from hidden field if in edit mode
-  if(!excludeId&&p==='ef') excludeId=document.getElementById('ef-id')?.value||'';
-  const sel=selectedLinks[p]||new Set();
-  const q=(query||'').toLowerCase().trim();
-  const fiches=db.fiches.filter(f=>{
-    if(f.id===excludeId)return false;
-    if(!q)return true;
-    return f.title.toLowerCase().includes(q)||(buildPath(f)||'').toLowerCase().includes(q);
-  }).slice(0,20);
-  const list=document.getElementById(`${p}-link-list`);
-  if(!list)return;
-  if(!fiches.length){
-    list.innerHTML=`<div style="padding:10px 13px;font-size:12px;color:var(--text-dim)">${q?'Aucun résultat':'Aucune autre fiche disponible'}</div>`;
-    return;
-  }
-  list.innerHTML=fiches.map(f=>{
-    const checked=sel.has(f.id);
-    const path=buildPath(f);
-    return `<label class="link-picker-item${checked?' selected':''}">
-      <input type="checkbox" ${checked?'checked':''} onchange="toggleLink('${p}','${f.id}','${excludeId}')">
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escH(f.title)}</span>
-      ${path?`<span class="link-picker-item-path">${path}</span>`:''}
-    </label>`;
-  }).join('');
-}
-
-function toggleLink(p, ficheId, excludeId=''){
-  const sel=selectedLinks[p]||(selectedLinks[p]=new Set());
-  sel.has(ficheId)?sel.delete(ficheId):sel.add(ficheId);
-  renderLinkPicker(p, document.querySelector(`#${p}-link-picker .link-picker-search`)?.value||'', excludeId);
-  renderLinkTags(p, excludeId);
-}
-
-function renderLinkTags(p, excludeId=''){
-  const sel=selectedLinks[p]||new Set();
-  const container=document.getElementById(`${p}-link-tags`);
-  if(!container)return;
-  if(!sel.size){container.innerHTML='';return;}
-  container.innerHTML=[...sel].map(id=>{
-    const f=db.fiches.find(x=>x.id===id);
-    if(!f)return'';
-    return `<span class="link-tag" onclick="toggleLink('${p}','${id}','${excludeId}')">
-      ${escH(f.title)}
-      <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </span>`;
-  }).join('');
-}
-
-function getLinkPickerSelected(p){
-  return [...(selectedLinks[p]||new Set())];
-}
-
-/* ── §11b · Récemment consultées ───────────────────────────────── */
-function trackRecent(ficheId){
-  let recent=getRecent();
-  recent=recent.filter(x=>x.id!==ficheId);
-  recent.unshift({id:ficheId,viewedAt:Date.now()});
-  recent=recent.slice(0,5);
-  localStorage.setItem('kb_recent',JSON.stringify(recent));
-}
-
-function getRecent(){
-  try{
-    const r=JSON.parse(localStorage.getItem('kb_recent')||'[]');
-    // Filtrer les fiches qui n'existent plus
-    return r.filter(x=>db.fiches.some(f=>f.id===x.id));
-  }catch(e){return[];}
-}
-
-function timeAgo(ts){
-  const diff=Date.now()-ts;
-  const min=Math.floor(diff/60000);
-  const h=Math.floor(diff/3600000);
-  const d=Math.floor(diff/86400000);
-  if(min<1)return'à l\'instant';
-  if(min<60)return`il y a ${min} min`;
-  if(h<24)return`il y a ${h}h`;
-  if(d<7)return`il y a ${d}j`;
-  return fmtDate(ts);
-}
 function hlText(text,q){return escH(text).replace(new RegExp(`(${escH(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),'<span class="highlight">$1</span>');}
 
 let toastTm;
@@ -1422,6 +1327,121 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
+
+/* ── §11a · Link picker ────────────────────────────────────────── */
+const _links={};
+
+function initLinkPicker(p,ids,excludeId){
+  _links[p]=new Set((ids||[]).filter(function(id){return id!==excludeId;}));
+  _lpExclude=_lpExclude||{};_lpExclude[p]=excludeId||'';
+  _renderLinkList(p);
+  _renderLinkTags(p);
+  const inp=document.getElementById(p+'-link-search');
+  if(inp){inp.value='';inp.oninput=function(){_renderLinkList(p,inp.value);};}
+  // Delegated click handler on the list
+  const list=document.getElementById(p+'-link-list');
+  if(list){
+    list.onclick=function(e){
+      const item=e.target.closest('.link-picker-item');
+      if(!item)return;
+      const fid=item.dataset.fid;
+      if(!fid)return;
+      const sel=_links[p]||(_links[p]=new Set());
+      sel.has(fid)?sel.delete(fid):sel.add(fid);
+      _renderLinkList(p,document.getElementById(p+'-link-search')?.value||'');
+      _renderLinkTags(p);
+    };
+  }
+  const tags=document.getElementById(p+'-link-tags');
+  if(tags){
+    tags.onclick=function(e){
+      const tag=e.target.closest('.link-tag');
+      if(!tag)return;
+      const fid=tag.dataset.fid;
+      if(!fid)return;
+      const sel=_links[p]||(_links[p]=new Set());
+      sel.delete(fid);
+      _renderLinkList(p,document.getElementById(p+'-link-search')?.value||'');
+      _renderLinkTags(p);
+    };
+  }
+}
+let _lpExclude={};
+
+function _renderLinkList(p,query){
+  const sel=_links[p]||new Set();
+  const excludeId=_lpExclude[p]||'';
+  const q=(query||'').toLowerCase().trim();
+  const list=document.getElementById(p+'-link-list');
+  if(!list)return;
+  const fiches=db.fiches.filter(function(f){
+    if(f.id===excludeId)return false;
+    if(!q)return true;
+    return f.title.toLowerCase().indexOf(q)>=0;
+  }).slice(0,25);
+  if(!fiches.length){
+    list.innerHTML='<div style="padding:9px 13px;font-size:12px;color:var(--text-dim)">'+(q?'Aucun résultat':'Aucune autre fiche')+'</div>';
+    return;
+  }
+  let h='';
+  fiches.forEach(function(f){
+    const checked=sel.has(f.id);
+    const path=buildPath(f);
+    h+='<div class="link-picker-item'+(checked?' selected':'')+'" data-fid="'+f.id+'">'
+      +'<input type="checkbox"'+(checked?' checked':'')+' readonly style="pointer-events:none">'
+      +'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(f.title)+'</span>'
+      +(path?'<span class="link-picker-item-path">'+path+'</span>':'')
+      +'</div>';
+  });
+  list.innerHTML=h;
+}
+
+function _renderLinkTags(p){
+  const sel=_links[p]||new Set();
+  const el=document.getElementById(p+'-link-tags');
+  if(!el)return;
+  let h='';
+  sel.forEach(function(id){
+    const f=db.fiches.find(function(x){return x.id===id;});
+    if(!f)return;
+    h+='<span class="link-tag" data-fid="'+id+'">'+escH(f.title)
+      +'<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>';
+  });
+  el.innerHTML=h;
+}
+
+function getSelectedLinks(p){
+  return Array.from(_links[p]||new Set());
+}
+
+/* ── §11b · Récemment consultées ───────────────────────────────── */
+function trackRecent(id){
+  try{
+    let r=JSON.parse(localStorage.getItem('kb_recent')||'[]');
+    r=r.filter(function(x){return x.id!==id;});
+    r.unshift({id:id,viewedAt:Date.now()});
+    localStorage.setItem('kb_recent',JSON.stringify(r.slice(0,5)));
+  }catch(e){}
+}
+
+function getRecent(){
+  try{
+    const r=JSON.parse(localStorage.getItem('kb_recent')||'[]');
+    return r.filter(function(x){return db.fiches.some(function(f){return f.id===x.id;});});
+  }catch(e){return[];}
+}
+
+function timeAgo(ts){
+  const diff=Date.now()-ts;
+  const min=Math.floor(diff/60000);
+  const h=Math.floor(diff/3600000);
+  const d=Math.floor(diff/86400000);
+  if(min<1)return "à l'instant";
+  if(min<60)return 'il y a '+min+' min';
+  if(h<24)return 'il y a '+h+'h';
+  if(d<7)return 'il y a '+d+'j';
+  return fmtDate(ts);
+}
 
 /* ════════════════════════════════════════════════════════════════════
    §12 · DRAG & DROP
