@@ -84,7 +84,7 @@
   /* MAIN */
   #main{flex:1;padding:30px 34px;min-width:0}
 
-  /* BREADCRUMB */
+  /* ── §6b · Breadcrumb ──────────────────────────────────────────── */
   #breadcrumb{display:flex;align-items:center;gap:7px;margin-bottom:22px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.07em;color:var(--text-dim);flex-wrap:wrap}
   .crumb{cursor:pointer;transition:color .15s}
   .crumb:hover{color:var(--gold)}
@@ -540,9 +540,28 @@
 <div id="toast"></div>
 
 <script>
-/* ================================================================
-   CONFIG
-================================================================ */
+/* ════════════════════════════════════════════════════════════════════
+   BASE DE CONNAISSANCES — index.html
+   antoninbld · github.com/antoninbld/fiches-connaissances
+   ════════════════════════════════════════════════════════════════════
+
+   SOMMAIRE
+   ─────────────────────────────────────────────────────────────────
+   §1  CONFIG & MODÈLE DE DONNÉES          ~ligne 545
+   §2  GITHUB — fetch / save / sync        ~ligne 562
+   §3  MIGRATION v1 → v2                   ~ligne 596
+   §4  INITIALISATION                      ~ligne 618
+   §5  NAVIGATION — état & routes          ~ligne 640
+   §6  RENDU — sidebar, breadcrumb         ~ligne 654
+   §7  RENDU — home, vues, recherche       ~ligne 734
+   §8  FICHES — CRUD + viewer + zoom       ~ligne 881
+   §9  STRUCTURE — tree manager            ~ligne 1027
+   §10 GITHUB MODAL                        ~ligne 1151
+   §11 UTILITAIRES                         ~ligne 1176
+   §12 DRAG & DROP                         ~ligne 1193
+   §13 QUIZ ENGINE                         ~ligne 1283
+   ════════════════════════════════════════════════════════════════════ */
+/* ── §1 CONFIG & MODÈLE DE DONNÉES ─────────────────────────────── */
 const GH_OWNER='antoninbld',GH_REPO='fiches-connaissances',GH_FILE='data.json',GH_BRANCH='main';
 const PALETTE=['#c9a84c','#5a8ae0','#5aad7a','#9a6edf','#e06060','#e07a40','#4ab8c0','#d07aae'];
 
@@ -558,7 +577,8 @@ const getToken=()=>localStorage.getItem('gh_pat')||'';
 const localSave=()=>localStorage.setItem('kb_v2',JSON.stringify(db));
 const localLoad=()=>{try{return JSON.parse(localStorage.getItem('kb_v2')||'null')}catch(e){return null}};
 
-/* ── GITHUB ── */
+
+/* ── §2 · GITHUB — fetch / save / sync ─────────────────────────── */
 async function ghFetch(path,opts={}){
   return fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/${path}`,{
     ...opts,headers:{'Authorization':`Bearer ${getToken()}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json',...(opts.headers||{})}
@@ -581,7 +601,7 @@ async function githubSave(data){
   ghSha=(await res.json()).content.sha;
 }
 
-/* ── SYNC ── */
+/* ── §2b · Sync planifiée ──────────────────────────────────────── */
 function scheduleSave(){localSave();if(!getToken())return;clearTimeout(syncTimer);syncTimer=setTimeout(doSync,1500);}
 async function doSync(){
   if(isSyncing){syncQueue=true;return;}
@@ -592,7 +612,8 @@ async function doSync(){
 }
 function setSyncStatus(cls,label){document.getElementById('sync-status').className=cls;document.getElementById('sync-label').textContent=label;}
 
-/* ── MIGRATION v1 → v2 ── */
+
+/* ── §3 · MIGRATION v1 → v2 ─────────────────────────────────────── */
 function migrate(raw){
   if(!raw)return null;
   (raw.categories||[]).forEach(cat=>{
@@ -614,7 +635,8 @@ function migrate(raw){
   return raw;
 }
 
-/* ── INIT ── */
+
+/* ── §4 · INITIALISATION ────────────────────────────────────────── */
 async function init(){
   const token=getToken();
   if(token){
@@ -637,9 +659,10 @@ async function init(){
 }
 function seedDefault(){db.categories.push({id:uid(),name:'Général',color:PALETTE[0],subcats:[]});localSave();}
 
-/* ================================================================
-   NAV STATE
-================================================================ */
+
+/* ════════════════════════════════════════════════════════════════════
+   §5 · NAVIGATION — état & routes
+════════════════════════════════════════════════════════════════════ */
 let state={view:'home',catId:null,subcatId:null,themeId:null,search:''};
 let openCats=new Set(),openSubs=new Set();
 
@@ -651,9 +674,10 @@ function goTheme(catId,subcatId,themeId){state={view:'theme',catId,subcatId,them
 function toggleCatOpen(catId,e){e.stopPropagation();openCats.has(catId)?openCats.delete(catId):openCats.add(catId);renderSidebar();}
 function toggleSubOpen(subId,e){e.stopPropagation();openSubs.has(subId)?openSubs.delete(subId):openSubs.add(subId);renderSidebar();}
 
-/* ================================================================
-   RENDER
-================================================================ */
+
+/* ════════════════════════════════════════════════════════════════════
+   §6 · RENDU — sidebar, breadcrumb, orchestration
+════════════════════════════════════════════════════════════════════ */
 function render(){renderSidebar();renderBreadcrumb();if(state.search)renderSearch();else if(state.view==='home')renderHome();else if(state.view==='quiz')renderQuizPicker();else renderView();}
 
 function cntFiches(f){return db.fiches.filter(x=>{
@@ -663,7 +687,7 @@ function cntFiches(f){return db.fiches.filter(x=>{
   return true;
 }).length;}
 
-/* SIDEBAR */
+/* ── §6a · Sidebar ─────────────────────────────────────────────── */
 function renderSidebar(){
   document.getElementById('nav-home').className='nav-home'+(state.view==='home'&&!state.search?' active':'');
   document.getElementById('nav-quiz').className='nav-quiz'+(state.view==='quiz'?' active':'');
@@ -708,7 +732,7 @@ function renderSidebar(){
   }).join('');
 }
 
-/* BREADCRUMB */
+/* ── §6b · Breadcrumb ──────────────────────────────────────────── */
 function renderBreadcrumb(){
   let h=`<span class="crumb" onclick="goHome()">Accueil</span>`;
   if(state.search){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Recherche</span>`;}
@@ -731,7 +755,11 @@ function renderBreadcrumb(){
   document.getElementById('breadcrumb').innerHTML=h;
 }
 
-/* HOME */
+
+/* ════════════════════════════════════════════════════════════════════
+   §7 · RENDU — home, vues catégorie/sous-cat/thème, recherche
+════════════════════════════════════════════════════════════════════ */
+/* ── §7a · Accueil ─────────────────────────────────────────────── */
 function renderHome(){
   let html='';
   if(!getToken())html+=`<div id="setup-banner">
@@ -766,7 +794,7 @@ function renderHome(){
   document.getElementById('content').innerHTML=html;
 }
 
-/* VIEW (cat / sub / theme) */
+/* ── §7b · Vue catégorie / sous-catégorie / thème ─────────────── */
 function renderView(){
   const cat=getCat(state.catId);if(!cat){goHome();return;}
   const sub=state.subcatId?getSub(cat,state.subcatId):null;
@@ -855,7 +883,7 @@ function buildPath(f){
   return [cat?.name,sub?.name,th?.name].filter(Boolean).map(escH).join(' › ');
 }
 
-/* SEARCH */
+/* ── §7c · Recherche ───────────────────────────────────────────── */
 function handleSearch(q){state.search=q.trim();render();}
 function renderSearch(){
   const q=state.search.toLowerCase();
@@ -878,9 +906,10 @@ function renderSearch(){
   document.getElementById('content').innerHTML=html;
 }
 
-/* ================================================================
-   FICHE CRUD
-================================================================ */
+
+/* ════════════════════════════════════════════════════════════════════
+   §8 · FICHES — CRUD, viewer, zoom
+════════════════════════════════════════════════════════════════════ */
 function openAddFiche(preCatId='',preSubId='',preThId=''){
   fillCatSel('f-cat');
   ['f-title','f-html','f-new-subcat','f-new-theme'].forEach(i=>document.getElementById(i).value='');
@@ -967,7 +996,7 @@ function saveFiche(){
   scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
 }
 
-/* ── ZOOM VIEWER ── */
+/* ── §8b · Viewer zoom ─────────────────────────────────────────── */
 let vZoom=1;
 function vZoomSet(z){
   vZoom=Math.round(Math.max(0.2,Math.min(3,z))*10)/10;
@@ -1024,9 +1053,10 @@ function deleteFiche(id){
   scheduleSave();toast('Fiche supprimée.','success');render();
 }
 
-/* ================================================================
-   TREE MANAGER
-================================================================ */
+
+/* ════════════════════════════════════════════════════════════════════
+   §9 · STRUCTURE — gestionnaire d'arborescence (catégories/sous-cat/thèmes)
+════════════════════════════════════════════════════════════════════ */
 let selColor=PALETTE[0];
 let treeOpen1=new Set(),treeOpen2=new Set();
 
@@ -1148,9 +1178,10 @@ function addRootCat(){
   renderTree();render();toast('Catégorie créée !','success');
 }
 
-/* ================================================================
-   GITHUB MODAL
-================================================================ */
+
+/* ════════════════════════════════════════════════════════════════════
+   §10 · GITHUB MODAL
+════════════════════════════════════════════════════════════════════ */
 function openGithubModal(){
   const t=getToken();if(t)document.getElementById('gh-token').value=t;
   openModal('github-modal');
@@ -1173,9 +1204,10 @@ async function testAndLoad(){
   }catch(e){setSyncStatus('error','Erreur');toast('Erreur : '+e.message,'error');}
 }
 
-/* ================================================================
-   UTILS
-================================================================ */
+
+/* ════════════════════════════════════════════════════════════════════
+   §11 · UTILITAIRES — helpers, toast, modales
+════════════════════════════════════════════════════════════════════ */
 function getCat(id){return db.categories.find(c=>c.id===id);}
 function getSub(cat,id){return(cat?.subcats||[]).find(s=>s.id===id);}
 function getTh(sub,id){return(sub?.subcats||[]).find(t=>t.id===id);}
@@ -1190,9 +1222,11 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
-/* ================================================================
-   DRAG & DROP — CATEGORIES (sidebar)
-================================================================ */
+
+/* ════════════════════════════════════════════════════════════════════
+   §12 · DRAG & DROP
+════════════════════════════════════════════════════════════════════ */
+/* ── §12a · Catégories (sidebar) ───────────────────────────────── */
 let dragCatId=null;
 (function initSidebarDrag(){
   const el=document.getElementById('sidebar-cats');
@@ -1234,9 +1268,7 @@ let dragCatId=null;
   });
 })();
 
-/* ================================================================
-   DRAG & DROP — FICHES (grid)
-================================================================ */
+/* ── §12b · Fiches (grille) ─────────────────────────────────────── */
 let dragFicheId=null;
 (function initFicheDrag(){
   const content=document.getElementById('content');
@@ -1280,15 +1312,14 @@ let dragFicheId=null;
   });
 })();
 
-/* ================================================================
-   QUIZ ENGINE — 100% LOCAL, aucune API
-   Analyse le DOM de la fiche pour extraire questions/réponses
-================================================================ */
+
+/* ════════════════════════════════════════════════════════════════════
+   §13 · QUIZ ENGINE — 100% local, aucune API
+   Analyse le HTML de la fiche pour extraire questions & réponses
+════════════════════════════════════════════════════════════════════ */
 let quizState = null;
 
-/* ──────────────────────────────────────────────────────────────
-   PARSEUR DE FICHE
-────────────────────────────────────────────────────────────── */
+/* ── §13a · Parseur de fiche ────────────────────────────────────── */
 function parseFiche(html){
   const wrap = document.createElement('div');
   wrap.innerHTML = html;
@@ -1509,7 +1540,7 @@ function parseFiche(html){
   return final;
 }
 
-/* ─ PICKER ─ */
+/* ── §13b · Sélecteur de fiche ─────────────────────────────────── */
 function renderQuizPicker(){
   const fiches = db.fiches;
   let html = `<div class="quiz-hero">
@@ -1536,7 +1567,7 @@ function renderQuizPicker(){
   document.getElementById('content').innerHTML=html;
 }
 
-/* ─ START ─ */
+/* ── §13c · Démarrage du quiz ──────────────────────────────────── */
 function quizStart(ficheId){
   const fiche=db.fiches.find(f=>f.id===ficheId);
   if(!fiche) return;
@@ -1560,7 +1591,7 @@ function quizStart(ficheId){
   renderQuizQuestion();
 }
 
-/* ─ RENDER QUESTION ─ */
+/* ── §13d · Affichage des questions ────────────────────────────── */
 function renderQuizQuestion(){
   if(!quizState){renderQuizPicker();return;}
   const{questions,qIdx,score,total,ficheTitle}=quizState;
@@ -1609,7 +1640,7 @@ function renderQuizQuestion(){
   document.getElementById('content').innerHTML=html;
 }
 
-/* ─ ANSWERS ─ */
+/* ── §13e · Gestion des réponses ───────────────────────────────── */
 function quizAnswerMCQ(choiceIdx){
   if(!quizState)return;
   const q=quizState.questions[quizState.qIdx];
@@ -1640,7 +1671,7 @@ function quizAnswerFlash(knew){
   renderQuizQuestion();
 }
 
-/* ─ RESULTS ─ */
+/* ── §13f · Résultats ──────────────────────────────────────────── */
 function renderQuizResults(){
   if(!quizState)return;
   const{score,total,ficheTitle,ficheId}=quizState;
