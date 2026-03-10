@@ -578,7 +578,7 @@
       <button class="btn btn-outline btn-sm" onclick="closeModal('viewer-modal')" style="flex-shrink:0">✕ Fermer</button>
     </div>
     <div id="viewer-wrap">
-      <iframe id="viewer-frame" sandbox="allow-scripts allow-popups"></iframe>
+      <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
     </div>
     <div id="viewer-links"></div>
   </div>
@@ -1219,17 +1219,24 @@ function _openViewer(f,html){
   vZoom=1;document.getElementById('zoom-val').textContent='100%';
   const frame=document.getElementById('viewer-frame');
   frame.style.transform='';frame.style.width='100%';frame.style.height='100%';
-  // Blob URL pour les fichiers lourds (srcdoc plante au-delà de ~1MB)
+  // Libérer l'ancien blob URL si présent
   if(window._viewerBlobUrl){URL.revokeObjectURL(window._viewerBlobUrl);window._viewerBlobUrl=null;}
-  if(html.length>500_000){
-    const blob=new Blob([html],{type:'text/html'});
-    window._viewerBlobUrl=URL.createObjectURL(blob);
-    frame.removeAttribute('srcdoc');
-    frame.src=window._viewerBlobUrl;
-  }else{
-    frame.removeAttribute('src');
-    frame.srcdoc=html;
-  }
+  // Écriture directe dans le document iframe — aucune limite de taille
+  frame.removeAttribute('src');
+  frame.removeAttribute('srcdoc');
+  // Attendre que l'iframe soit prête puis écrire
+  const writeHtml=()=>{
+    try{
+      frame.contentDocument.open();
+      frame.contentDocument.write(html);
+      frame.contentDocument.close();
+    }catch(e){
+      // Fallback srcdoc pour les petits fichiers si contentDocument échoue
+      frame.srcdoc=html;
+    }
+  };
+  if(frame.contentDocument){writeHtml();}
+  else{frame.onload=writeHtml;frame.src='about:blank';}
   // Voir aussi
   const linksEl=document.getElementById('viewer-links');
   linksEl.innerHTML='';linksEl.style.display='none';
