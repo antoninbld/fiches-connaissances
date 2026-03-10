@@ -621,7 +621,7 @@ let db={categories:[],fiches:[]};
 let ghSha=null,isSyncing=false,syncQueue=false,syncTimer=null;
 
 const getToken=()=>localStorage.getItem('gh_pat')||'';
-const localSave=()=>localStorage.setItem('kb_v2',JSON.stringify(db));
+const localSave=()=>{try{localStorage.setItem('kb_v2',JSON.stringify(db));}catch(e){toast('⚠️ localStorage plein — données non sauvegardées localement.','error');console.warn('localSave failed:',e);}};
 const localLoad=()=>{try{return JSON.parse(localStorage.getItem('kb_v2')||'null')}catch(e){return null}};
 
 
@@ -639,6 +639,14 @@ async function githubLoad(){
   return JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
 }
 async function githubSave(data){
+  // Avertir si le JSON total dépasse ~700KB (limite pratique de l'API GitHub contents)
+  const _json=JSON.stringify(data);
+  if(_json.length > 700_000) {
+    const _kb=Math.round(_json.length/1024);
+    setSyncStatus('error','Données trop lourdes ('+_kb+'KB)');
+    toast('⚠️ Données trop lourdes pour GitHub API ('+_kb+'KB). Exportez ou allégez vos fiches.','error');
+    return;
+  }
   if(!getToken())return;
   const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
   const body={message:`Mise à jour — ${new Date().toLocaleString('fr-FR')}`,content,branch:GH_BRANCH};
@@ -1066,6 +1074,8 @@ function saveFiche(){
   if(!title){toast('Titre requis.','error');return;}
   const loc=resolveLoc('f');if(!loc){toast('Catégorie requise.','error');return;}
   if(!html){toast('Contenu HTML requis.','error');return;}
+  // Avertissement si HTML très lourd (> 1 MB)
+  if(html.length > 1_000_000) toast('⚠️ Fiche très lourde ('+Math.round(html.length/1024)+'KB) — la sync GitHub peut échouer.','warn');
   db.fiches.push({id:uid(),title,...loc,html,date:Date.now(),links:lpGet('f')});
   scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
 }
@@ -1152,6 +1162,8 @@ function updateFiche(){
   const title=document.getElementById('ef-title').value.trim(),html=document.getElementById('ef-html').value.trim();
   if(!title||!html){toast('Champs requis manquants.','error');return;}
   const loc=resolveLoc('ef');if(!loc){toast('Catégorie requise.','error');return;}
+  if(html.length > 1_000_000) toast('⚠️ Fiche très lourde ('+Math.round(html.length/1024)+'KB) — la sync GitHub peut échouer.','warn');
+  if(html.length > 1_000_000) toast('⚠️ Fiche très lourde ('+Math.round(html.length/1024)+'KB) — la sync GitHub peut échouer.','warn');
   Object.assign(f,{title,...loc,html,links:lpGet('ef')});
   scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
 }
