@@ -618,6 +618,8 @@ const PALETTE=['#c9a84c','#5a8ae0','#5aad7a','#9a6edf','#e06060','#e07a40','#4ab
   fiches:     [{id,title,catId,subcatId,themeId,html,date}]
 */
 let db={categories:[],fiches:[]};
+const HEAVY_THRESHOLD=150_000; // chars (~150KB) — au-delà, stockage GitHub séparé
+const _htmlCache={};            // cache mémoire : {ficheId: html}
 let ghSha=null,isSyncing=false,syncQueue=false,syncTimer=null;
 
 const getToken=()=>localStorage.getItem('gh_pat')||'';
@@ -639,14 +641,6 @@ async function githubLoad(){
   return JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
 }
 async function githubSave(data){
-  // Avertir si le JSON total dépasse ~700KB (limite pratique de l'API GitHub contents)
-  const _json=JSON.stringify(data);
-  if(_json.length > 700_000) {
-    const _kb=Math.round(_json.length/1024);
-    setSyncStatus('error','Données trop lourdes ('+_kb+'KB)');
-    toast('⚠️ Données trop lourdes pour GitHub API ('+_kb+'KB). Exportez ou allégez vos fiches.','error');
-    return;
-  }
   if(!getToken())return;
   const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
   const body={message:`Mise à jour — ${new Date().toLocaleString('fr-FR')}`,content,branch:GH_BRANCH};
@@ -654,6 +648,27 @@ async function githubSave(data){
   const res=await ghFetch(`contents/${GH_FILE}`,{method:'PUT',body:JSON.stringify(body)});
   if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||`HTTP ${res.status}`);}
   ghSha=(await res.json()).content.sha;
+}
+
+/* ── Fichiers individuels (fiches lourdes) ─────────────────────── */
+async function ghSaveFile(path,rawContent,sha){
+  const content=btoa(unescape(encodeURIComponent(rawContent)));
+  const body={message:`Fiche — ${path}`,content,branch:GH_BRANCH};
+  if(sha)body.sha=sha;
+  const res=await ghFetch(`contents/${path}`,{method:'PUT',body:JSON.stringify(body)});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||`HTTP ${res.status}`);}
+  return (await res.json()).content.sha;
+}
+async function ghLoadFile(path){
+  const res=await ghFetch(`contents/${path}?ref=${GH_BRANCH}`);
+  if(res.status===404)return null;
+  if(!res.ok)throw new Error(`HTTP ${res.status}`);
+  const d=await res.json();
+  return{content:decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))),sha:d.sha};
+}
+async function ghDeleteFile(path,sha){
+  if(!sha)return;
+  await ghFetch(`contents/${path}`,{method:'DELETE',body:JSON.stringify({message:`Suppression — ${path}`,sha,branch:GH_BRANCH})});
 }
 
 /* ── §2b · Sync planifiée ──────────────────────────────────────── */
@@ -1074,10 +1089,22 @@ function saveFiche(){
   if(!title){toast('Titre requis.','error');return;}
   const loc=resolveLoc('f');if(!loc){toast('Catégorie requise.','error');return;}
   if(!html){toast('Contenu HTML requis.','error');return;}
-  // Avertissement si HTML très lourd (> 1 MB)
-  if(html.length > 1_000_000) toast('⚠️ Fiche très lourde ('+Math.round(html.length/1024)+'KB) — la sync GitHub peut échouer.','warn');
-  db.fiches.push({id:uid(),title,...loc,html,date:Date.now(),links:lpGet('f')});
-  scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
+  const id=uid();
+  const isHeavy=html.length>HEAVY_THRESHOLD;
+  const fiche={id,title,...loc,html:isHeavy?'__EXTERNAL__':html,date:Date.now(),links:lpGet('f'),externalSha:null};
+  db.fiches.push(fiche);
+  if(isHeavy){
+    _htmlCache[id]=html;
+    scheduleSave();
+    closeModal('add-modal');
+    toast('Fiche enregistrée — sync fichier en cours…','success');
+    render();
+    if(getToken())ghSaveFile(`fiches/${id}.html`,html,null)
+      .then(sha=>{fiche.externalSha=sha;scheduleSave();toast('Fiche lourde synchronisée ✓','success');})
+      .catch(e=>toast('Erreur sync fiche : '+e.message,'error'));
+  }else{
+    scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
+  }
 }
 
 /* ── §8b · Viewer zoom ─────────────────────────────────────────── */
@@ -1098,63 +1125,85 @@ function vZoomReset(){vZoomSet(1);}
 
 function viewFiche(id){
   const f=db.fiches.find(x=>x.id===id);if(!f)return;
-  console.log('[viewFiche] id='+id+' title='+f.title+' links='+JSON.stringify(f.links));
+  trackRecent(id);
+  if(f.html==='__EXTERNAL__'){
+    if(_htmlCache[id]){_openViewer(f,_htmlCache[id]);return;}
+    if(!getToken()){toast('Token GitHub requis pour charger cette fiche.','error');return;}
+    // Ouvrir le viewer en mode chargement
+    document.getElementById('viewer-title').textContent=f.title+' — chargement…';
+    document.getElementById('viewer-frame').srcdoc='<body style="font-family:sans-serif;padding:40px 30px;background:#0d0d14;color:#888"><p style="font-size:15px">⏳ Chargement de la fiche depuis GitHub…</p></body>';
+    document.getElementById('viewer-links').innerHTML='';
+    document.getElementById('viewer-links').style.display='none';
+    openModal('viewer-modal');
+    ghLoadFile(`fiches/${id}.html`)
+      .then(r=>{
+        if(!r){toast('Fichier introuvable sur GitHub.','error');return;}
+        _htmlCache[id]=r.content;f.externalSha=r.sha;
+        _openViewer(f,r.content);
+      })
+      .catch(e=>toast('Erreur chargement : '+e.message,'error'));
+    return;
+  }
+  _openViewer(f,f.html);
+}
+function _openViewer(f,html){
   document.getElementById('viewer-title').textContent=f.title;
   vZoom=1;document.getElementById('zoom-val').textContent='100%';
   const frame=document.getElementById('viewer-frame');
   frame.style.transform='';frame.style.width='100%';frame.style.height='100%';
-  frame.srcdoc=f.html;
+  frame.srcdoc=html;
   // Voir aussi
-  const _linksEl=document.getElementById('viewer-links');
-  console.log('[viewFiche] _linksEl='+_linksEl+' links array='+(f.links||[]).length);
-  _linksEl.innerHTML='';
-  _linksEl.style.display='none';
-  const _linked=(f.links||[]).map(function(lid){
-    const found=db.fiches.find(function(x){return x.id===lid;});
-    console.log('[viewFiche] lid='+lid+' found='+(found?found.title:'NOT FOUND'));
-    return found;
-  }).filter(Boolean);
-  console.log('[viewFiche] _linked.length='+_linked.length);
-  if(_linked.length){
-    const _label=document.createElement('div');
-    _label.className='voir-aussi-label';
-    _label.textContent='Voir aussi';
-    const _chips=document.createElement('div');
-    _chips.className='voir-aussi-chips';
-    _linked.forEach(function(_lf){
-      const _cat=getCat(_lf.catId);
-      const _col=_cat?_cat.color:'#888';
-      const _chip=document.createElement('div');
-      _chip.className='voir-aussi-chip';
-      _chip.innerHTML='<span class="voir-aussi-chip-dot" style="background:'+_col+'"></span>'
-        +'<div style="min-width:0"><div class="voir-aussi-chip-text">'+escH(_lf.title)+'</div>'
-        +'<div class="voir-aussi-chip-path">'+buildPath(_lf)+'</div></div>';
-      _chip.addEventListener('click',function(){closeModal('viewer-modal');viewFiche(_lf.id);});
-      _chips.appendChild(_chip);
+  const linksEl=document.getElementById('viewer-links');
+  linksEl.innerHTML='';linksEl.style.display='none';
+  const linked=(f.links||[]).map(lid=>db.fiches.find(x=>x.id===lid)).filter(Boolean);
+  if(linked.length){
+    const label=document.createElement('div');label.className='voir-aussi-label';label.textContent='Voir aussi';
+    const chips=document.createElement('div');chips.className='voir-aussi-chips';
+    linked.forEach(lf=>{
+      const cat=getCat(lf.catId);
+      const chip=document.createElement('div');chip.className='voir-aussi-chip';
+      chip.innerHTML='<span class="voir-aussi-chip-dot" style="background:'+(cat?cat.color:'#888')+'"></span>'
+        +'<div style="min-width:0"><div class="voir-aussi-chip-text">'+escH(lf.title)+'</div>'
+        +'<div class="voir-aussi-chip-path">'+buildPath(lf)+'</div></div>';
+      chip.addEventListener('click',()=>{closeModal('viewer-modal');viewFiche(lf.id);});
+      chips.appendChild(chip);
     });
-    _linksEl.appendChild(_label);
-    _linksEl.appendChild(_chips);
-    _linksEl.style.display='block';
-    console.log('[viewFiche] viewer-links display set to block, innerHTML length='+_linksEl.innerHTML.length);
+    linksEl.appendChild(label);linksEl.appendChild(chips);
+    linksEl.style.display='block';
   }
-  trackRecent(id);
-  openModal('viewer-modal');
+  if(!document.getElementById('viewer-modal').classList.contains('open'))openModal('viewer-modal');
   requestAnimationFrame(()=>vZoomSet(1));
 }
 
 function editFiche(id){
   const f=db.fiches.find(x=>x.id===id);if(!f)return;
-  document.getElementById('ef-id').value=f.id;
-  document.getElementById('ef-title').value=f.title;
-  document.getElementById('ef-html').value=f.html;
-  ['ef-new-subcat','ef-new-theme'].forEach(i=>document.getElementById(i).value='');
-  fillCatSel('ef-cat');document.getElementById('ef-cat').value=f.catId;
-  document.getElementById('ef-l2-wrap').style.display='';
-  fillSubSel('ef',f.catId);document.getElementById('ef-subcat').value=f.subcatId||'';
-  if(f.subcatId){fillThSel('ef',f.catId,f.subcatId);document.getElementById('ef-l3-wrap').style.display='';document.getElementById('ef-theme').value=f.themeId||'';}
-  else document.getElementById('ef-l3-wrap').style.display='none';
-  lpInit('ef',f.links||[],f.id);
-  openModal('edit-modal');
+  function _fillForm(htmlVal){
+    document.getElementById('ef-id').value=f.id;
+    document.getElementById('ef-title').value=f.title;
+    document.getElementById('ef-html').value=htmlVal;
+    ['ef-new-subcat','ef-new-theme'].forEach(i=>document.getElementById(i).value='');
+    fillCatSel('ef-cat');document.getElementById('ef-cat').value=f.catId;
+    document.getElementById('ef-l2-wrap').style.display='';
+    fillSubSel('ef',f.catId);document.getElementById('ef-subcat').value=f.subcatId||'';
+    if(f.subcatId){fillThSel('ef',f.catId,f.subcatId);document.getElementById('ef-l3-wrap').style.display='';document.getElementById('ef-theme').value=f.themeId||'';}
+    else document.getElementById('ef-l3-wrap').style.display='none';
+    lpInit('ef',f.links||[],f.id);
+    openModal('edit-modal');
+  }
+  if(f.html==='__EXTERNAL__'){
+    if(_htmlCache[id]){_fillForm(_htmlCache[id]);return;}
+    if(!getToken()){toast('Token GitHub requis pour modifier cette fiche.','error');return;}
+    toast('Chargement de la fiche…','');
+    ghLoadFile(`fiches/${id}.html`)
+      .then(r=>{
+        if(!r){toast('Fichier introuvable sur GitHub.','error');return;}
+        _htmlCache[id]=r.content;f.externalSha=r.sha;
+        _fillForm(r.content);
+      })
+      .catch(e=>toast('Erreur chargement : '+e.message,'error'));
+    return;
+  }
+  _fillForm(f.html);
 }
 
 function updateFiche(){
@@ -1162,14 +1211,29 @@ function updateFiche(){
   const title=document.getElementById('ef-title').value.trim(),html=document.getElementById('ef-html').value.trim();
   if(!title||!html){toast('Champs requis manquants.','error');return;}
   const loc=resolveLoc('ef');if(!loc){toast('Catégorie requise.','error');return;}
-  if(html.length > 1_000_000) toast('⚠️ Fiche très lourde ('+Math.round(html.length/1024)+'KB) — la sync GitHub peut échouer.','warn');
-  if(html.length > 1_000_000) toast('⚠️ Fiche très lourde ('+Math.round(html.length/1024)+'KB) — la sync GitHub peut échouer.','warn');
-  Object.assign(f,{title,...loc,html,links:lpGet('ef')});
-  scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
+  const isHeavy=html.length>HEAVY_THRESHOLD;
+  const wasHeavy=f.html==='__EXTERNAL__';
+  if(isHeavy){
+    _htmlCache[id]=html;
+    Object.assign(f,{title,...loc,html:'__EXTERNAL__',links:lpGet('ef')});
+    scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour — sync en cours…','success');render();
+    if(getToken())ghSaveFile(`fiches/${id}.html`,html,f.externalSha||null)
+      .then(sha=>{f.externalSha=sha;scheduleSave();toast('Fiche lourde synchronisée ✓','success');})
+      .catch(e=>toast('Erreur sync fiche : '+e.message,'error'));
+  }else{
+    if(wasHeavy&&getToken()&&f.externalSha)ghDeleteFile(`fiches/${id}.html`,f.externalSha).catch(()=>{});
+    delete _htmlCache[id];
+    Object.assign(f,{title,...loc,html,links:lpGet('ef'),externalSha:null});
+    scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
+  }
 }
 
 function deleteFiche(id){
   if(!confirm('Supprimer cette fiche définitivement ?'))return;
+  const f=db.fiches.find(x=>x.id===id);
+  if(f&&f.html==='__EXTERNAL__'&&getToken()&&f.externalSha)
+    ghDeleteFile(`fiches/${id}.html`,f.externalSha).catch(()=>{});
+  delete _htmlCache[id];
   db.fiches=db.fiches.filter(f=>f.id!==id);
   scheduleSave();toast('Fiche supprimée.','success');render();
 }
