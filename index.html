@@ -578,7 +578,7 @@
       <button class="btn btn-outline btn-sm" onclick="closeModal('viewer-modal')" style="flex-shrink:0">✕ Fermer</button>
     </div>
     <div id="viewer-wrap">
-      <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+      <iframe id="viewer-frame" sandbox="allow-scripts allow-popups"></iframe>
     </div>
     <div id="viewer-links"></div>
   </div>
@@ -689,15 +689,27 @@ async function ghSaveFile(path, rawContent, existingBlobSha){
   return blobSha; // On stocke le blobSha dans externalSha
 }
 
-async function ghLoadFile(path){
+async function ghLoadFile(path, blobSha){
+  // Chemin direct : Git Blobs API (pas de limite, authentifié)
+  if(blobSha){
+    const res=await ghFetch(`git/blobs/${blobSha}`);
+    if(res.status===404)return null;
+    if(!res.ok)throw new Error(`Blob HTTP ${res.status}`);
+    const d=await res.json();
+    // GitHub renvoie du base64, mais peut tronquer les très gros blobs → utiliser download_url
+    if(d.content&&d.content.trim()!==''){
+      return{content:decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))),sha:blobSha};
+    }
+  }
+  // Fallback : Contents API
   const res=await ghFetch(`contents/${path}?ref=${GH_BRANCH}`);
   if(res.status===404)return null;
   if(!res.ok)throw new Error(`HTTP ${res.status}`);
   const d=await res.json();
-  // Fichiers > 1MB : GitHub renvoie content:'' + download_url
   if(!d.content||d.content.trim()===''){
-    if(!d.download_url)throw new Error('Fichier trop volumineux et pas de download_url');
-    const raw=await fetch(d.download_url);
+    // Fichier > 1MB : télécharger via download_url AVEC le token
+    if(!d.download_url)throw new Error('Fichier trop volumineux, download_url absent');
+    const raw=await fetch(d.download_url,{headers:{'Authorization':`Bearer ${getToken()}`}});
     if(!raw.ok)throw new Error(`Download HTTP ${raw.status}`);
     return{content:await raw.text(),sha:d.sha};
   }
@@ -1190,7 +1202,7 @@ function viewFiche(id){
     document.getElementById('viewer-links').innerHTML='';
     document.getElementById('viewer-links').style.display='none';
     openModal('viewer-modal');
-    ghLoadFile(`fiches/${id}.html`)
+    ghLoadFile(`fiches/${id}.html`,f.externalSha||null)
       .then(r=>{
         if(!r){
           closeModal('viewer-modal');
@@ -1263,7 +1275,7 @@ function editFiche(id){
     if(_htmlCache[id]){_fillForm(_htmlCache[id]);return;}
     if(!getToken()){toast('Token GitHub requis pour modifier cette fiche.','error');return;}
     toast('Chargement de la fiche…','');
-    ghLoadFile(`fiches/${id}.html`)
+    ghLoadFile(`fiches/${id}.html`,f.externalSha||null)
       .then(r=>{
         if(!r){
           toast('Fichier non trouvé sur GitHub — re-colle le HTML ci-dessous.','warn');
