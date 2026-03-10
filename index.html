@@ -578,7 +578,7 @@
       <button class="btn btn-outline btn-sm" onclick="closeModal('viewer-modal')" style="flex-shrink:0">✕ Fermer</button>
     </div>
     <div id="viewer-wrap">
-      <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+      <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
     </div>
     <div id="viewer-links"></div>
   </div>
@@ -1210,7 +1210,17 @@ function _openViewer(f,html){
   vZoom=1;document.getElementById('zoom-val').textContent='100%';
   const frame=document.getElementById('viewer-frame');
   frame.style.transform='';frame.style.width='100%';frame.style.height='100%';
-  frame.srcdoc=html;
+  // Blob URL pour les fichiers lourds (srcdoc plante au-delà de ~1MB)
+  if(window._viewerBlobUrl){URL.revokeObjectURL(window._viewerBlobUrl);window._viewerBlobUrl=null;}
+  if(html.length>500_000){
+    const blob=new Blob([html],{type:'text/html'});
+    window._viewerBlobUrl=URL.createObjectURL(blob);
+    frame.removeAttribute('srcdoc');
+    frame.src=window._viewerBlobUrl;
+  }else{
+    frame.removeAttribute('src');
+    frame.srcdoc=html;
+  }
   // Voir aussi
   const linksEl=document.getElementById('viewer-links');
   linksEl.innerHTML='';linksEl.style.display='none';
@@ -1468,7 +1478,14 @@ function hlText(text,q){return escH(text).replace(new RegExp(`(${escH(q).replace
 let toastTm;
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`show ${type}`;clearTimeout(toastTm);toastTm=setTimeout(()=>{el.className=''},3200);}
 function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  if(id==='viewer-modal'&&window._viewerBlobUrl){
+    URL.revokeObjectURL(window._viewerBlobUrl);
+    window._viewerBlobUrl=null;
+    document.getElementById('viewer-frame').removeAttribute('src');
+  }
+}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
 
