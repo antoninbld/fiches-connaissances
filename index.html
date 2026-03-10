@@ -723,18 +723,6 @@ async function ghDeleteFile(path,sha){
     message:`Suppression — ${path}`,sha:fileSha,branch:GH_BRANCH
   })});
 }
-async function ghLoadFile(path){
-  const res=await ghFetch(`contents/${path}?ref=${GH_BRANCH}`);
-  if(res.status===404)return null;
-  if(!res.ok)throw new Error(`HTTP ${res.status}`);
-  const d=await res.json();
-  return{content:decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))),sha:d.sha};
-}
-async function ghDeleteFile(path,sha){
-  if(!sha)return;
-  await ghFetch(`contents/${path}`,{method:'DELETE',body:JSON.stringify({message:`Suppression — ${path}`,sha,branch:GH_BRANCH})});
-}
-
 /* ── §2b · Sync planifiée ──────────────────────────────────────── */
 function scheduleSave(){localSave();if(!getToken())return;clearTimeout(syncTimer);syncTimer=setTimeout(doSync,1500);}
 async function doSync(){
