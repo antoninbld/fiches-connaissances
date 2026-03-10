@@ -683,7 +683,7 @@ async function ghSaveFile(path, rawContent, existingBlobSha){
   const {sha:newCommitSha}=await newCommitRes.json();
 
   // 6. Avancer la branche
-  const patchRes=await ghFetch(`git/refs/heads/${GH_BRANCH}`,{method:'PATCH',body:JSON.stringify({sha:newCommitSha})});
+  const patchRes=await ghFetch(`git/refs/heads/${GH_BRANCH}`,{method:'PATCH',body:JSON.stringify({sha:newCommitSha,force:true})});
   if(!patchRes.ok)throw new Error(`Ref patch HTTP ${patchRes.status}`);
 
   return blobSha; // On stocke le blobSha dans externalSha
@@ -1150,13 +1150,13 @@ function saveFiche(){
   db.fiches.push(fiche);
   if(isHeavy){
     _htmlCache[id]=html;
-    scheduleSave();
     closeModal('add-modal');
-    toast('Fiche enregistrée — sync fichier en cours…','success');
+    toast('Fiche enregistrée — sync en cours, patiente quelques secondes…','success');
     render();
     if(getToken())ghSaveFile(`fiches/${id}.html`,html,null)
       .then(sha=>{fiche.externalSha=sha;scheduleSave();toast('Fiche lourde synchronisée ✓','success');})
       .catch(e=>toast('Erreur sync fiche : '+e.message,'error'));
+    else scheduleSave();
   }else{
     scheduleSave();closeModal('add-modal');toast('Fiche enregistrée — synchronisation…','success');render();
   }
@@ -1279,10 +1279,11 @@ function updateFiche(){
   if(isHeavy){
     _htmlCache[id]=html;
     Object.assign(f,{title,...loc,html:'__EXTERNAL__',links:lpGet('ef')});
-    scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour — sync en cours…','success');render();
+    closeModal('edit-modal');toast('Fiche mise à jour — sync en cours, patiente quelques secondes…','success');render();
     if(getToken())ghSaveFile(`fiches/${id}.html`,html,f.externalSha||null)
       .then(sha=>{f.externalSha=sha;scheduleSave();toast('Fiche lourde synchronisée ✓','success');})
       .catch(e=>toast('Erreur sync fiche : '+e.message,'error'));
+    else scheduleSave();
   }else{
     if(wasHeavy&&getToken()&&f.externalSha)ghDeleteFile(`fiches/${id}.html`,f.externalSha).catch(()=>{});
     delete _htmlCache[id];
