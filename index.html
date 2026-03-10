@@ -690,24 +690,21 @@ async function ghSaveFile(path, rawContent, existingBlobSha){
 }
 
 async function ghLoadFile(path, blobSha){
-  // Chemin direct : Git Blobs API (pas de limite, authentifié)
+  // Blob SHA dispo : utiliser Accept: raw qui retourne le texte brut sans limite de taille
   if(blobSha){
-    const res=await ghFetch(`git/blobs/${blobSha}`);
+    const res=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/git/blobs/${blobSha}`,{
+      headers:{'Authorization':`Bearer ${getToken()}`,'Accept':'application/vnd.github.raw+json'}
+    });
     if(res.status===404)return null;
     if(!res.ok)throw new Error(`Blob HTTP ${res.status}`);
-    const d=await res.json();
-    // GitHub renvoie du base64, mais peut tronquer les très gros blobs → utiliser download_url
-    if(d.content&&d.content.trim()!==''){
-      return{content:decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))),sha:blobSha};
-    }
+    return{content:await res.text(),sha:blobSha};
   }
-  // Fallback : Contents API
+  // Fallback : Contents API (fichiers <= 1MB)
   const res=await ghFetch(`contents/${path}?ref=${GH_BRANCH}`);
   if(res.status===404)return null;
   if(!res.ok)throw new Error(`HTTP ${res.status}`);
   const d=await res.json();
   if(!d.content||d.content.trim()===''){
-    // Fichier > 1MB : télécharger via download_url AVEC le token
     if(!d.download_url)throw new Error('Fichier trop volumineux, download_url absent');
     const raw=await fetch(d.download_url,{headers:{'Authorization':`Bearer ${getToken()}`}});
     if(!raw.ok)throw new Error(`Download HTTP ${raw.status}`);
