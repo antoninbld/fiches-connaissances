@@ -188,8 +188,8 @@
   #zoom-val:hover{color:var(--text)}
 
   /* DRAG & DROP */
-  .drag-handle{cursor:grab;color:var(--text-dim);font-size:13px;padding:0 4px 0 0;flex-shrink:0;opacity:0;transition:opacity .15s;line-height:1;user-select:none}
-  .n1:hover .drag-handle{opacity:1}
+  .drag-handle{cursor:grab;color:var(--text-dim);font-size:13px;opacity:.35;transition:opacity .15s;line-height:1;user-select:none}
+  .n1:hover .drag-handle{opacity:.9}
   .n1.dragging{opacity:.35}
   .n1.drag-over{background:var(--gold-glow)!important;border-left-color:var(--gold)!important}
   .fiche-card[draggable]{cursor:default}
@@ -692,6 +692,7 @@ async function init(){
     setSyncStatus('notoken','GitHub non configuré');
     const local=migrate(localLoad());if(local)db=local;else seedDefault();
   }
+  expandSidebarByDefault();
   render();
 }
 function seedDefault(){db.categories.push({id:uid(),name:'Général',color:PALETTE[0],subcats:[]});localSave();}
@@ -702,6 +703,11 @@ function seedDefault(){db.categories.push({id:uid(),name:'Général',color:PALET
 ════════════════════════════════════════════════════════════════════ */
 let state={view:'home',catId:null,subcatId:null,themeId:null,search:''};
 let openCats=new Set(),openSubs=new Set();
+
+function expandSidebarByDefault(){
+  openCats=new Set(db.categories.map(c=>c.id));
+  openSubs=new Set(db.categories.flatMap(c=>(c.subcats||[]).map(s=>s.id)));
+}
 
 function goHome(){state={view:'home',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
 function goCat(catId){state={view:'cat',catId,subcatId:null,themeId:null,search:''};openCats.add(catId);render();}
@@ -733,9 +739,9 @@ function renderSidebar(){
     const total=cntFiches({catId:cat.id});
     const subs=cat.subcats||[];
     let h=`<div class="n1 ${isSel&&!state.subcatId?'sel':''}" draggable="true" data-cat-id="${cat.id}" onclick="goCat('${cat.id}')">
-      <span class="drag-handle" title="Glisser pour réordonner">⠿</span>
       <div class="n1-left"><span class="n1-dot" style="background:${cat.color}"></span><span>${escH(cat.name)}</span></div>
-      <div style="display:flex;align-items:center;gap:5px">
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        <span class="drag-handle" title="Glisser pour réordonner">⠿</span>
         <span class="badge">${total}</span>
         ${subs.length?`<svg class="arrow ${isOpen?'open':''}" onclick="toggleCatOpen('${cat.id}',event)" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`:''}
       </div>
@@ -1308,7 +1314,7 @@ function showAddSub(catId){treeOpen1.add(catId);renderTree();const el=document.g
 function confirmSub(catId){
   const name=document.getElementById(`inew-sub-${catId}`)?.value.trim();if(!name)return;
   const cat=getCat(catId);
-  if(!cat.subcats.find(s=>s.name===name)){cat.subcats.push({id:uid(),name,subcats:[]});scheduleSave();render();}
+  if(!cat.subcats.find(s=>s.name===name)){const newSub={id:uid(),name,subcats:[]};cat.subcats.push(newSub);openCats.add(catId);openSubs.add(newSub.id);scheduleSave();render();}
   renderTree();toast('Sous-catégorie créée !','success');
 }
 function showAddTheme(catId,subId){treeOpen1.add(catId);treeOpen2.add(subId);renderTree();const el=document.getElementById(`iadd-th-${subId}`);if(el){el.style.display='flex';document.getElementById(`inew-th-${subId}`)?.focus();}}
@@ -1349,7 +1355,9 @@ function addRootCat(){
   const name=document.getElementById('new-cat-name').value.trim();
   if(!name){toast('Nom requis.','error');return;}
   if(db.categories.find(c=>c.name===name)){toast('Catégorie déjà existante.','error');return;}
-  db.categories.push({id:uid(),name,color:selColor,subcats:[]});
+  const newCat={id:uid(),name,color:selColor,subcats:[]};
+  db.categories.push(newCat);
+  openCats.add(newCat.id);
   scheduleSave();document.getElementById('new-cat-name').value='';
   renderTree();render();toast('Catégorie créée !','success');
 }
