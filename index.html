@@ -650,14 +650,69 @@ async function githubSave(data){
   ghSha=(await res.json()).content.sha;
 }
 
-/* ── Fichiers individuels (fiches lourdes) ─────────────────────── */
-async function ghSaveFile(path,rawContent,sha){
-  const content=btoa(unescape(encodeURIComponent(rawContent)));
-  const body={message:`Fiche — ${path}`,content,branch:GH_BRANCH};
-  if(sha)body.sha=sha;
-  const res=await ghFetch(`contents/${path}`,{method:'PUT',body:JSON.stringify(body)});
-  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||`HTTP ${res.status}`);}
-  return (await res.json()).content.sha;
+/* ── Fichiers individuels (Git Data API — pas de limite de taille) ── */
+async function ghSaveFile(path, rawContent, existingBlobSha){
+  // 1. Créer le blob (supporte n'importe quelle taille, encodage utf-8 natif)
+  const blobRes=await ghFetch('git/blobs',{method:'POST',body:JSON.stringify({content:rawContent,encoding:'utf-8'})});
+  if(!blobRes.ok){const e=await blobRes.json().catch(()=>({}));throw new Error(e.message||`Blob HTTP ${blobRes.status}`);}
+  const {sha:blobSha}=await blobRes.json();
+
+  // 2. Récupérer le commit courant
+  const refRes=await ghFetch(`git/ref/heads/${GH_BRANCH}`);
+  if(!refRes.ok)throw new Error(`Ref HTTP ${refRes.status}`);
+  const {object:{sha:commitSha}}=await refRes.json();
+
+  // 3. Récupérer le tree du commit
+  const commitRes=await ghFetch(`git/commits/${commitSha}`);
+  if(!commitRes.ok)throw new Error(`Commit HTTP ${commitRes.status}`);
+  const {tree:{sha:treeSha}}=await commitRes.json();
+
+  // 4. Créer un nouveau tree avec le fichier
+  const treeRes=await ghFetch('git/trees',{method:'POST',body:JSON.stringify({
+    base_tree:treeSha,
+    tree:[{path,mode:'100644',type:'blob',sha:blobSha}]
+  })});
+  if(!treeRes.ok)throw new Error(`Tree HTTP ${treeRes.status}`);
+  const {sha:newTreeSha}=await treeRes.json();
+
+  // 5. Créer le commit
+  const newCommitRes=await ghFetch('git/commits',{method:'POST',body:JSON.stringify({
+    message:`Fiche — ${path}`,tree:newTreeSha,parents:[commitSha]
+  })});
+  if(!newCommitRes.ok)throw new Error(`NewCommit HTTP ${newCommitRes.status}`);
+  const {sha:newCommitSha}=await newCommitRes.json();
+
+  // 6. Avancer la branche
+  const patchRes=await ghFetch(`git/refs/heads/${GH_BRANCH}`,{method:'PATCH',body:JSON.stringify({sha:newCommitSha})});
+  if(!patchRes.ok)throw new Error(`Ref patch HTTP ${patchRes.status}`);
+
+  return blobSha; // On stocke le blobSha dans externalSha
+}
+
+async function ghLoadFile(path){
+  const res=await ghFetch(`contents/${path}?ref=${GH_BRANCH}`);
+  if(res.status===404)return null;
+  if(!res.ok)throw new Error(`HTTP ${res.status}`);
+  const d=await res.json();
+  // Fichiers > 1MB : GitHub renvoie content:'' + download_url
+  if(!d.content||d.content.trim()===''){
+    if(!d.download_url)throw new Error('Fichier trop volumineux et pas de download_url');
+    const raw=await fetch(d.download_url);
+    if(!raw.ok)throw new Error(`Download HTTP ${raw.status}`);
+    return{content:await raw.text(),sha:d.sha};
+  }
+  return{content:decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))),sha:d.sha};
+}
+
+async function ghDeleteFile(path,sha){
+  if(!sha)return;
+  // Pour la suppression on a besoin du blob SHA via Contents API
+  const check=await ghFetch(`contents/${path}?ref=${GH_BRANCH}`);
+  if(check.status===404)return; // Déjà supprimé
+  const fileSha=(await check.json()).sha;
+  await ghFetch(`contents/${path}`,{method:'DELETE',body:JSON.stringify({
+    message:`Suppression — ${path}`,sha:fileSha,branch:GH_BRANCH
+  })});
 }
 async function ghLoadFile(path){
   const res=await ghFetch(`contents/${path}?ref=${GH_BRANCH}`);
@@ -1137,7 +1192,11 @@ function viewFiche(id){
     openModal('viewer-modal');
     ghLoadFile(`fiches/${id}.html`)
       .then(r=>{
-        if(!r){toast('Fichier introuvable sur GitHub.','error');return;}
+        if(!r){
+          closeModal('viewer-modal');
+          toast('Fiche introuvable sur GitHub — clique ✏️ Modifier pour re-coller le contenu.','error');
+          return;
+        }
         _htmlCache[id]=r.content;f.externalSha=r.sha;
         _openViewer(f,r.content);
       })
@@ -1196,7 +1255,11 @@ function editFiche(id){
     toast('Chargement de la fiche…','');
     ghLoadFile(`fiches/${id}.html`)
       .then(r=>{
-        if(!r){toast('Fichier introuvable sur GitHub.','error');return;}
+        if(!r){
+          toast('Fichier non trouvé sur GitHub — re-colle le HTML ci-dessous.','warn');
+          _fillForm('');
+          return;
+        }
         _htmlCache[id]=r.content;f.externalSha=r.sha;
         _fillForm(r.content);
       })
