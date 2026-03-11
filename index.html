@@ -1014,6 +1014,19 @@ function installCortexInteractions(){
 function renderCortexScene(){
   if(!cortexGraphState)return;
   const s=cortexGraphState;
+  const selectedId=cortexSelectedId;
+  const highlightedNodes=new Set();
+  const highlightedEdges=new Set();
+  if(selectedId){
+    highlightedNodes.add(selectedId);
+    s.edges.forEach(e=>{
+      if(e.source===selectedId||e.target===selectedId){
+        highlightedNodes.add(e.source);
+        highlightedNodes.add(e.target);
+        highlightedEdges.add([e.source,e.target].sort().join('|'));
+      }
+    });
+  }
   const cosY=Math.cos(s.orbitY),sinY=Math.sin(s.orbitY),cosX=Math.cos(s.orbitX),sinX=Math.sin(s.orbitX);
   const projected={};
   s.nodes3d.forEach(n=>{
@@ -1036,14 +1049,23 @@ function renderCortexScene(){
   let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}">`;
   edgesByDepth.forEach(e=>{
     const a=projected[e.source],b=projected[e.target];
-    const opacity=Math.max(0.18,Math.min(0.72,0.45+((a.scale+b.scale)/2-1)*0.45));
-    svg+=`<line class="cortex-link" x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" style="opacity:${opacity.toFixed(3)}"/>`;
+    const edgeKey=[e.source,e.target].sort().join('|');
+    const isHighlighted=!selectedId||highlightedEdges.has(edgeKey);
+    const baseOpacity=Math.max(0.18,Math.min(0.72,0.45+((a.scale+b.scale)/2-1)*0.45));
+    const opacity=isHighlighted?Math.max(baseOpacity,0.72):Math.min(baseOpacity,0.1);
+    const stroke=isHighlighted?'rgba(120,210,255,0.9)':'rgba(90,184,224,0.16)';
+    const strokeWidth=isHighlighted?2.2:1;
+    svg+=`<line class="cortex-link" x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" style="opacity:${opacity.toFixed(3)};stroke:${stroke};stroke-width:${strokeWidth}"/>`;
   });
   nodesByDepth.forEach(n=>{
     const p=projected[n.id],deg=s.nodeDeg[n.id]||0;
     const baseR=Math.min(18,7+deg*1.1),r=Math.max(4,Math.min(24,baseR*p.scale));
-    const isActive=cortexSelectedId===n.id;
-    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}"><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${r.toFixed(2)}" fill="${n.color}" opacity="0.96"/><text class="cortex-node-label" x="${(p.x+r+5).toFixed(2)}" y="${(p.y+4).toFixed(2)}" style="opacity:${Math.max(0.45,Math.min(1,p.scale*0.9)).toFixed(2)}">${escH(n.label.slice(0,40))}</text></g>`;
+    const isActive=selectedId===n.id;
+    const isHighlighted=!selectedId||highlightedNodes.has(n.id);
+    const nodeOpacity=isActive?1:(isHighlighted?0.98:0.2);
+    const nodeRadius=isActive?r*1.2:r;
+    const labelOpacity=isActive?1:(isHighlighted?Math.max(0.6,Math.min(1,p.scale*0.95)):0.22);
+    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}"><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${n.color}" opacity="${nodeOpacity.toFixed(2)}"/><text class="cortex-node-label" x="${(p.x+nodeRadius+5).toFixed(2)}" y="${(p.y+4).toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${escH(n.label.slice(0,40))}</text></g>`;
   });
   svg+='</svg>';
   const hud=s.graphEl.querySelector('.cortex-hud');
