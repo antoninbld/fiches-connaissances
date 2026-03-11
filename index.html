@@ -60,7 +60,9 @@
 
   .cortex-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px;align-items:stretch;min-height:66vh}
   .cortex-graph{position:relative;background:radial-gradient(circle at 20% 10%,rgba(90,138,224,.12),transparent 40%),var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:520px}
+  .cortex-graph.is-dragging{cursor:grabbing}
   .cortex-svg{position:absolute;inset:0;width:100%;height:100%}
+  .cortex-hud{position:absolute;left:12px;bottom:12px;z-index:2;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;color:var(--text-dim);background:rgba(14,22,45,.72);border:1px solid rgba(90,138,224,.2);border-radius:9px;padding:7px 10px;backdrop-filter:blur(4px);pointer-events:none}
   .cortex-info{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
   .cortex-info-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
   .cortex-clear-btn{width:24px;height:24px;border-radius:50%;border:1px solid rgba(224,96,96,.45);background:rgba(224,96,96,.08);color:var(--red);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
@@ -726,6 +728,7 @@ function seedDefault(){db.categories.push({id:uid(),name:'Général',color:PALET
 ════════════════════════════════════════════════════════════════════ */
 let state={view:'home',catId:null,subcatId:null,themeId:null,search:''};
 let cortexSelectedId=null;
+let cortexGraphState=null;
 let openCats=new Set(),openSubs=new Set();
 
 function expandSidebarByDefault(){
@@ -894,7 +897,7 @@ function renderCortex(){
   document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="section-count">${db.fiches.length} fiche${db.fiches.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div></div>
   <div class="view-subtitle" style="margin-bottom:12px">Carte de liens entre fiches (inspirée de la vue graphe d'Obsidian).</div>
   <div class="cortex-layout">
-    <div class="cortex-graph" id="cortex-graph"></div>
+    <div class="cortex-graph" id="cortex-graph"><div class="cortex-hud">Glisser: orbite 3D · Shift+glisser: déplacer · Molette: zoom</div></div>
     <div class="cortex-info" id="cortex-info"><div class="voir-aussi-label">Sélection</div><h3>Aucune fiche</h3><div class="view-subtitle">Clique sur un point pour voir ses détails et accéder à la fiche.</div></div>
   </div>`;
   requestAnimationFrame(drawCortexGraph);
@@ -936,24 +939,111 @@ function drawCortexGraph(){
   db.fiches.forEach(f=>{(f.links||[]).forEach(to=>{if(!nodeIds.has(to)||to===f.id)return;const k=[f.id,to].sort().join('|');if(!edgeMap.has(k))edgeMap.set(k,{source:f.id,target:to});});});
   const edges=[...edgeMap.values()];
   const pos=computeCortexLayout(nodes,edges,width,height);
+  const nodeDeg={};
+  nodes.forEach(n=>nodeDeg[n.id]=0);
+  edges.forEach(e=>{nodeDeg[e.source]=(nodeDeg[e.source]||0)+1;nodeDeg[e.target]=(nodeDeg[e.target]||0)+1;});
+  const depthRange=Math.max(width,height)*0.22;
+  cortexGraphState={
+    graphEl,width,height,nodes,edges,nodeDeg,
+    nodes3d:nodes.map((n,i)=>{const hash=[...n.id].reduce((a,c)=>a+c.charCodeAt(0),0);return{id:n.id,x:pos[n.id].x-width/2,y:pos[n.id].y-height/2,z:(((hash+i*17)%1000)/1000-0.5)*depthRange};}),
+    orbitX:-0.25,orbitY:0.45,panX:0,panY:0,zoom:1,perspective:900,isDragging:false,dragMoved:false,lastX:0,lastY:0,blockClickUntil:0
+  };
+  installCortexInteractions();
+  renderCortexScene();
+}
 
-  let svg=`<svg class="cortex-svg" viewBox="0 0 ${width} ${height}">`;
-  edges.forEach(e=>{const a=pos[e.source],b=pos[e.target];svg+=`<line class="cortex-link" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;});
-  nodes.forEach(n=>{const p=pos[n.id],deg=edges.filter(e=>e.source===n.id||e.target===n.id).length;const r=Math.min(18,7+deg*1.1);
-    svg+=`<g class="cortex-node" data-node-id="${n.id}"><circle class="cortex-node-circle" cx="${p.x}" cy="${p.y}" r="${r}" fill="${n.color}" opacity="0.95"/><text class="cortex-node-label" x="${p.x+r+5}" y="${p.y+4}">${escH(n.label.slice(0,40))}</text></g>`;
-  });
-  svg+='</svg>';
-  graphEl.innerHTML=svg;
-  const nodeEls=graphEl.querySelectorAll('.cortex-node');
-  nodeEls.forEach(el=>el.addEventListener('click',()=>{
-    nodeEls.forEach(x=>x.classList.remove('active'));
-    el.classList.add('active');
-    const id=el.getAttribute('data-node-id');
+function installCortexInteractions(){
+  if(!cortexGraphState)return;
+  const {graphEl}=cortexGraphState;
+  graphEl.onpointerdown=e=>{
+    if(e.button!==0)return;
+    cortexGraphState.isDragging=true;
+    cortexGraphState.dragMoved=false;
+    cortexGraphState.dragMode=e.shiftKey?'pan':'orbit';
+    cortexGraphState.lastX=e.clientX;
+    cortexGraphState.lastY=e.clientY;
+    graphEl.classList.add('is-dragging');
+    graphEl.setPointerCapture(e.pointerId);
+  };
+  graphEl.onpointermove=e=>{
+    if(!cortexGraphState?.isDragging)return;
+    const dx=e.clientX-cortexGraphState.lastX,dy=e.clientY-cortexGraphState.lastY;
+    cortexGraphState.lastX=e.clientX;
+    cortexGraphState.lastY=e.clientY;
+    if(Math.abs(dx)+Math.abs(dy)>1)cortexGraphState.dragMoved=true;
+    if(cortexGraphState.dragMode==='pan'){
+      cortexGraphState.panX+=dx;
+      cortexGraphState.panY+=dy;
+    }else{
+      cortexGraphState.orbitY+=dx*0.005;
+      cortexGraphState.orbitX=Math.max(-1.35,Math.min(1.35,cortexGraphState.orbitX+dy*0.005));
+    }
+    renderCortexScene();
+  };
+  graphEl.onpointerup=e=>{
+    if(!cortexGraphState)return;
+    if(cortexGraphState.dragMoved)cortexGraphState.blockClickUntil=Date.now()+160;
+    cortexGraphState.isDragging=false;
+    graphEl.classList.remove('is-dragging');
+    try{graphEl.releasePointerCapture(e.pointerId);}catch(_e){}
+  };
+  graphEl.onwheel=e=>{
+    e.preventDefault();
+    if(!cortexGraphState)return;
+    const next=cortexGraphState.zoom*(e.deltaY<0?1.1:0.9);
+    cortexGraphState.zoom=Math.max(0.5,Math.min(2.8,next));
+    renderCortexScene();
+  };
+  graphEl.onclick=e=>{
+    if(!cortexGraphState||Date.now()<cortexGraphState.blockClickUntil)return;
+    const nodeEl=e.target.closest('.cortex-node');
+    if(!nodeEl)return;
+    const id=nodeEl.getAttribute('data-node-id');
+    if(!id)return;  
     cortexSelectedId=id;
     const fiche=db.fiches.find(f=>f.id===id);
-    if(!fiche)return;
-    showCortexSelection(fiche);
-  }));
+    if(fiche)showCortexSelection(fiche);
+    renderCortexScene();
+  };
+}
+
+function renderCortexScene(){
+  if(!cortexGraphState)return;
+  const s=cortexGraphState;
+  const cosY=Math.cos(s.orbitY),sinY=Math.sin(s.orbitY),cosX=Math.cos(s.orbitX),sinX=Math.sin(s.orbitX);
+  const projected={};
+  s.nodes3d.forEach(n=>{
+    const x1=n.x*cosY-n.z*sinY;
+    const z1=n.x*sinY+n.z*cosY;
+    const y2=n.y*cosX-z1*sinX;
+    const z2=n.y*sinX+z1*cosX;
+    const depthOffset=540;
+    const scale=s.zoom*s.perspective/(s.perspective+z2+depthOffset);
+    projected[n.id]={
+      x:s.width/2+s.panX+x1*scale,
+      y:s.height/2+s.panY+y2*scale,
+      z:z2,
+      scale:Math.max(0.35,Math.min(2.4,scale))
+    };
+  });
+
+  const edgesByDepth=s.edges.slice().sort((a,b)=>((projected[a.source].z+projected[a.target].z)/2)-((projected[b.source].z+projected[b.target].z)/2));
+  const nodesByDepth=s.nodes.slice().sort((a,b)=>projected[a.id].z-projected[b.id].z);
+  let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}">`;
+  edgesByDepth.forEach(e=>{
+    const a=projected[e.source],b=projected[e.target];
+    const opacity=Math.max(0.18,Math.min(0.72,0.45+((a.scale+b.scale)/2-1)*0.45));
+    svg+=`<line class="cortex-link" x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" style="opacity:${opacity.toFixed(3)}"/>`;
+  });
+  nodesByDepth.forEach(n=>{
+    const p=projected[n.id],deg=s.nodeDeg[n.id]||0;
+    const baseR=Math.min(18,7+deg*1.1),r=Math.max(4,Math.min(24,baseR*p.scale));
+    const isActive=cortexSelectedId===n.id;
+    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}"><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${r.toFixed(2)}" fill="${n.color}" opacity="0.96"/><text class="cortex-node-label" x="${(p.x+r+5).toFixed(2)}" y="${(p.y+4).toFixed(2)}" style="opacity:${Math.max(0.45,Math.min(1,p.scale*0.9)).toFixed(2)}">${escH(n.label.slice(0,40))}</text></g>`;
+  });
+  svg+='</svg>';
+  const hud=s.graphEl.querySelector('.cortex-hud');
+  s.graphEl.innerHTML=svg+(hud?hud.outerHTML:'');
 }
 
 function computeCortexLayout(nodes,edges,w,h){
