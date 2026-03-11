@@ -6,6 +6,11 @@
       "color": "#5a8ae0",
       "subcats": [
         {
+          "id": "mmh8e1y77esy",
+          "name": "Electricité",
+          "subcats": []
+        },
+        {
           "id": "mmh8duxkwxp9",
           "name": "Gaz",
           "subcats": [
@@ -14,11 +19,6 @@
               "name": "CRE"
             }
           ]
-        },
-        {
-          "id": "mmh8e1y77esy",
-          "name": "Electricité",
-          "subcats": []
         },
         {
           "id": "mmh8eqycybc1",
