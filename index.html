@@ -66,14 +66,14 @@
   .n1-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
   /* Level 2 */
-  .n2{display:flex;align-items:center;justify-content:space-between;padding:7px 16px 7px 34px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none}
-  .n2:hover{background:var(--surface2)}
+  .n2{display:flex;align-items:center;justify-content:space-between;padding:7px 16px 7px 34px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none;background:rgba(90,138,224,.05)}
+  .n2:hover{background:rgba(90,138,224,.12)}
   .n2.sel{background:rgba(201,168,76,.07);border-left-color:var(--gold-dim)}
-  .n2-left{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-muted)}
+  .n2-left{display:flex;align-items:center;gap:7px;font-size:13px;color:#b9c9ee}
   .n2.sel .n2-left{color:var(--text)}
 
   /* Level 3 */
-  .n3{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 6px 54px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none;font-size:12px;color:var(--text-dim)}
+  .n3{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 6px 54px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none;font-size:12px;color:var(--text-dim);font-style:italic}
   .n3:hover{background:var(--surface2);color:var(--text-muted)}
   .n3.sel{color:var(--gold);background:var(--gold-glow);border-left-color:var(--gold)}
 
@@ -192,6 +192,9 @@
   .n1:hover .drag-handle{opacity:.9}
   .n1.dragging{opacity:.35}
   .n1.drag-over{background:var(--gold-glow)!important;border-left-color:var(--gold)!important}
+  .n2:hover .drag-handle{opacity:.85}
+  .n2.dragging{opacity:.35}
+  .n2.drag-over{background:rgba(90,138,224,.18)!important;border-left-color:var(--blue)!important}
   .fiche-card[draggable]{cursor:default}
   .fiche-card .drag-handle-fiche{position:absolute;top:8px;right:8px;cursor:grab;color:var(--text-dim);font-size:12px;opacity:0;transition:opacity .15s;user-select:none}
   .fiche-card{position:relative}
@@ -706,7 +709,7 @@ let openCats=new Set(),openSubs=new Set();
 
 function expandSidebarByDefault(){
   openCats=new Set(db.categories.map(c=>c.id));
-  openSubs=new Set(db.categories.flatMap(c=>(c.subcats||[]).map(s=>s.id)));
+  openSubs=new Set();
 }
 
 function goHome(){state={view:'home',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
@@ -752,8 +755,8 @@ function renderSidebar(){
         const subSel=state.subcatId===sub.id;
         const subTotal=cntFiches({catId:cat.id,subcatId:sub.id});
         const themes=sub.subcats||[];
-        h+=`<div class="n2 ${subSel&&!state.themeId?'sel':''}" onclick="goSub('${cat.id}','${sub.id}')">
-          <div class="n2-left"><span style="color:var(--text-dim);margin-right:2px">└</span><span>${escH(sub.name)}</span></div>
+        h+=`<div class="n2 ${subSel&&!state.themeId?'sel':''}" draggable="true" data-cat-id="${cat.id}" data-sub-id="${sub.id}" onclick="goSub('${cat.id}','${sub.id}')">
+          <div class="n2-left"><span class="drag-handle" title="Glisser pour réordonner">⠿</span><span style="color:var(--blue);margin-right:2px">▸</span><span>${escH(sub.name)}</span></div>
           <div style="display:flex;align-items:center;gap:5px">
             <span class="badge" style="font-size:9px">${subTotal}</span>
             ${themes.length?`<svg class="arrow ${subOpen?'open':''}" onclick="toggleSubOpen('${sub.id}',event)" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`:''}
@@ -1505,7 +1508,7 @@ let dragCatId=null;
 (function initSidebarDrag(){
   const el=document.getElementById('sidebar-cats');
   el.addEventListener('dragstart',e=>{
-    const n1=e.target.closest('[data-cat-id]');
+    const n1=e.target.closest('.n1[data-cat-id]');
     if(!n1){e.preventDefault();return;}
     dragCatId=n1.dataset.catId;
     requestAnimationFrame(()=>n1.classList.add('dragging'));
@@ -1518,7 +1521,7 @@ let dragCatId=null;
   });
   el.addEventListener('dragover',e=>{
     e.preventDefault();
-    const n1=e.target.closest('[data-cat-id]');
+    const n1=e.target.closest('.n1[data-cat-id]');
     el.querySelectorAll('.n1').forEach(x=>x.classList.remove('drag-over'));
     if(n1&&n1.dataset.catId!==dragCatId)n1.classList.add('drag-over');
   });
@@ -1527,7 +1530,7 @@ let dragCatId=null;
   });
   el.addEventListener('drop',e=>{
     e.preventDefault();
-    const n1=e.target.closest('[data-cat-id]');
+    const n1=e.target.closest('.n1[data-cat-id]');
     el.querySelectorAll('.n1').forEach(x=>x.classList.remove('drag-over','dragging'));
     if(!n1||!dragCatId||n1.dataset.catId===dragCatId){dragCatId=null;return;}
     const toId=n1.dataset.catId;
@@ -1542,7 +1545,56 @@ let dragCatId=null;
   });
 })();
 
-/* ── §12b · Fiches (grille) ─────────────────────────────────────── */
+/* ── §12b · Sous-catégories (sidebar) ───────────────────────────── */
+let dragSubId=null;
+let dragSubCatId=null;
+(function initSidebarSubDrag(){
+  const el=document.getElementById('sidebar-cats');
+  el.addEventListener('dragstart',e=>{
+    const n2=e.target.closest('[data-sub-id]');
+    if(!n2)return;
+    dragSubId=n2.dataset.subId;
+    dragSubCatId=n2.dataset.catId;
+    requestAnimationFrame(()=>n2.classList.add('dragging'));
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain',dragSubId);
+    e.stopPropagation();
+  });
+  el.addEventListener('dragend',()=>{
+    el.querySelectorAll('.n2').forEach(x=>x.classList.remove('dragging','drag-over'));
+    dragSubId=null;dragSubCatId=null;
+  });
+  el.addEventListener('dragover',e=>{
+    if(!dragSubId)return;
+    const n2=e.target.closest('[data-sub-id]');
+    if(!n2)return;
+    if(n2.dataset.catId!==dragSubCatId)return;
+    e.preventDefault();
+    el.querySelectorAll('.n2').forEach(x=>x.classList.remove('drag-over'));
+    if(n2.dataset.subId!==dragSubId)n2.classList.add('drag-over');
+    e.stopPropagation();
+  });
+  el.addEventListener('drop',e=>{
+    if(!dragSubId)return;
+    const n2=e.target.closest('[data-sub-id]');
+    el.querySelectorAll('.n2').forEach(x=>x.classList.remove('drag-over','dragging'));
+    if(!n2||n2.dataset.catId!==dragSubCatId||n2.dataset.subId===dragSubId){dragSubId=null;dragSubCatId=null;return;}
+    e.preventDefault();
+    const cat=getCat(dragSubCatId);
+    if(!cat||!cat.subcats){dragSubId=null;dragSubCatId=null;return;}
+    const fromIdx=cat.subcats.findIndex(s=>s.id===dragSubId);
+    let toIdx=cat.subcats.findIndex(s=>s.id===n2.dataset.subId);
+    if(fromIdx<0||toIdx<0){dragSubId=null;dragSubCatId=null;return;}
+    const [item]=cat.subcats.splice(fromIdx,1);
+    toIdx=cat.subcats.findIndex(s=>s.id===n2.dataset.subId);
+    cat.subcats.splice(fromIdx<toIdx+1?toIdx+1:toIdx,0,item);
+    scheduleSave();renderSidebar();
+    dragSubId=null;dragSubCatId=null;
+    e.stopPropagation();
+  });
+})();
+
+/* ── §12c · Fiches (grille) ─────────────────────────────────────── */
 let dragFicheId=null;
 (function initFicheDrag(){
   const content=document.getElementById('content');
