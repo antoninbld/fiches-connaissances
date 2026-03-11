@@ -62,11 +62,15 @@
   .cortex-graph{position:relative;background:radial-gradient(circle at 20% 10%,rgba(90,138,224,.12),transparent 40%),var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:520px}
   .cortex-svg{position:absolute;inset:0;width:100%;height:100%}
   .cortex-info{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+  .cortex-info-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .cortex-clear-btn{width:24px;height:24px;border-radius:50%;border:1px solid rgba(224,96,96,.45);background:rgba(224,96,96,.08);color:var(--red);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+  .cortex-clear-btn:hover{background:rgba(224,96,96,.2);border-color:var(--red)}
   .cortex-info h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--text)}
   .cortex-node-label{fill:var(--text);font-size:12px;pointer-events:none}
   .cortex-node{cursor:pointer;transition:filter .15s}
   .cortex-node:hover{filter:brightness(1.2)}
-  .cortex-node.active{stroke:var(--gold);stroke-width:2.5}
+  .cortex-node.active .cortex-node-circle{stroke:var(--gold);stroke-width:2.5}
+  .cortex-node.active .cortex-node-label{fill:#f0e7cc;font-weight:600}
   .cortex-link{stroke:rgba(90,184,224,.45);stroke-width:1.3}
   
   /* Level 1 */
@@ -721,6 +725,7 @@ function seedDefault(){db.categories.push({id:uid(),name:'Général',color:PALET
    §5 · NAVIGATION — état & routes
 ════════════════════════════════════════════════════════════════════ */
 let state={view:'home',catId:null,subcatId:null,themeId:null,search:''};
+let cortexSelectedId=null;
 let openCats=new Set(),openSubs=new Set();
 
 function expandSidebarByDefault(){
@@ -884,6 +889,7 @@ function renderHome(){
 }
 
 function renderCortex(){
+  cortexSelectedId=null;
   const nbLinks=db.fiches.reduce((n,f)=>n+(f.links||[]).length,0);
   document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="section-count">${db.fiches.length} fiche${db.fiches.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div></div>
   <div class="view-subtitle" style="margin-bottom:12px">Carte de liens entre fiches (inspirée de la vue graphe d'Obsidian).</div>
@@ -892,6 +898,32 @@ function renderCortex(){
     <div class="cortex-info" id="cortex-info"><div class="voir-aussi-label">Sélection</div><h3>Aucune fiche</h3><div class="view-subtitle">Clique sur un point pour voir ses détails et accéder à la fiche.</div></div>
   </div>`;
   requestAnimationFrame(drawCortexGraph);
+}
+
+function clearCortexSelection(){
+  cortexSelectedId=null;
+  document.querySelectorAll('.cortex-node.active').forEach(el=>el.classList.remove('active'));
+  const info=document.getElementById('cortex-info');
+  if(!info)return;
+  info.innerHTML='<div class="voir-aussi-label">Sélection</div><h3>Aucune fiche</h3><div class="view-subtitle">Clique sur un point pour voir ses détails et accéder à la fiche.</div>';
+}
+
+function showCortexSelection(fiche){
+  const info=document.getElementById('cortex-info');
+  if(!info||!fiche)return;
+  const related=(fiche.links||[]).map(l=>db.fiches.find(x=>x.id===l)).filter(Boolean);
+  info.innerHTML=`<div class="cortex-info-head"><div class="voir-aussi-label">Fiche sélectionnée</div><button class="cortex-clear-btn" onclick="clearCortexSelection()" title="Désélectionner" aria-label="Désélectionner">×</button></div><h3>${escH(fiche.title)}</h3><div class="view-subtitle">${buildPath(fiche)||'Sans catégorie'}</div><div class="view-subtitle">${related.length} lien${related.length!==1?'s':''}</div><div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-outline btn-sm" onclick="viewFiche('${fiche.id}')">👁 Voir</button><button class="btn btn-gold btn-sm" onclick="editFiche('${fiche.id}')">✏ Modifier</button></div>`;
+  if(related.length){
+    const label=document.createElement('div');label.className='voir-aussi-label';label.style.marginTop='6px';label.textContent='Reliée à';
+    const chips=document.createElement('div');chips.className='voir-aussi-chips';
+    related.forEach(r=>{
+      const chip=document.createElement('div');chip.className='voir-aussi-chip';
+      chip.innerHTML='<span class="voir-aussi-chip-dot" style="background:'+(getCat(r.catId)?.color||'#888')+'"></span><div style="min-width:0"><div class="voir-aussi-chip-text">'+escH(r.title)+'</div></div>';
+      chip.addEventListener('click',()=>viewFiche(r.id));
+      chips.appendChild(chip);
+    });
+    info.appendChild(label);info.appendChild(chips);
+  }
 }
 
 function drawCortexGraph(){
@@ -908,7 +940,7 @@ function drawCortexGraph(){
   let svg=`<svg class="cortex-svg" viewBox="0 0 ${width} ${height}">`;
   edges.forEach(e=>{const a=pos[e.source],b=pos[e.target];svg+=`<line class="cortex-link" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;});
   nodes.forEach(n=>{const p=pos[n.id],deg=edges.filter(e=>e.source===n.id||e.target===n.id).length;const r=Math.min(18,7+deg*1.1);
-    svg+=`<g class="cortex-node" data-node-id="${n.id}"><circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${n.color}" opacity="0.95"/><text class="cortex-node-label" x="${p.x+r+5}" y="${p.y+4}">${escH(n.label.slice(0,40))}</text></g>`;
+    svg+=`<g class="cortex-node" data-node-id="${n.id}"><circle class="cortex-node-circle" cx="${p.x}" cy="${p.y}" r="${r}" fill="${n.color}" opacity="0.95"/><text class="cortex-node-label" x="${p.x+r+5}" y="${p.y+4}">${escH(n.label.slice(0,40))}</text></g>`;
   });
   svg+='</svg>';
   graphEl.innerHTML=svg;
@@ -917,22 +949,10 @@ function drawCortexGraph(){
     nodeEls.forEach(x=>x.classList.remove('active'));
     el.classList.add('active');
     const id=el.getAttribute('data-node-id');
+    cortexSelectedId=id;
     const fiche=db.fiches.find(f=>f.id===id);
     if(!fiche)return;
-    const related=(fiche.links||[]).map(l=>db.fiches.find(x=>x.id===l)).filter(Boolean);
-    const info=document.getElementById('cortex-info');
-    info.innerHTML=`<div class="voir-aussi-label">Fiche sélectionnée</div><h3>${escH(fiche.title)}</h3><div class="view-subtitle">${buildPath(fiche)||'Sans catégorie'}</div><div class="view-subtitle">${related.length} lien${related.length!==1?'s':''}</div><div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-outline btn-sm" onclick="viewFiche('${fiche.id}')">👁 Voir</button><button class="btn btn-gold btn-sm" onclick="editFiche('${fiche.id}')">✏ Modifier</button></div>`;
-    if(related.length){
-      const label=document.createElement('div');label.className='voir-aussi-label';label.style.marginTop='6px';label.textContent='Reliée à';
-      const chips=document.createElement('div');chips.className='voir-aussi-chips';
-      related.forEach(r=>{
-        const chip=document.createElement('div');chip.className='voir-aussi-chip';
-        chip.innerHTML='<span class="voir-aussi-chip-dot" style="background:'+(getCat(r.catId)?.color||'#888')+'"></span><div style="min-width:0"><div class="voir-aussi-chip-text">'+escH(r.title)+'</div></div>';
-        chip.addEventListener('click',()=>viewFiche(r.id));
-        chips.appendChild(chip);
-      });
-      info.appendChild(label);info.appendChild(chips);
-    }
+    showCortexSelection(fiche);
   }));
 }
 
