@@ -996,10 +996,14 @@ function installCortexInteractions(){
   };
   graphEl.onclick=e=>{
     if(!cortexGraphState||Date.now()<cortexGraphState.blockClickUntil)return;
-    const nodeEl=e.target.closest('.cortex-node');
+    let nodeEl=e.target.closest('.cortex-node');
+    if(!nodeEl){
+      const hit=document.elementFromPoint(e.clientX,e.clientY);
+      nodeEl=hit?hit.closest('.cortex-node'):null;
+    }
     if(!nodeEl)return;
     const id=nodeEl.getAttribute('data-node-id');
-    if(!id)return;  
+    if(!id)return;
     cortexSelectedId=id;
     const fiche=db.fiches.find(f=>f.id===id);
     if(fiche)showCortexSelection(fiche);
