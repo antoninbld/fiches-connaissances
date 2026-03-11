@@ -1508,8 +1508,9 @@ let dragCatId=null;
 (function initSidebarDrag(){
   const el=document.getElementById('sidebar-cats');
   el.addEventListener('dragstart',e=>{
+    if(e.target.closest('.n2[data-sub-id]'))return;
     const n1=e.target.closest('.n1[data-cat-id]');
-    if(!n1){e.preventDefault();return;}
+    if(!n1)return;
     dragCatId=n1.dataset.catId;
     requestAnimationFrame(()=>n1.classList.add('dragging'));
     e.dataTransfer.effectAllowed='move';
