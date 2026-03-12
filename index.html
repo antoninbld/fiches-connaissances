@@ -954,11 +954,11 @@ function drawCortexGraph(){
   const edgeMap=new Map();
   db.fiches.forEach(f=>{(f.links||[]).forEach(to=>{if(!nodeIds.has(to)||to===f.id)return;const k=[f.id,to].sort().join('|');if(!edgeMap.has(k))edgeMap.set(k,{source:f.id,target:to});});});
   const edges=[...edgeMap.values()];
-  const pos=computeCortexLayout(nodes,edges,width,height);
   const nodeDeg={};
   nodes.forEach(n=>nodeDeg[n.id]=0);
   edges.forEach(e=>{nodeDeg[e.source]=(nodeDeg[e.source]||0)+1;nodeDeg[e.target]=(nodeDeg[e.target]||0)+1;});
   const maxDeg=nodes.reduce((m,n)=>Math.max(m,nodeDeg[n.id]||0),0);
+  const pos=computeCortexLayout(nodes,edges,width,height,nodeDeg,maxDeg);
   const depthRange=Math.max(width,height)*0.22;
   cortexGraphState={
     graphEl,width,height,nodes,edges,nodeDeg,maxDeg,
@@ -1074,6 +1074,8 @@ function renderCortexScene(){
     const strokeWidth=isHighlighted?2.2:1;
     svg+=`<line class="cortex-link" x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" style="opacity:${opacity.toFixed(3)};stroke:${stroke};stroke-width:${strokeWidth}"/>`;
   });
+  const placedLabels=[];
+  const denseGraph=s.nodes.length>45;
   nodesByDepth.forEach(n=>{
     const p=projected[n.id],deg=s.nodeDeg[n.id]||0;
     const ratio=s.maxDeg>0?Math.log1p(deg)/Math.log1p(s.maxDeg):0;
@@ -1085,31 +1087,102 @@ function renderCortexScene(){
     const nodeOpacity=isActive?1:(isHighlighted?0.98:0.2);
     const nodeRadius=isActive?r*1.2:r;
     const labelOpacity=isActive?1:(isHighlighted?Math.max(0.6,Math.min(1,p.scale*0.95)):0.22);
-    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}"><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${n.color}" opacity="${nodeOpacity.toFixed(2)}"/><text class="cortex-node-label" x="${(p.x+nodeRadius+5).toFixed(2)}" y="${(p.y+4).toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${escH(n.label.slice(0,40))}</text></g>`;
+    const labelText=escH(n.label.slice(0,40));
+    const shouldAttemptLabel=isActive||(!denseGraph&&labelOpacity>=0.52)||(denseGraph&&(deg>=2||isHighlighted)&&labelOpacity>=0.74);
+    let drawLabel=shouldAttemptLabel;
+    let labelX=(p.x+nodeRadius+5),labelY=(p.y+4);
+    if(drawLabel){
+      const labelW=Math.min(220,n.label.length*6.2);
+      const labelH=13;
+      const box={x:labelX,y:labelY-labelH,w:labelW,h:labelH+4};
+      const collides=placedLabels.some(b=>!(box.x+box.w<b.x||b.x+b.w<box.x||box.y+box.h<b.y||b.y+b.h<box.y));
+      if(collides&&!isActive)drawLabel=false;
+      else placedLabels.push(box);
+    }
+    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}"><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${n.color}" opacity="${nodeOpacity.toFixed(2)}"/>${drawLabel?`<text class="cortex-node-label" x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${labelText}</text>`:''}</g>`;
   });
   svg+='</svg>';
   const hud=s.graphEl.querySelector('.cortex-hud');
   s.graphEl.innerHTML=svg+(hud?hud.outerHTML:'');
 }
 
-function computeCortexLayout(nodes,edges,w,h){
+function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
   const out={};
   if(!nodes.length)return out;
-  const centerX=w/2,centerY=h/2;
-  nodes.forEach((n,i)=>{const a=(i/nodes.length)*Math.PI*2;out[n.id]={x:centerX+Math.cos(a)*Math.min(w,h)*0.28,y:centerY+Math.sin(a)*Math.min(w,h)*0.28};});
-  for(let k=0;k<220;k++){
-    const forces={};nodes.forEach(n=>forces[n.id]={x:0,y:0});
-    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
-      const a=out[nodes[i].id],b=out[nodes[j].id];
-      let dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||0.1,rep=1400/(d*d);
-      forces[nodes[i].id].x+=dx/d*rep;forces[nodes[i].id].y+=dy/d*rep;
-      forces[nodes[j].id].x-=dx/d*rep;forces[nodes[j].id].y-=dy/d*rep;
+  const centerX=w/2,centerY=h/2,nodeCount=nodes.length;
+  const minSize=Math.min(w,h);
+  const densityBoost=Math.min(1.25,Math.sqrt(nodeCount)/14);
+  const layoutRadius=minSize*(0.22+Math.min(0.23,densityBoost*0.15));
+  const goldenAngle=Math.PI*(3-Math.sqrt(5));
+
+  nodes.forEach((n,i)=>{
+    const deg=nodeDeg?.[n.id]||0;
+    const ratio=maxDeg>0?Math.log1p(deg)/Math.log1p(maxDeg):0;
+    const nodeR=7+ratio*11;
+    const radius=Math.sqrt((i+0.5)/nodeCount)*layoutRadius;
+    const angle=i*goldenAngle;
+    out[n.id]={x:centerX+Math.cos(angle)*radius,y:centerY+Math.sin(angle)*radius,r:nodeR};
+  });
+
+  const iterations=nodeCount>180?120:(nodeCount>90?170:230);
+  const edgeBaseLen=115+Math.min(75,Math.sqrt(nodeCount)*5.5);
+  const samplePairs=nodeCount>140?38:nodeCount;
+  const sampleStep=17;
+
+  for(let k=0;k<iterations;k++){
+    const cooling=1-k/iterations;
+    const forces={};
+    nodes.forEach(n=>forces[n.id]={x:0,y:0});
+
+    for(let i=0;i<nodeCount;i++){
+      const ni=nodes[i];
+      const pi=out[ni.id];
+      const maxSamples=nodeCount>140?samplePairs:(nodeCount-i-1);
+      for(let s=1;s<=maxSamples;s++){
+        const j=nodeCount>140?(i+s*sampleStep)%nodeCount:(i+s);
+        if(j<=i||j>=nodeCount)continue;
+        const nj=nodes[j];
+        const pj=out[nj.id];
+        let dx=pi.x-pj.x,dy=pi.y-pj.y;
+        let d=Math.hypot(dx,dy)||0.01;
+        const minDist=pi.r+pj.r+8;
+        if(d<minDist){
+          const push=(minDist-d)*0.23;
+          forces[ni.id].x+=(dx/d)*push;
+          forces[ni.id].y+=(dy/d)*push;
+          forces[nj.id].x-=(dx/d)*push;
+          forces[nj.id].y-=(dy/d)*push;
+        }
+        const rep=1300/(d*d);
+        forces[ni.id].x+=(dx/d)*rep;
+        forces[ni.id].y+=(dy/d)*rep;
+        forces[nj.id].x-=(dx/d)*rep;
+        forces[nj.id].y-=(dy/d)*rep;
+      }
     }
-    edges.forEach(e=>{const a=out[e.source],b=out[e.target];let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||0.1,attr=(d-130)*0.007;
-      forces[e.source].x+=dx*attr;forces[e.source].y+=dy*attr;
-      forces[e.target].x-=dx*attr;forces[e.target].y-=dy*attr;
+    
+    edges.forEach(e=>{
+      const a=out[e.source],b=out[e.target];
+      if(!a||!b)return;
+      let dx=b.x-a.x,dy=b.y-a.y;
+      const d=Math.hypot(dx,dy)||0.01;
+      const targetLen=edgeBaseLen+a.r+b.r;
+      const attr=(d-targetLen)*0.0058;
+      forces[e.source].x+=dx*attr;
+      forces[e.source].y+=dy*attr;
+      forces[e.target].x-=dx*attr;
+      forces[e.target].y-=dy*attr;
     });
-    nodes.forEach(n=>{const p=out[n.id],f=forces[n.id];p.x+=(f.x)*0.9;p.y+=(f.y)*0.9;p.x=Math.max(25,Math.min(w-25,p.x));p.y=Math.max(25,Math.min(h-25,p.y));});
+
+    nodes.forEach(n=>{
+      const p=out[n.id],f=forces[n.id];
+      const toCenterX=centerX-p.x,toCenterY=centerY-p.y;
+      p.x+=f.x*(0.8+cooling*0.6)+toCenterX*0.0018;
+      p.y+=f.y*(0.8+cooling*0.6)+toCenterY*0.0018;
+      const margin=Math.max(22,Math.ceil(p.r+6));
+      p.x=Math.max(margin,Math.min(w-margin,p.x));
+      p.y=Math.max(margin,Math.min(h-margin,p.y));
+    });
   }
   return out;
 }
