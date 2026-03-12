@@ -73,7 +73,7 @@
   .cortex-node:hover{filter:brightness(1.2)}
   .cortex-node.active .cortex-node-circle{stroke:var(--gold);stroke-width:2.5}
   .cortex-node.active .cortex-node-label{fill:#f0e7cc;font-weight:600}
-  .cortex-link{stroke:rgba(90,184,224,.45);stroke-width:1.3}
+  .cortex-link{fill:none;stroke:rgba(90,184,224,.45);stroke-width:1.3;stroke-linecap:round}
   
   /* Level 1 */
   .n1{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none}
@@ -1064,6 +1064,20 @@ function renderCortexScene(){
   const edgesByDepth=s.edges.slice().sort((a,b)=>((projected[a.source].z+projected[a.target].z)/2)-((projected[b.source].z+projected[b.target].z)/2));
   const nodesByDepth=s.nodes.slice().sort((a,b)=>projected[a.id].z-projected[b.id].z);
   let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}">`;
+  const computeOrganicEdgePath=(a,b,edgeKey)=>{
+    const dx=b.x-a.x,dy=b.y-a.y;
+    const len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len,ny=dx/len;
+    const hashSeed=edgeKey.split('').reduce((acc,ch)=>acc+ch.charCodeAt(0),0);
+    const bendDirection=(hashSeed%2===0?1:-1);
+    const bendAmplitude=Math.min(40,Math.max(8,len*0.12))*bendDirection;
+    const spreadOffset=((hashSeed%7)-3)*1.8;
+    const c1x=a.x+dx*0.30+nx*(bendAmplitude+spreadOffset);
+    const c1y=a.y+dy*0.30+ny*(bendAmplitude+spreadOffset);
+    const c2x=a.x+dx*0.72+nx*((bendAmplitude*0.4)-spreadOffset);
+    const c2y=a.y+dy*0.72+ny*((bendAmplitude*0.4)-spreadOffset);
+    return `M ${a.x.toFixed(2)} ${a.y.toFixed(2)} C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${b.x.toFixed(2)} ${b.y.toFixed(2)}`;
+  };
   edgesByDepth.forEach(e=>{
     const a=projected[e.source],b=projected[e.target];
     const edgeKey=[e.source,e.target].sort().join('|');
@@ -1072,7 +1086,8 @@ function renderCortexScene(){
     const opacity=isHighlighted?Math.max(baseOpacity,0.72):Math.min(baseOpacity,0.1);
     const stroke=isHighlighted?'rgba(120,210,255,0.9)':'rgba(90,184,224,0.16)';
     const strokeWidth=isHighlighted?2.2:1;
-    svg+=`<line class="cortex-link" x1="${a.x.toFixed(2)}" y1="${a.y.toFixed(2)}" x2="${b.x.toFixed(2)}" y2="${b.y.toFixed(2)}" style="opacity:${opacity.toFixed(3)};stroke:${stroke};stroke-width:${strokeWidth}"/>`;
+    const organicPath=computeOrganicEdgePath(a,b,edgeKey);
+    svg+=`<path class="cortex-link" d="${organicPath}" style="opacity:${opacity.toFixed(3)};stroke:${stroke};stroke-width:${strokeWidth}"/>`;
   });
   const placedLabels=[];
   const denseGraph=s.nodes.length>45;
