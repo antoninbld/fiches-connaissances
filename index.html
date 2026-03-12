@@ -1124,6 +1124,14 @@ function renderCortexScene(){
 function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
   const out={};
   if(!nodes.length)return out;
+  const hashSeed=(str,salt=0)=>{
+    let h=2166136261^salt;
+    for(let i=0;i<str.length;i++){
+      h^=str.charCodeAt(i);
+      h=Math.imul(h,16777619);
+    }
+    return h>>>0;
+  };
   const centerX=w/2,centerY=h/2,nodeCount=nodes.length;
   const minSize=Math.min(w,h);
   const avgSpacing=Math.sqrt((w*h)/Math.max(1,nodeCount));
@@ -1133,14 +1141,29 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
   const minGap=Math.max(10,Math.min(26,avgSpacing*0.15));
   const borderPadding=Math.max(28,Math.min(80,avgSpacing*0.45));
   const goldenAngle=Math.PI*(3-Math.sqrt(5));
+  const jitterAmplitude=Math.max(8,Math.min(52,avgSpacing*0.52));
 
-  nodes.forEach((n,i)=>{
+  const orderedNodes=nodes.slice().sort((a,b)=>{
+    const da=nodeDeg?.[a.id]||0,db=nodeDeg?.[b.id]||0;
+    if(db!==da)return db-da;
+    const ha=hashSeed(a.id,19),hb=hashSeed(b.id,19);
+    return ha-hb;
+  });
+  
+  orderedNodes.forEach((n,i)=>{
     const deg=nodeDeg?.[n.id]||0;
     const ratio=maxDeg>0?Math.log1p(deg)/Math.log1p(maxDeg):0;
     const nodeR=7+ratio*11;
-    const radius=Math.sqrt((i+0.5)/nodeCount)*layoutRadius;
-    const angle=i*goldenAngle;
-    out[n.id]={x:centerX+Math.cos(angle)*radius,y:centerY+Math.sin(angle)*radius,r:nodeR};
+    const ringRatio=Math.sqrt((i+0.5)/nodeCount);
+    const radius=ringRatio*layoutRadius;
+    const angle=i*goldenAngle+seededUnit(n.id,37)*0.95;
+    const radialJitter=(seededUnit(n.id,71)-0.5)*(jitterAmplitude*(0.35+0.65*ringRatio));
+    const tangentJitter=(seededUnit(n.id,113)-0.5)*jitterAmplitude;
+    const baseX=centerX+Math.cos(angle)*(radius+radialJitter);
+    const baseY=centerY+Math.sin(angle)*(radius+radialJitter);
+    const tangentX=-Math.sin(angle)*tangentJitter;
+    const tangentY=Math.cos(angle)*tangentJitter;
+    out[n.id]={x:baseX+tangentX,y:baseY+tangentY,r:nodeR};
   });
 
   const iterations=nodeCount>180?120:(nodeCount>90?170:230);
@@ -1148,6 +1171,7 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
   const samplePairs=nodeCount>140?38:nodeCount;
   const sampleStep=17;
   const repulsionBase=Math.max(1750,Math.min(7600,(avgSpacing*avgSpacing)*0.9));
+  const microNoise=Math.max(0.05,Math.min(1.35,avgSpacing*0.014));
 
   for(let k=0;k<iterations;k++){
     const cooling=1-k/iterations;
@@ -1197,8 +1221,11 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
     nodes.forEach(n=>{
       const p=out[n.id],f=forces[n.id];
       const toCenterX=centerX-p.x,toCenterY=centerY-p.y;
-      p.x+=f.x*(0.62+cooling*0.48)+toCenterX*0.0012;
-      p.y+=f.y*(0.62+cooling*0.48)+toCenterY*0.0012;
+      const wobble=(cooling*cooling)*microNoise;
+      const noiseX=(seededUnit(`${n.id}:${k}`,149)-0.5)*wobble;
+      const noiseY=(seededUnit(`${n.id}:${k}`,173)-0.5)*wobble;
+      p.x+=f.x*(0.62+cooling*0.48)+toCenterX*0.0012+noiseX;
+      p.y+=f.y*(0.62+cooling*0.48)+toCenterY*0.0012+noiseY;
       const margin=Math.max(borderPadding,Math.ceil(p.r+minGap));
       p.x=Math.max(margin,Math.min(w-margin,p.x));
       p.y=Math.max(margin,Math.min(h-margin,p.y));
