@@ -729,6 +729,7 @@ function seedDefault(){db.categories.push({id:uid(),name:'Général',color:PALET
 let state={view:'home',catId:null,subcatId:null,themeId:null,search:''};
 let cortexSelectedId=null;
 let cortexGraphState=null;
+let cortexSizeStrength=0.55;
 let openCats=new Set(),openSubs=new Set();
 
 function expandSidebarByDefault(){
@@ -896,6 +897,12 @@ function renderCortex(){
   const nbLinks=db.fiches.reduce((n,f)=>n+(f.links||[]).length,0);
   document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="section-count">${db.fiches.length} fiche${db.fiches.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div></div>
   <div class="view-subtitle" style="margin-bottom:12px">Carte de liens entre fiches (inspirée de la vue graphe d'Obsidian).</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)">
+    <label for="cortex-size-strength" class="voir-aussi-label" style="margin:0">Taille selon liens</label>
+    <input id="cortex-size-strength" type="range" min="0" max="100" step="1" value="${Math.round(cortexSizeStrength*100)}" oninput="setCortexSizeStrength(this.value)">
+    <span id="cortex-size-strength-val" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)">${Math.round(cortexSizeStrength*100)}%</span>
+    <span class="view-subtitle" style="margin:0">Plus une fiche est reliée, plus son cercle grandit.</span>
+  </div>
   <div class="cortex-layout">
     <div class="cortex-graph" id="cortex-graph"><div class="cortex-hud">Glisser: orbite 3D · Shift+glisser: déplacer · Molette: zoom</div></div>
     <div class="cortex-info" id="cortex-info"><div class="voir-aussi-label">Sélection</div><h3>Aucune fiche</h3><div class="view-subtitle">Clique sur un point pour voir ses détails et accéder à la fiche.</div></div>
@@ -903,6 +910,15 @@ function renderCortex(){
   requestAnimationFrame(drawCortexGraph);
 }
 
+function setCortexSizeStrength(raw){
+  const num=Number(raw);
+  if(!Number.isFinite(num))return;
+  cortexSizeStrength=Math.max(0,Math.min(1,num/100));
+  const valEl=document.getElementById('cortex-size-strength-val');
+  if(valEl)valEl.textContent=`${Math.round(cortexSizeStrength*100)}%`;
+  if(state.view==='cortex'&&cortexGraphState)renderCortexScene();
+}
+  
 function clearCortexSelection(){
   cortexSelectedId=null;
   document.querySelectorAll('.cortex-node.active').forEach(el=>el.classList.remove('active'));
@@ -942,9 +958,10 @@ function drawCortexGraph(){
   const nodeDeg={};
   nodes.forEach(n=>nodeDeg[n.id]=0);
   edges.forEach(e=>{nodeDeg[e.source]=(nodeDeg[e.source]||0)+1;nodeDeg[e.target]=(nodeDeg[e.target]||0)+1;});
+  const maxDeg=nodes.reduce((m,n)=>Math.max(m,nodeDeg[n.id]||0),0);
   const depthRange=Math.max(width,height)*0.22;
   cortexGraphState={
-    graphEl,width,height,nodes,edges,nodeDeg,
+    graphEl,width,height,nodes,edges,nodeDeg,maxDeg,
     nodes3d:nodes.map((n,i)=>{const hash=[...n.id].reduce((a,c)=>a+c.charCodeAt(0),0);return{id:n.id,x:pos[n.id].x-width/2,y:pos[n.id].y-height/2,z:(((hash+i*17)%1000)/1000-0.5)*depthRange};}),
     orbitX:-0.25,orbitY:0.45,panX:0,panY:0,zoom:1,perspective:900,isDragging:false,dragMoved:false,lastX:0,lastY:0,blockClickUntil:0
   };
@@ -1059,7 +1076,10 @@ function renderCortexScene(){
   });
   nodesByDepth.forEach(n=>{
     const p=projected[n.id],deg=s.nodeDeg[n.id]||0;
-    const baseR=Math.min(18,7+deg*1.1),r=Math.max(4,Math.min(24,baseR*p.scale));
+    const ratio=s.maxDeg>0?Math.log1p(deg)/Math.log1p(s.maxDeg):0;
+    const easedRatio=Math.pow(ratio,0.72);
+    const baseR=6+((1-cortexSizeStrength)*4)+(cortexSizeStrength*(4+easedRatio*16));
+    const r=Math.max(4.5,Math.min(30,baseR*p.scale));
     const isActive=selectedId===n.id;
     const isHighlighted=!selectedId||highlightedNodes.has(n.id);
     const nodeOpacity=isActive?1:(isHighlighted?0.98:0.2);
