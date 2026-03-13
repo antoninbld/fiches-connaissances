@@ -1147,7 +1147,7 @@ function renderCortexScene(){
 
   const edgesByDepth=s.edges.slice().sort((a,b)=>((projected[a.source].z+projected[a.target].z)/2)-((projected[b.source].z+projected[b.target].z)/2));
   const nodesByDepth=s.nodes.slice().sort((a,b)=>projected[a.id].z-projected[b.id].z);
-  let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}"><defs><radialGradient id="cortex-depth-glow" cx="50%" cy="45%" r="58%"><stop offset="0%" stop-color="rgba(111,176,255,0.12)"/><stop offset="55%" stop-color="rgba(72,111,196,0.06)"/><stop offset="100%" stop-color="rgba(10,14,24,0.02)"/></radialGradient><filter id="cortex-soft-shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter><radialGradient id="cortex-focus-overlay" cx="50%" cy="50%" r="70%"><stop offset="0%" stop-color="rgba(12,18,34,0)"/><stop offset="100%" stop-color="rgba(8,10,18,0.36)"/></radialGradient></defs><ellipse cx="${(s.width/2).toFixed(1)}" cy="${(s.height/2).toFixed(1)}" rx="${(s.width*0.43).toFixed(1)}" ry="${(s.height*0.37).toFixed(1)}" fill="url(#cortex-depth-glow)" opacity="0.8"/>`;
+  let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}"><defs><radialGradient id="cortex-depth-glow" cx="50%" cy="45%" r="58%"><stop offset="0%" stop-color="rgba(111,176,255,0.12)"/><stop offset="55%" stop-color="rgba(72,111,196,0.06)"/><stop offset="100%" stop-color="rgba(10,14,24,0.02)"/></radialGradient><filter id="cortex-soft-shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter><radialGradient id="cortex-focus-overlay" cx="50%" cy="50%" r="70%"><stop offset="0%" stop-color="rgba(12,18,34,0)"/><stop offset="100%" stop-color="rgba(8,10,18,0.36)"/></radialGradient><filter id="cortex-active-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4.8"/></filter></defs><ellipse cx="${(s.width/2).toFixed(1)}" cy="${(s.height/2).toFixed(1)}" rx="${(s.width*0.43).toFixed(1)}" ry="${(s.height*0.37).toFixed(1)}" fill="url(#cortex-depth-glow)" opacity="0.8"/>`;
   const hashEdgeSeed=(str,salt=0)=>{
     let h=2166136261^salt;
     for(let i=0;i<str.length;i++){
@@ -1157,6 +1157,23 @@ function renderCortexScene(){
     return h>>>0;
   };
   const seededEdgeUnit=(str,salt=0)=>hashEdgeSeed(str,salt)/4294967295;
+  const hexToRgb=(hex)=>{
+    if(!hex)return [201,168,76];
+    const h=hex.trim();
+    const short=/^#([\da-f]{3})$/i.exec(h);
+    if(short)return short[1].split('').map(v=>parseInt(v+v,16));
+    const long=/^#([\da-f]{6})$/i.exec(h);
+    if(long)return [long[1].slice(0,2),long[1].slice(2,4),long[1].slice(4,6)].map(v=>parseInt(v,16));
+    return [201,168,76];
+  };
+  const activeColor=(hex)=>{
+    const [r,g,b]=hexToRgb(hex);
+    return [
+      Math.min(255,Math.round(r*1.16+22)),
+      Math.min(255,Math.round(g*1.14+20)),
+      Math.min(255,Math.round(b*1.1+16))
+    ];
+  };
   const computeOrganicEdgePath=(a,b,edgeKey)=>{
     const dx=b.x-a.x,dy=b.y-a.y;
     const len=Math.hypot(dx,dy)||1;
@@ -1198,8 +1215,8 @@ function renderCortexScene(){
     const r=Math.max(4.5,Math.min(30,baseR*p.scale));
     const isActive=selectedId===n.id;
     const isHighlighted=!selectedId||highlightedNodes.has(n.id);
-    const nodeOpacity=isActive?1:(isHighlighted?0.96:0.22);
-    const nodeRadius=isActive?r*1.28:(isHighlighted?r*1.08:r);
+    const nodeOpacity=isActive?1:(isHighlighted?0.96:0.17);
+    const nodeRadius=isActive?r*1.34:(isHighlighted?r*1.08:r);
     const haze=Math.max(0.3,Math.min(1.15,(p.scale-0.35)/1.65));
     const labelOpacity=isActive?1:(isHighlighted?Math.max(0.6,Math.min(1,p.scale*0.95)):0.22);
     const labelText=escH(n.label.slice(0,40));
@@ -1216,7 +1233,12 @@ function renderCortexScene(){
     }
     const shadowDx=(p.z/180)*6;
     const shadowDy=6+(p.z/260)*5;
-    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}"><ellipse cx="${(p.x+shadowDx).toFixed(2)}" cy="${(p.y+shadowDy).toFixed(2)}" rx="${(nodeRadius*0.92).toFixed(2)}" ry="${(nodeRadius*0.5).toFixed(2)}" fill="rgba(0,0,0,0.22)" opacity="${(nodeOpacity*0.45*haze).toFixed(2)}" filter="url(#cortex-soft-shadow)"/><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${n.color}" opacity="${(nodeOpacity*haze).toFixed(2)}"/>${drawLabel?`<text class="cortex-node-label" x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${labelText}</text>`:''}</g>`;
+    const [activeR,activeG,activeB]=activeColor(n.color);
+    const nodeFill=isActive?`rgb(${activeR},${activeG},${activeB})`:n.color;
+    const activeHaloOuter=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*2.1).toFixed(2)}" fill="rgba(${activeR},${activeG},${activeB},${(0.14*haze).toFixed(3)})" filter="url(#cortex-active-glow)"/>`:'';
+    const activeHaloInner=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*1.48).toFixed(2)}" fill="rgba(${activeR},${activeG},${activeB},${(0.22*haze).toFixed(3)})"/>`:'';
+    const activeCore=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*0.58).toFixed(2)}" fill="rgba(255,245,222,0.36)"/>`:'';
+    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}">${activeHaloOuter}${activeHaloInner}<ellipse cx="${(p.x+shadowDx).toFixed(2)}" cy="${(p.y+shadowDy).toFixed(2)}" rx="${(nodeRadius*0.92).toFixed(2)}" ry="${(nodeRadius*0.5).toFixed(2)}" fill="rgba(0,0,0,0.22)" opacity="${(nodeOpacity*0.45*haze).toFixed(2)}" filter="url(#cortex-soft-shadow)"/><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${nodeFill}" opacity="${(nodeOpacity*haze).toFixed(2)}"/>${activeCore}${drawLabel?`<text class="cortex-node-label" x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${labelText}</text>`:''}</g>`;
   });
   if(selectedId&&projected[selectedId]){
     const c=projected[selectedId];
