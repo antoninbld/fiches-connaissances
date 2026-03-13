@@ -274,12 +274,9 @@
   #viewer-links{padding:14px 22px 18px;border-top:1px solid var(--border);background:var(--surface);display:none;flex-shrink:0;max-height:160px;overflow-y:auto}
   .voir-aussi-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px}
   .voir-aussi-chips{display:flex;flex-wrap:wrap;gap:8px}
-  .voir-aussi-chips-compact{display:flex;flex-direction:column;gap:6px;min-width:0}
-  .voir-aussi-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .18s;max-width:280px;min-width:0}
-  .voir-aussi-chips-compact .voir-aussi-chip{max-width:100%;width:100%}
+  .voir-aussi-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .18s;max-width:280px}
   .voir-aussi-chip:hover{border-color:var(--gold-dim)}
   .voir-aussi-chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-  .voir-aussi-chip-main{min-width:0;flex:1;overflow:hidden}
   .voir-aussi-chip-text{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .voir-aussi-chip-path{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
@@ -985,14 +982,14 @@ function clearCortexSelection(){
 function showCortexSelection(fiche){
   const info=document.getElementById('cortex-info');
   if(!info||!fiche)return;
-  const related=getRelatedFiches(fiche);
+  const related=(fiche.links||[]).map(l=>db.fiches.find(x=>x.id===l)).filter(Boolean);
   info.innerHTML=`<div class="cortex-info-head"><div class="voir-aussi-label">Fiche sélectionnée</div><button class="cortex-clear-btn" onclick="clearCortexSelection()" title="Désélectionner" aria-label="Désélectionner">×</button></div><h3>${escH(fiche.title)}</h3><div class="view-subtitle">${buildPath(fiche)||'Sans catégorie'}</div><div class="view-subtitle">${related.length} lien${related.length!==1?'s':''}</div><div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-outline btn-sm" onclick="viewFiche('${fiche.id}')">👁 Voir</button><button class="btn btn-gold btn-sm" onclick="editFiche('${fiche.id}')">✏ Modifier</button></div>`;
   if(related.length){
     const label=document.createElement('div');label.className='voir-aussi-label';label.style.marginTop='6px';label.textContent='Reliée à';
     const chips=document.createElement('div');chips.className='voir-aussi-chips';
     related.forEach(r=>{
       const chip=document.createElement('div');chip.className='voir-aussi-chip';
-      chip.innerHTML='<span class="voir-aussi-chip-dot" style="background:'+(getCat(r.catId)?.color||'#888')+'"></span><div class="voir-aussi-chip-main"><div class="voir-aussi-chip-text" title="'+escA(r.title)+'">'+escH(r.title)+'</div></div>';
+      chip.innerHTML='<span class="voir-aussi-chip-dot" style="background:'+(getCat(r.catId)?.color||'#888')+'"></span><div style="min-width:0"><div class="voir-aussi-chip-text">'+escH(r.title)+'</div></div>';
       chip.addEventListener('click',()=>viewFiche(r.id));
       chips.appendChild(chip);
     });
@@ -1000,44 +997,14 @@ function showCortexSelection(fiche){
   }
 }
 
-function getFicheLinkIds(fiche){
-  if(!fiche)return[];
-  const rawLinks=fiche.links??fiche.related??fiche.relatedIds??fiche.voirAussi??[];
-  if(!Array.isArray(rawLinks))return[];
-  return rawLinks.map(id=>String(id)).filter(Boolean);
-}
-
-function getRelatedFiches(fiche){
-  if(!fiche)return[];
-  const currentId=String(fiche.id);
-  const relatedById=new Map();
-  getFicheLinkIds(fiche).forEach(linkId=>{
-    const linked=db.fiches.find(x=>String(x.id)===String(linkId));
-    if(linked&&String(linked.id)!==currentId)relatedById.set(String(linked.id),linked);
-  });
-  db.fiches.forEach(candidate=>{
-    if(String(candidate.id)===currentId)return;
-    if(getFicheLinkIds(candidate).some(linkId=>String(linkId)===currentId))relatedById.set(String(candidate.id),candidate);
-  });
-  return Array.from(relatedById.values());
-}
-
 function drawCortexGraph(){
   const graphEl=document.getElementById('cortex-graph');
   if(!graphEl)return;
   const width=Math.max(graphEl.clientWidth,680),height=Math.max(graphEl.clientHeight,520);
-  const nodes=db.fiches.map(f=>({id:String(f.id),label:f.title,color:getCat(f.catId)?.color||'#888',ref:f}));
+  const nodes=db.fiches.map(f=>({id:f.id,label:f.title,color:getCat(f.catId)?.color||'#888',ref:f}));
   const nodeIds=new Set(nodes.map(n=>n.id));
   const edgeMap=new Map();
-  db.fiches.forEach(f=>{
-    const fromId=String(f.id);
-    getFicheLinkIds(f).forEach(to=>{
-      const toId=String(to);
-      if(!nodeIds.has(toId)||toId===fromId)return;
-      const k=[fromId,toId].sort().join('|');
-      if(!edgeMap.has(k))edgeMap.set(k,{source:fromId,target:toId});
-    });
-  });
+  db.fiches.forEach(f=>{(f.links||[]).forEach(to=>{if(!nodeIds.has(to)||to===f.id)return;const k=[f.id,to].sort().join('|');if(!edgeMap.has(k))edgeMap.set(k,{source:f.id,target:to});});});
   const edges=[...edgeMap.values()];
   const nodeDeg={};
   nodes.forEach(n=>nodeDeg[n.id]=0);
@@ -1072,19 +1039,6 @@ function drawCortexGraph(){
 function installCortexInteractions(){
   if(!cortexGraphState)return;
   const {graphEl}=cortexGraphState;
-  const extractNodeId=(evt)=>{
-    const path=typeof evt.composedPath==='function'?evt.composedPath():[];
-    for(const el of path){
-      if(el?.dataset?.nodeId)return String(el.dataset.nodeId);
-    }
-    let cur=evt.target;
-    while(cur){
-      if(cur?.dataset?.nodeId)return String(cur.dataset.nodeId);
-      cur=cur.parentNode;
-    }
-    const hit=document.elementFromPoint(evt.clientX,evt.clientY);
-    return hit?.closest?.('.cortex-node')?.getAttribute?.('data-node-id')||null;
-  };
   graphEl.onpointerdown=e=>{
     if(e.button!==0)return;
     cortexGraphState.isDragging=true;
@@ -1100,7 +1054,7 @@ function installCortexInteractions(){
     const dx=e.clientX-cortexGraphState.lastX,dy=e.clientY-cortexGraphState.lastY;
     cortexGraphState.lastX=e.clientX;
     cortexGraphState.lastY=e.clientY;
-    if(Math.abs(dx)+Math.abs(dy)>4)cortexGraphState.dragMoved=true;
+    if(Math.abs(dx)+Math.abs(dy)>1)cortexGraphState.dragMoved=true;
     stopCortexFocusAnimation();
     if(cortexGraphState.dragMode==='pan'){
       cortexGraphState.panX+=dx;
@@ -1114,7 +1068,7 @@ function installCortexInteractions(){
   };
   graphEl.onpointerup=e=>{
     if(!cortexGraphState)return;
-    if(cortexGraphState.dragMoved)cortexGraphState.blockClickUntil=Date.now()+120;
+    if(cortexGraphState.dragMoved)cortexGraphState.blockClickUntil=Date.now()+160;
     cortexGraphState.isDragging=false;
     graphEl.classList.remove('is-dragging');
     try{graphEl.releasePointerCapture(e.pointerId);}catch(_e){}
@@ -1129,18 +1083,24 @@ function installCortexInteractions(){
   };
   graphEl.onclick=e=>{
     if(!cortexGraphState||Date.now()<cortexGraphState.blockClickUntil)return;
-    const id=extractNodeId(e);
-    if(!id){
+    let nodeEl=e.target.closest('.cortex-node');
+    if(!nodeEl){
+      const hit=document.elementFromPoint(e.clientX,e.clientY);
+      nodeEl=hit?hit.closest('.cortex-node'):null;
+    }
+    if(!nodeEl){
       clearCortexSelection();
       renderCortexScene();
       return;
     }
-    if(String(cortexSelectedId)===String(id)){
+    const id=nodeEl.getAttribute('data-node-id');
+    if(!id)return;
+    if(cortexSelectedId===id){
       clearCortexSelection();
       return;
     }
-    cortexSelectedId=String(id);
-    const fiche=db.fiches.find(f=>String(f.id)===String(id));
+    cortexSelectedId=id;
+    const fiche=db.fiches.find(f=>f.id===id);
     if(fiche)showCortexSelection(fiche);
     renderCortexScene();
     focusCortexOnNode(id);
