@@ -47,12 +47,6 @@
       "subcats": []
     },
     {
-      "id": "mmp3nq09odp9",
-      "name": "Géographie",
-      "color": "#9a6edf",
-      "subcats": []
-    },
-    {
       "id": "mmp43k4rq4nq",
       "name": "Matières premières",
       "color": "#4ab8c0",
@@ -62,6 +56,12 @@
       "id": "mmp450cs2ys7",
       "name": "Infrastructures",
       "color": "#c9a84c",
+      "subcats": []
+    },
+    {
+      "id": "mmp3nq09odp9",
+      "name": "Géographie",
+      "color": "#9a6edf",
       "subcats": []
     }
   ],
