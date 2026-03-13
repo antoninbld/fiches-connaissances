@@ -1132,6 +1132,7 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
     }
     return h>>>0;
   };
+  const seededUnit=(str,salt=0)=>hashSeed(str,salt)/4294967295;
   const centerX=w/2,centerY=h/2,nodeCount=nodes.length;
   const minSize=Math.min(w,h);
   const avgSpacing=Math.sqrt((w*h)/Math.max(1,nodeCount));
