@@ -989,7 +989,7 @@ function showCortexSelection(fiche){
   info.innerHTML=`<div class="cortex-info-head"><div class="voir-aussi-label">Fiche sélectionnée</div><button class="cortex-clear-btn" onclick="clearCortexSelection()" title="Désélectionner" aria-label="Désélectionner">×</button></div><h3>${escH(fiche.title)}</h3><div class="view-subtitle">${buildPath(fiche)||'Sans catégorie'}</div><div class="view-subtitle">${related.length} lien${related.length!==1?'s':''}</div><div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-outline btn-sm" onclick="viewFiche('${fiche.id}')">👁 Voir</button><button class="btn btn-gold btn-sm" onclick="editFiche('${fiche.id}')">✏ Modifier</button></div>`;
   if(related.length){
     const label=document.createElement('div');label.className='voir-aussi-label';label.style.marginTop='6px';label.textContent='Reliée à';
-    const chips=document.createElement('div');chips.className='voir-aussi-chips voir-aussi-chips-compact';
+    const chips=document.createElement('div');chips.className='voir-aussi-chips';
     related.forEach(r=>{
       const chip=document.createElement('div');chip.className='voir-aussi-chip';
       chip.innerHTML='<span class="voir-aussi-chip-dot" style="background:'+(getCat(r.catId)?.color||'#888')+'"></span><div class="voir-aussi-chip-main"><div class="voir-aussi-chip-text" title="'+escA(r.title)+'">'+escH(r.title)+'</div></div>';
