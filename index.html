@@ -58,7 +58,13 @@
   .nav-home:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border2)}
   .nav-home.active{background:var(--gold-glow);color:var(--gold);border-left-color:var(--gold)}
 
-  .cortex-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px;align-items:stretch;min-height:66vh}
+  .cortex-layout{display:flex;align-items:stretch;min-height:66vh;gap:0}
+  .cortex-graph{position:relative;background:radial-gradient(circle at 20% 10%,rgba(90,138,224,.12),transparent 40%),var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:520px}
+  .cortex-map-wrap{flex:1 1 auto;min-width:0;padding-right:10px}
+  .cortex-resizer{width:10px;position:relative;cursor:col-resize;flex-shrink:0;touch-action:none}
+  .cortex-resizer::before{content:'';position:absolute;top:18px;bottom:18px;left:50%;width:1px;background:var(--border2);opacity:.75;transform:translateX(-50%);transition:all .18s ease}
+  .cortex-resizer:hover::before,.cortex-layout.is-resizing .cortex-resizer::before{width:2px;background:var(--gold-dim);opacity:1;box-shadow:0 0 10px rgba(201,168,76,.22)}
+  .cortex-info{width:var(--cortex-panel-width,320px);min-width:0}
   .cortex-graph{position:relative;background:radial-gradient(circle at 20% 10%,rgba(90,138,224,.12),transparent 40%),var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:520px}
   .cortex-graph.is-dragging{cursor:grabbing}
   .cortex-svg{position:absolute;inset:0;width:100%;height:100%}
@@ -297,7 +303,10 @@
   @media (max-width: 980px){
     #sidebar{width:240px;min-width:240px}
     #main{padding:24px 20px}
-      .cortex-layout{grid-template-columns:1fr}
+    .cortex-layout{display:grid;grid-template-columns:1fr}
+    .cortex-map-wrap{padding-right:0}
+    .cortex-resizer{display:none}
+    .cortex-info{width:auto}
   }
 
   @media (max-width: 760px){
@@ -731,9 +740,14 @@ let cortexSelectedId=null;
 let cortexGraphState=null;
 let cortexSizeStrength=0.55;
 let cortexFocusAnimFrame=null;
+let cortexPanelWidth=320;
+let isCortexResizing=false;
+let cortexResizerResizeBound=false;
 let openCats=new Set(),openSubs=new Set();
 
 const CORTEX_VIEW_DEFAULTS={panX:0,panY:0,zoom:1};
+const CORTEX_PANEL_MIN_WIDTH=260;
+const CORTEX_PANEL_MAX_WIDTH=560;
 
 function expandSidebarByDefault(){
   openCats=new Set(db.categories.map(c=>c.id));
@@ -906,11 +920,80 @@ function renderCortex(){
     <span id="cortex-size-strength-val" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)">${Math.round(cortexSizeStrength*100)}%</span>
     <span class="view-subtitle" style="margin:0">Plus une fiche est reliée, plus son cercle grandit.</span>
   </div>
-  <div class="cortex-layout">
-    <div class="cortex-graph" id="cortex-graph"><div class="cortex-hud">Glisser: orbite 3D · Shift+glisser: déplacer · Molette: zoom</div></div>
+  <div class="cortex-layout" id="cortex-layout">
+    <div class="cortex-map-wrap">
+      <div class="cortex-graph" id="cortex-graph"><div class="cortex-hud">Glisser: orbite 3D · Shift+glisser: déplacer · Molette: zoom</div></div>
+    </div>
+    <div class="cortex-resizer" id="cortex-resizer" role="separator" aria-label="Redimensionner le panneau de fiche" aria-orientation="vertical" tabindex="0"></div>
     <div class="cortex-info" id="cortex-info"><div class="voir-aussi-label">Sélection</div><h3>Aucune fiche</h3><div class="view-subtitle">Clique sur un point pour voir ses détails et accéder à la fiche.</div></div>
   </div>`;
+  applyCortexPanelWidth();
+  installCortexResizer();
   requestAnimationFrame(drawCortexGraph);
+}
+
+function getCortexPanelBounds(){
+  const main=document.getElementById('main');
+  const total=main?main.clientWidth:1200;
+  const maxByLayout=Math.max(CORTEX_PANEL_MIN_WIDTH,total-420);
+  return{min:CORTEX_PANEL_MIN_WIDTH,max:Math.min(CORTEX_PANEL_MAX_WIDTH,maxByLayout)};
+}
+
+function applyCortexPanelWidth(){
+  const layout=document.getElementById('cortex-layout');
+  const info=document.getElementById('cortex-info');
+  if(!layout||!info)return;
+  if(window.matchMedia('(max-width: 980px)').matches){
+    layout.classList.remove('is-resizing');
+    info.style.width='';
+    return;
+  }
+  const bounds=getCortexPanelBounds();
+  cortexPanelWidth=Math.max(bounds.min,Math.min(bounds.max,cortexPanelWidth));
+  info.style.width=`${Math.round(cortexPanelWidth)}px`;
+}
+
+function setCortexPanelWidthFromClientX(clientX){
+  const layout=document.getElementById('cortex-layout');
+  if(!layout)return;
+  const rect=layout.getBoundingClientRect();
+  const next=rect.right-clientX;
+  const bounds=getCortexPanelBounds();
+  cortexPanelWidth=Math.max(bounds.min,Math.min(bounds.max,next));
+  applyCortexPanelWidth();
+  if(cortexGraphState&&state.view==='cortex')renderCortexScene();
+}
+
+function installCortexResizer(){
+  const layout=document.getElementById('cortex-layout');
+  const resizer=document.getElementById('cortex-resizer');
+  if(!layout||!resizer)return;
+  const onMove=e=>{if(isCortexResizing)setCortexPanelWidthFromClientX(e.clientX);};
+  const stop=()=>{if(!isCortexResizing)return;isCortexResizing=false;layout.classList.remove('is-resizing');window.removeEventListener('pointermove',onMove);window.removeEventListener('pointerup',stop);};
+  if(resizer.dataset.bound==='1')return;
+  resizer.dataset.bound='1';
+  resizer.onpointerdown=e=>{
+    if(window.matchMedia('(max-width: 980px)').matches)return;
+    isCortexResizing=true;
+    layout.classList.add('is-resizing');
+    resizer.setPointerCapture(e.pointerId);
+    setCortexPanelWidthFromClientX(e.clientX);
+    window.addEventListener('pointermove',onMove);
+    window.addEventListener('pointerup',stop,{once:true});
+  };
+  resizer.onkeydown=e=>{
+    if(window.matchMedia('(max-width: 980px)').matches)return;
+    if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+    e.preventDefault();
+    const step=e.shiftKey?48:24;
+    cortexPanelWidth+=e.key==='ArrowLeft'?step:-step;
+    applyCortexPanelWidth();
+    if(cortexGraphState&&state.view==='cortex')renderCortexScene();
+  };
+  if(!cortexResizerResizeBound){
+    cortexResizerResizeBound=true;
+    window.addEventListener('resize',()=>{if(state.view==='cortex')applyCortexPanelWidth();});
+  }
 }
 
 function setCortexSizeStrength(raw){
