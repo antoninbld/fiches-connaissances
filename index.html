@@ -1082,18 +1082,30 @@ function renderCortexScene(){
   const edgesByDepth=s.edges.slice().sort((a,b)=>((projected[a.source].z+projected[a.target].z)/2)-((projected[b.source].z+projected[b.target].z)/2));
   const nodesByDepth=s.nodes.slice().sort((a,b)=>projected[a.id].z-projected[b.id].z);
   let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}"><defs><radialGradient id="cortex-depth-glow" cx="50%" cy="45%" r="58%"><stop offset="0%" stop-color="rgba(111,176,255,0.12)"/><stop offset="55%" stop-color="rgba(72,111,196,0.06)"/><stop offset="100%" stop-color="rgba(10,14,24,0.02)"/></radialGradient><filter id="cortex-soft-shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter></defs><ellipse cx="${(s.width/2).toFixed(1)}" cy="${(s.height/2).toFixed(1)}" rx="${(s.width*0.43).toFixed(1)}" ry="${(s.height*0.37).toFixed(1)}" fill="url(#cortex-depth-glow)" opacity="0.8"/>`;
+  const hashEdgeSeed=(str,salt=0)=>{
+    let h=2166136261^salt;
+    for(let i=0;i<str.length;i++){
+      h^=str.charCodeAt(i);
+      h=Math.imul(h,16777619);
+    }
+    return h>>>0;
+  };
+  const seededEdgeUnit=(str,salt=0)=>hashEdgeSeed(str,salt)/4294967295;
   const computeOrganicEdgePath=(a,b,edgeKey)=>{
     const dx=b.x-a.x,dy=b.y-a.y;
     const len=Math.hypot(dx,dy)||1;
     const nx=-dy/len,ny=dx/len;
-    const hashSeed=edgeKey.split('').reduce((acc,ch)=>acc+ch.charCodeAt(0),0);
-    const bendDirection=(hashSeed%2===0?1:-1);
-    const bendAmplitude=Math.min(40,Math.max(8,len*0.12))*bendDirection;
-    const spreadOffset=((hashSeed%7)-3)*1.8;
-    const c1x=a.x+dx*0.30+nx*(bendAmplitude+spreadOffset);
-    const c1y=a.y+dy*0.30+ny*(bendAmplitude+spreadOffset);
-    const c2x=a.x+dx*0.72+nx*((bendAmplitude*0.4)-spreadOffset);
-    const c2y=a.y+dy*0.72+ny*((bendAmplitude*0.4)-spreadOffset);
+    const bendDirection=seededEdgeUnit(edgeKey,17)>0.5?1:-1;
+    const bendStrength=0.12+seededEdgeUnit(edgeKey,31)*0.17;
+    const baseCurve=Math.max(9,Math.min(62,len*bendStrength));
+    const controlSpread=((seededEdgeUnit(edgeKey,43)-0.5)*14);
+    const asymmetry=(seededEdgeUnit(edgeKey,59)-0.5)*0.22;
+    const c1t=0.28+asymmetry;
+    const c2t=0.72-asymmetry;
+    const c1x=a.x+dx*c1t+nx*((baseCurve+controlSpread)*bendDirection);
+    const c1y=a.y+dy*c1t+ny*((baseCurve+controlSpread)*bendDirection);
+    const c2x=a.x+dx*c2t+nx*((baseCurve*0.66-controlSpread)*bendDirection);
+    const c2y=a.y+dy*c2t+ny*((baseCurve*0.66-controlSpread)*bendDirection);
     return `M ${a.x.toFixed(2)} ${a.y.toFixed(2)} C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${b.x.toFixed(2)} ${b.y.toFixed(2)}`;
   };
   edgesByDepth.forEach(e=>{
@@ -1159,12 +1171,12 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
   const minSize=Math.min(w,h);
   const avgSpacing=Math.sqrt((w*h)/Math.max(1,nodeCount));
   const edgeDensity=nodeCount>1?Math.min(1,edges.length/((nodeCount*(nodeCount-1))/2)):0;
-  const spreadBoost=Math.min(0.95,0.58+Math.log2(nodeCount+2)*0.085+edgeDensity*0.18);
+  const spreadBoost=Math.min(1.28,0.78+Math.log2(nodeCount+2)*0.11+edgeDensity*0.22);
   const layoutRadius=minSize*spreadBoost*0.5;
-  const minGap=Math.max(10,Math.min(26,avgSpacing*0.15));
-  const borderPadding=Math.max(28,Math.min(80,avgSpacing*0.45));
+  const minGap=Math.max(16,Math.min(42,avgSpacing*0.26));
+  const borderPadding=Math.max(36,Math.min(110,avgSpacing*0.52));
   const goldenAngle=Math.PI*(3-Math.sqrt(5));
-  const jitterAmplitude=Math.max(8,Math.min(52,avgSpacing*0.52));
+  const jitterAmplitude=Math.max(12,Math.min(70,avgSpacing*0.6));
 
   const orderedNodes=nodes.slice().sort((a,b)=>{
     const da=nodeDeg?.[a.id]||0,db=nodeDeg?.[b.id]||0;
@@ -1189,12 +1201,13 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
     out[n.id]={x:baseX+tangentX,y:baseY+tangentY,r:nodeR};
   });
 
-  const iterations=nodeCount>180?120:(nodeCount>90?170:230);
-  const edgeBaseLen=Math.max(120,Math.min(minSize*0.5,avgSpacing*1.55+Math.sqrt(nodeCount)*4));
+  const iterations=nodeCount>180?150:(nodeCount>90?210:280);
+  const edgeBaseLen=Math.max(170,Math.min(minSize*0.74,avgSpacing*2.1+Math.sqrt(nodeCount)*9));
   const samplePairs=nodeCount>140?38:nodeCount;
   const sampleStep=17;
-  const repulsionBase=Math.max(1750,Math.min(7600,(avgSpacing*avgSpacing)*0.9));
+  const repulsionBase=Math.max(4600,Math.min(21500,(avgSpacing*avgSpacing)*2.35));
   const microNoise=Math.max(0.05,Math.min(1.35,avgSpacing*0.014));
+  const centerPullBase=0.00022;
 
   for(let k=0;k<iterations;k++){
     const cooling=1-k/iterations;
@@ -1212,9 +1225,9 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
         const pj=out[nj.id];
         let dx=pi.x-pj.x,dy=pi.y-pj.y;
         let d=Math.hypot(dx,dy)||0.01;
-        const minDist=pi.r+pj.r+minGap;
+        const minDist=(pi.r+pj.r)*1.08+minGap;
         if(d<minDist){
-          const push=(minDist-d)*(0.35+cooling*0.2);
+          const push=(minDist-d)*(0.78+cooling*0.34);
           forces[ni.id].x+=(dx/d)*push;
           forces[ni.id].y+=(dy/d)*push;
           forces[nj.id].x-=(dx/d)*push;
@@ -1233,8 +1246,8 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
       if(!a||!b)return;
       let dx=b.x-a.x,dy=b.y-a.y;
       const d=Math.hypot(dx,dy)||0.01;
-      const targetLen=edgeBaseLen+a.r+b.r;
-      const attr=(d-targetLen)*(0.0036+edgeDensity*0.0012);
+      const targetLen=edgeBaseLen+(a.r+b.r)*1.15;
+      const attr=(d-targetLen)*(0.0025+edgeDensity*0.0008);
       forces[e.source].x+=dx*attr;
       forces[e.source].y+=dy*attr;
       forces[e.target].x-=dx*attr;
@@ -1247,8 +1260,10 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
       const wobble=(cooling*cooling)*microNoise;
       const noiseX=(seededUnit(`${n.id}:${k}`,149)-0.5)*wobble;
       const noiseY=(seededUnit(`${n.id}:${k}`,173)-0.5)*wobble;
-      p.x+=f.x*(0.62+cooling*0.48)+toCenterX*0.0012+noiseX;
-      p.y+=f.y*(0.62+cooling*0.48)+toCenterY*0.0012+noiseY;
+      const radial=Math.hypot(toCenterX,toCenterY)||1;
+      const centerPull=Math.min(centerPullBase,centerPullBase*(layoutRadius/(radial+layoutRadius*0.18)));
+      p.x+=f.x*(0.68+cooling*0.45)+toCenterX*centerPull+noiseX;
+      p.y+=f.y*(0.68+cooling*0.45)+toCenterY*centerPull+noiseY;
       const margin=Math.max(borderPadding,Math.ceil(p.r+minGap));
       p.x=Math.max(margin,Math.min(w-margin,p.x));
       p.y=Math.max(margin,Math.min(h-margin,p.y));
@@ -1264,7 +1279,7 @@ function computeCortexLayout(nodes,edges,w,h,nodeDeg,maxDeg){
         const pi=out[ni.id],pj=out[nj.id];
         let dx=pi.x-pj.x,dy=pi.y-pj.y;
         let d=Math.hypot(dx,dy)||0.01;
-        const wanted=pi.r+pj.r+minGap;
+        const wanted=(pi.r+pj.r)*1.14+minGap;
         if(d>=wanted)continue;
         const overlap=(wanted-d)*0.5;
         const ux=dx/d,uy=dy/d;
