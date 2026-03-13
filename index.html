@@ -1000,17 +1000,24 @@ function showCortexSelection(fiche){
   }
 }
 
+function getFicheLinkIds(fiche){
+  if(!fiche)return[];
+  const rawLinks=fiche.links??fiche.related??fiche.relatedIds??fiche.voirAussi??[];
+  if(!Array.isArray(rawLinks))return[];
+  return rawLinks.map(id=>String(id)).filter(Boolean);
+}
+
 function getRelatedFiches(fiche){
   if(!fiche)return[];
   const currentId=String(fiche.id);
   const relatedById=new Map();
-  (fiche.links||[]).forEach(linkId=>{
+  getFicheLinkIds(fiche).forEach(linkId=>{
     const linked=db.fiches.find(x=>String(x.id)===String(linkId));
     if(linked&&String(linked.id)!==currentId)relatedById.set(String(linked.id),linked);
   });
   db.fiches.forEach(candidate=>{
     if(String(candidate.id)===currentId)return;
-    if((candidate.links||[]).some(linkId=>String(linkId)===currentId))relatedById.set(String(candidate.id),candidate);
+    if(getFicheLinkIds(candidate).some(linkId=>String(linkId)===currentId))relatedById.set(String(candidate.id),candidate);
   });
   return Array.from(relatedById.values());
 }
@@ -1019,10 +1026,18 @@ function drawCortexGraph(){
   const graphEl=document.getElementById('cortex-graph');
   if(!graphEl)return;
   const width=Math.max(graphEl.clientWidth,680),height=Math.max(graphEl.clientHeight,520);
-  const nodes=db.fiches.map(f=>({id:f.id,label:f.title,color:getCat(f.catId)?.color||'#888',ref:f}));
+  const nodes=db.fiches.map(f=>({id:String(f.id),label:f.title,color:getCat(f.catId)?.color||'#888',ref:f}));
   const nodeIds=new Set(nodes.map(n=>n.id));
   const edgeMap=new Map();
-  db.fiches.forEach(f=>{(f.links||[]).forEach(to=>{if(!nodeIds.has(to)||to===f.id)return;const k=[f.id,to].sort().join('|');if(!edgeMap.has(k))edgeMap.set(k,{source:f.id,target:to});});});
+  db.fiches.forEach(f=>{
+    const fromId=String(f.id);
+    getFicheLinkIds(f).forEach(to=>{
+      const toId=String(to);
+      if(!nodeIds.has(toId)||toId===fromId)return;
+      const k=[fromId,toId].sort().join('|');
+      if(!edgeMap.has(k))edgeMap.set(k,{source:fromId,target:toId});
+    });
+  });
   const edges=[...edgeMap.values()];
   const nodeDeg={};
   nodes.forEach(n=>nodeDeg[n.id]=0);
@@ -1057,6 +1072,19 @@ function drawCortexGraph(){
 function installCortexInteractions(){
   if(!cortexGraphState)return;
   const {graphEl}=cortexGraphState;
+  const extractNodeId=(evt)=>{
+    const path=typeof evt.composedPath==='function'?evt.composedPath():[];
+    for(const el of path){
+      if(el?.dataset?.nodeId)return String(el.dataset.nodeId);
+    }
+    let cur=evt.target;
+    while(cur){
+      if(cur?.dataset?.nodeId)return String(cur.dataset.nodeId);
+      cur=cur.parentNode;
+    }
+    const hit=document.elementFromPoint(evt.clientX,evt.clientY);
+    return hit?.closest?.('.cortex-node')?.getAttribute?.('data-node-id')||null;
+  };
   graphEl.onpointerdown=e=>{
     if(e.button!==0)return;
     cortexGraphState.isDragging=true;
@@ -1101,18 +1129,12 @@ function installCortexInteractions(){
   };
   graphEl.onclick=e=>{
     if(!cortexGraphState||Date.now()<cortexGraphState.blockClickUntil)return;
-    let nodeEl=e.target.closest('.cortex-node');
-    if(!nodeEl){
-      const hit=document.elementFromPoint(e.clientX,e.clientY);
-      nodeEl=hit?hit.closest('.cortex-node'):null;
-    }
-    if(!nodeEl){
+    const id=extractNodeId(e);
+    if(!id){
       clearCortexSelection();
       renderCortexScene();
       return;
     }
-    const id=nodeEl.getAttribute('data-node-id');
-    if(!id)return;
     if(String(cortexSelectedId)===String(id)){
       clearCortexSelection();
       return;
