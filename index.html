@@ -959,11 +959,26 @@ function drawCortexGraph(){
   edges.forEach(e=>{nodeDeg[e.source]=(nodeDeg[e.source]||0)+1;nodeDeg[e.target]=(nodeDeg[e.target]||0)+1;});
   const maxDeg=nodes.reduce((m,n)=>Math.max(m,nodeDeg[n.id]||0),0);
   const pos=computeCortexLayout(nodes,edges,width,height,nodeDeg,maxDeg);
-  const depthRange=Math.max(width,height)*0.22;
+  const depthRange=Math.max(width,height)*0.48;
+  const sphereRadius=Math.min(width,height)*0.34;
   cortexGraphState={
     graphEl,width,height,nodes,edges,nodeDeg,maxDeg,
-    nodes3d:nodes.map((n,i)=>{const hash=[...n.id].reduce((a,c)=>a+c.charCodeAt(0),0);return{id:n.id,x:pos[n.id].x-width/2,y:pos[n.id].y-height/2,z:(((hash+i*17)%1000)/1000-0.5)*depthRange};}),
-    orbitX:-0.25,orbitY:0.45,panX:0,panY:0,zoom:1,perspective:900,isDragging:false,dragMoved:false,lastX:0,lastY:0,blockClickUntil:0
+    nodes3d:nodes.map((n,i)=>{
+      const hash=[...n.id].reduce((a,c)=>a+c.charCodeAt(0),0);
+      const u=((hash+i*17)%1000)/1000;
+      const v=((hash*31+i*13)%1000)/1000;
+      const ratio=maxDeg>0?Math.log1p(nodeDeg[n.id]||0)/Math.log1p(maxDeg):0;
+      const theta=u*Math.PI*2;
+      const phi=Math.acos((v*2)-1);
+      const radial=sphereRadius*(0.55+(1-ratio)*0.45);
+      const sx=Math.sin(phi)*Math.cos(theta)*radial;
+      const sy=Math.cos(phi)*radial*0.9;
+      const sz=Math.sin(phi)*Math.sin(theta)*radial;
+      const planarX=(pos[n.id].x-width/2)*0.48;
+      const planarY=(pos[n.id].y-height/2)*0.42;
+      return{id:n.id,x:sx+planarX,y:sy+planarY,z:sz+((u-0.5)*depthRange*0.38)};
+    }),
+    orbitX:-0.38,orbitY:0.62,orbitZ:0.12,panX:0,panY:0,zoom:1,perspective:760,isDragging:false,dragMoved:false,lastX:0,lastY:0,blockClickUntil:0
   };
   installCortexInteractions();
   renderCortexScene();
@@ -994,6 +1009,7 @@ function installCortexInteractions(){
     }else{
       cortexGraphState.orbitY+=dx*0.005;
       cortexGraphState.orbitX=Math.max(-1.35,Math.min(1.35,cortexGraphState.orbitX+dy*0.005));
+      cortexGraphState.orbitZ=Math.max(-0.55,Math.min(0.55,cortexGraphState.orbitZ+dx*0.0015));
     }
     renderCortexScene();
   };
@@ -1044,18 +1060,20 @@ function renderCortexScene(){
       }
     });
   }
-  const cosY=Math.cos(s.orbitY),sinY=Math.sin(s.orbitY),cosX=Math.cos(s.orbitX),sinX=Math.sin(s.orbitX);
+  const cosY=Math.cos(s.orbitY),sinY=Math.sin(s.orbitY),cosX=Math.cos(s.orbitX),sinX=Math.sin(s.orbitX),cosZ=Math.cos(s.orbitZ),sinZ=Math.sin(s.orbitZ);
   const projected={};
   s.nodes3d.forEach(n=>{
     const x1=n.x*cosY-n.z*sinY;
     const z1=n.x*sinY+n.z*cosY;
     const y2=n.y*cosX-z1*sinX;
     const z2=n.y*sinX+z1*cosX;
-    const depthOffset=540;
+    const x2=x1*cosZ-y2*sinZ;
+    const y3=x1*sinZ+y2*cosZ;
+    const depthOffset=420;
     const scale=s.zoom*s.perspective/(s.perspective+z2+depthOffset);
     projected[n.id]={
-      x:s.width/2+s.panX+x1*scale,
-      y:s.height/2+s.panY+y2*scale,
+      x:s.width/2+s.panX+x2*scale,
+      y:s.height/2+s.panY+y3*scale,
       z:z2,
       scale:Math.max(0.35,Math.min(2.4,scale))
     };
@@ -1063,7 +1081,7 @@ function renderCortexScene(){
 
   const edgesByDepth=s.edges.slice().sort((a,b)=>((projected[a.source].z+projected[a.target].z)/2)-((projected[b.source].z+projected[b.target].z)/2));
   const nodesByDepth=s.nodes.slice().sort((a,b)=>projected[a.id].z-projected[b.id].z);
-  let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}">`;
+  let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}"><defs><radialGradient id="cortex-depth-glow" cx="50%" cy="45%" r="58%"><stop offset="0%" stop-color="rgba(111,176,255,0.12)"/><stop offset="55%" stop-color="rgba(72,111,196,0.06)"/><stop offset="100%" stop-color="rgba(10,14,24,0.02)"/></radialGradient><filter id="cortex-soft-shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter></defs><ellipse cx="${(s.width/2).toFixed(1)}" cy="${(s.height/2).toFixed(1)}" rx="${(s.width*0.43).toFixed(1)}" ry="${(s.height*0.37).toFixed(1)}" fill="url(#cortex-depth-glow)" opacity="0.8"/>`;
   const computeOrganicEdgePath=(a,b,edgeKey)=>{
     const dx=b.x-a.x,dy=b.y-a.y;
     const len=Math.hypot(dx,dy)||1;
@@ -1082,7 +1100,8 @@ function renderCortexScene(){
     const a=projected[e.source],b=projected[e.target];
     const edgeKey=[e.source,e.target].sort().join('|');
     const isHighlighted=!selectedId||highlightedEdges.has(edgeKey);
-    const baseOpacity=Math.max(0.18,Math.min(0.72,0.45+((a.scale+b.scale)/2-1)*0.45));
+    const depthDelta=Math.min(1,Math.abs(a.z-b.z)/(Math.max(s.width,s.height)*0.5));
+    const baseOpacity=Math.max(0.14,Math.min(0.72,0.4+((a.scale+b.scale)/2-1)*0.42-depthDelta*0.12));
     const opacity=isHighlighted?Math.max(baseOpacity,0.72):Math.min(baseOpacity,0.1);
     const stroke=isHighlighted?'rgba(120,210,255,0.9)':'rgba(90,184,224,0.16)';
     const strokeWidth=isHighlighted?2.2:1;
@@ -1101,6 +1120,7 @@ function renderCortexScene(){
     const isHighlighted=!selectedId||highlightedNodes.has(n.id);
     const nodeOpacity=isActive?1:(isHighlighted?0.98:0.2);
     const nodeRadius=isActive?r*1.2:r;
+    const haze=Math.max(0.3,Math.min(1.15,(p.scale-0.35)/1.65));
     const labelOpacity=isActive?1:(isHighlighted?Math.max(0.6,Math.min(1,p.scale*0.95)):0.22);
     const labelText=escH(n.label.slice(0,40));
     const shouldAttemptLabel=isActive||(!denseGraph&&labelOpacity>=0.52)||(denseGraph&&(deg>=2||isHighlighted)&&labelOpacity>=0.74);
@@ -1114,7 +1134,9 @@ function renderCortexScene(){
       if(collides&&!isActive)drawLabel=false;
       else placedLabels.push(box);
     }
-    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}"><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${n.color}" opacity="${nodeOpacity.toFixed(2)}"/>${drawLabel?`<text class="cortex-node-label" x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${labelText}</text>`:''}</g>`;
+    const shadowDx=(p.z/180)*6;
+    const shadowDy=6+(p.z/260)*5;
+    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}"><ellipse cx="${(p.x+shadowDx).toFixed(2)}" cy="${(p.y+shadowDy).toFixed(2)}" rx="${(nodeRadius*0.92).toFixed(2)}" ry="${(nodeRadius*0.5).toFixed(2)}" fill="rgba(0,0,0,0.22)" opacity="${(nodeOpacity*0.45*haze).toFixed(2)}" filter="url(#cortex-soft-shadow)"/><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${n.color}" opacity="${(nodeOpacity*haze).toFixed(2)}"/>${drawLabel?`<text class="cortex-node-label" x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${labelText}</text>`:''}</g>`;
   });
   svg+='</svg>';
   const hud=s.graphEl.querySelector('.cortex-hud');
