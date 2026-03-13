@@ -1135,10 +1135,26 @@ function applyCortexZoom(factor){
   renderCortexScene();
 }
 
+function triggerCortexWheelZoom(direction,sourceEvent){
+  if(!cortexGraphState)return;
+  const {graphEl}=cortexGraphState;
+  const deltaY=direction==='in'?-100:100;
+  const wheelEvt=new WheelEvent('wheel',{
+    deltaY,
+    deltaMode:0,
+    bubbles:true,
+    cancelable:true,
+    clientX:sourceEvent?.clientX,
+    clientY:sourceEvent?.clientY
+  });
+  graphEl.dispatchEvent(wheelEvt);
+}
+  
 function installCortexInteractions(){
   if(!cortexGraphState)return;
   const {graphEl}=cortexGraphState;
   graphEl.onpointerdown=e=>{
+    if(e.target.closest('[data-cortex-zoom]'))return;
     if(e.button!==0)return;
     cortexGraphState.isDragging=true;
     cortexGraphState.dragMoved=false;
@@ -1181,7 +1197,7 @@ function installCortexInteractions(){
     btn.onclick=e=>{
       e.preventDefault();
       e.stopPropagation();
-      applyCortexZoom(btn.dataset.cortexZoom==='in'?1.1:0.9);
+      triggerCortexWheelZoom(btn.dataset.cortexZoom,e);
     };
   });
   graphEl.onclick=e=>{
