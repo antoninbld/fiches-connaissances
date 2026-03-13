@@ -1147,7 +1147,7 @@ function renderCortexScene(){
 
   const edgesByDepth=s.edges.slice().sort((a,b)=>((projected[a.source].z+projected[a.target].z)/2)-((projected[b.source].z+projected[b.target].z)/2));
   const nodesByDepth=s.nodes.slice().sort((a,b)=>projected[a.id].z-projected[b.id].z);
-  let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}"><defs><radialGradient id="cortex-depth-glow" cx="50%" cy="45%" r="58%"><stop offset="0%" stop-color="rgba(111,176,255,0.12)"/><stop offset="55%" stop-color="rgba(72,111,196,0.06)"/><stop offset="100%" stop-color="rgba(10,14,24,0.02)"/></radialGradient><filter id="cortex-soft-shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter><radialGradient id="cortex-focus-overlay" cx="50%" cy="50%" r="70%"><stop offset="0%" stop-color="rgba(12,18,34,0)"/><stop offset="100%" stop-color="rgba(8,10,18,0.36)"/></radialGradient><filter id="cortex-active-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4.8"/></filter></defs><ellipse cx="${(s.width/2).toFixed(1)}" cy="${(s.height/2).toFixed(1)}" rx="${(s.width*0.43).toFixed(1)}" ry="${(s.height*0.37).toFixed(1)}" fill="url(#cortex-depth-glow)" opacity="0.8"/>`;
+  let svg=`<svg class="cortex-svg" viewBox="0 0 ${s.width} ${s.height}"><defs><radialGradient id="cortex-depth-glow" cx="50%" cy="45%" r="58%"><stop offset="0%" stop-color="rgba(111,176,255,0.12)"/><stop offset="55%" stop-color="rgba(72,111,196,0.06)"/><stop offset="100%" stop-color="rgba(10,14,24,0.02)"/></radialGradient><filter id="cortex-soft-shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4"/></filter><filter id="cortex-active-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4.8"/></filter></defs><ellipse cx="${(s.width/2).toFixed(1)}" cy="${(s.height/2).toFixed(1)}" rx="${(s.width*0.43).toFixed(1)}" ry="${(s.height*0.37).toFixed(1)}" fill="url(#cortex-depth-glow)" opacity="0.8"/>`;
   const hashEdgeSeed=(str,salt=0)=>{
     let h=2166136261^salt;
     for(let i=0;i<str.length;i++){
@@ -1240,12 +1240,6 @@ function renderCortexScene(){
     const activeCore=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*0.58).toFixed(2)}" fill="rgba(255,245,222,0.36)"/>`:'';
     svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}">${activeHaloOuter}${activeHaloInner}<ellipse cx="${(p.x+shadowDx).toFixed(2)}" cy="${(p.y+shadowDy).toFixed(2)}" rx="${(nodeRadius*0.92).toFixed(2)}" ry="${(nodeRadius*0.5).toFixed(2)}" fill="rgba(0,0,0,0.22)" opacity="${(nodeOpacity*0.45*haze).toFixed(2)}" filter="url(#cortex-soft-shadow)"/><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${nodeFill}" opacity="${(nodeOpacity*haze).toFixed(2)}"/>${activeCore}${drawLabel?`<text class="cortex-node-label" x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${labelText}</text>`:''}</g>`;
   });
-  if(selectedId&&projected[selectedId]){
-    const c=projected[selectedId];
-    const ringR=Math.max(34,Math.min(95,42*c.scale));
-    svg+=`<circle cx="${c.x.toFixed(2)}" cy="${c.y.toFixed(2)}" r="${ringR.toFixed(2)}" fill="none" stroke="rgba(236,210,130,0.52)" stroke-width="1.8" stroke-dasharray="5 5"/>`;
-    svg+=`<circle cx="${c.x.toFixed(2)}" cy="${c.y.toFixed(2)}" r="${(ringR*1.55).toFixed(2)}" fill="url(#cortex-focus-overlay)" opacity="0.85"/>`;
-  }
   svg+='</svg>';
   const hud=s.graphEl.querySelector('.cortex-hud');
   s.graphEl.innerHTML=svg+(hud?hud.outerHTML:'');
