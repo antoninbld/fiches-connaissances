@@ -1322,7 +1322,7 @@ function renderCortexScene(){
     const nodeRadius=isActive?r*1.34:(isHighlighted?r*1.08:r);
     const haze=Math.max(0.3,Math.min(1.15,(p.scale-0.35)/1.65));
     const labelOpacity=isActive?1:(isHighlighted?Math.max(0.6,Math.min(1,p.scale*0.95)):0.22);
-    const labelText=escH(n.label.slice(0,40));
+    const labelText=escH(n.label.slice(0,100));
     const shouldAttemptLabel=isActive||(!denseGraph&&labelOpacity>=0.52)||(denseGraph&&(deg>=2||isHighlighted)&&labelOpacity>=0.74);
     let drawLabel=shouldAttemptLabel;
     let labelX=(p.x+nodeRadius+5),labelY=(p.y+4);
