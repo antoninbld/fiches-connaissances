@@ -985,7 +985,7 @@ function clearCortexSelection(){
 function showCortexSelection(fiche){
   const info=document.getElementById('cortex-info');
   if(!info||!fiche)return;
-  const related=(fiche.links||[]).map(l=>db.fiches.find(x=>x.id===l)).filter(Boolean);
+  const related=getRelatedFiches(fiche);
   info.innerHTML=`<div class="cortex-info-head"><div class="voir-aussi-label">Fiche sélectionnée</div><button class="cortex-clear-btn" onclick="clearCortexSelection()" title="Désélectionner" aria-label="Désélectionner">×</button></div><h3>${escH(fiche.title)}</h3><div class="view-subtitle">${buildPath(fiche)||'Sans catégorie'}</div><div class="view-subtitle">${related.length} lien${related.length!==1?'s':''}</div><div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-outline btn-sm" onclick="viewFiche('${fiche.id}')">👁 Voir</button><button class="btn btn-gold btn-sm" onclick="editFiche('${fiche.id}')">✏ Modifier</button></div>`;
   if(related.length){
     const label=document.createElement('div');label.className='voir-aussi-label';label.style.marginTop='6px';label.textContent='Reliée à';
@@ -998,6 +998,21 @@ function showCortexSelection(fiche){
     });
     info.appendChild(label);info.appendChild(chips);
   }
+}
+
+function getRelatedFiches(fiche){
+  if(!fiche)return[];
+  const currentId=String(fiche.id);
+  const relatedById=new Map();
+  (fiche.links||[]).forEach(linkId=>{
+    const linked=db.fiches.find(x=>String(x.id)===String(linkId));
+    if(linked&&String(linked.id)!==currentId)relatedById.set(String(linked.id),linked);
+  });
+  db.fiches.forEach(candidate=>{
+    if(String(candidate.id)===currentId)return;
+    if((candidate.links||[]).some(linkId=>String(linkId)===currentId))relatedById.set(String(candidate.id),candidate);
+  });
+  return Array.from(relatedById.values());
 }
 
 function drawCortexGraph(){
@@ -1057,7 +1072,7 @@ function installCortexInteractions(){
     const dx=e.clientX-cortexGraphState.lastX,dy=e.clientY-cortexGraphState.lastY;
     cortexGraphState.lastX=e.clientX;
     cortexGraphState.lastY=e.clientY;
-    if(Math.abs(dx)+Math.abs(dy)>1)cortexGraphState.dragMoved=true;
+    if(Math.abs(dx)+Math.abs(dy)>4)cortexGraphState.dragMoved=true;
     stopCortexFocusAnimation();
     if(cortexGraphState.dragMode==='pan'){
       cortexGraphState.panX+=dx;
@@ -1071,7 +1086,7 @@ function installCortexInteractions(){
   };
   graphEl.onpointerup=e=>{
     if(!cortexGraphState)return;
-    if(cortexGraphState.dragMoved)cortexGraphState.blockClickUntil=Date.now()+160;
+    if(cortexGraphState.dragMoved)cortexGraphState.blockClickUntil=Date.now()+120;
     cortexGraphState.isDragging=false;
     graphEl.classList.remove('is-dragging');
     try{graphEl.releasePointerCapture(e.pointerId);}catch(_e){}
@@ -1098,12 +1113,12 @@ function installCortexInteractions(){
     }
     const id=nodeEl.getAttribute('data-node-id');
     if(!id)return;
-    if(cortexSelectedId===id){
+    if(String(cortexSelectedId)===String(id)){
       clearCortexSelection();
       return;
     }
-    cortexSelectedId=id;
-    const fiche=db.fiches.find(f=>f.id===id);
+    cortexSelectedId=String(id);
+    const fiche=db.fiches.find(f=>String(f.id)===String(id));
     if(fiche)showCortexSelection(fiche);
     renderCortexScene();
     focusCortexOnNode(id);
