@@ -38,31 +38,36 @@
           "name": "Concepts clés",
           "subcats": []
         }
-      ]
+      ],
+      "summary": ""
     },
     {
       "id": "mmh7d5w832vp",
       "name": "Géopolitique",
       "color": "#e06060",
-      "subcats": []
+      "subcats": [],
+      "summary": "Rapports de force entre États, zones stratégiques et ressources, pour comprendre les enjeux de puissance, d’influence et de sécurité."
     },
     {
       "id": "mmp43k4rq4nq",
       "name": "Matières premières",
       "color": "#4ab8c0",
-      "subcats": []
+      "subcats": [],
+      "summary": ""
     },
     {
       "id": "mmp450cs2ys7",
       "name": "Infrastructures",
       "color": "#c9a84c",
-      "subcats": []
+      "subcats": [],
+      "summary": ""
     },
     {
       "id": "mmp3nq09odp9",
       "name": "Géographie",
       "color": "#9a6edf",
-      "subcats": []
+      "subcats": [],
+      "summary": ""
     }
   ],
   "fiches": [
