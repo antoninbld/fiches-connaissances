@@ -1715,8 +1715,8 @@ function vZoomSet(z){
   const frame=document.getElementById('viewer-frame');
   if(!wrap||!frame)return;
   const w=wrap.clientWidth,h=wrap.clientHeight;
-  frame.style.width=(w/vZoom)+'px';
-  frame.style.height=(h/vZoom)+'px';
+  frame.style.width=w+'px';
+  frame.style.height=h+'px';
   frame.style.transform=`scale(${vZoom})`;
   document.getElementById('zoom-val').textContent=Math.round(vZoom*100)+'%';
 }
