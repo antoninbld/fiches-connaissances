@@ -68,7 +68,12 @@
   .cortex-graph{position:relative;background:radial-gradient(circle at 20% 10%,rgba(90,138,224,.12),transparent 40%),var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;height:100%;min-height:0;flex:1 1 auto}
   .cortex-graph.is-dragging{cursor:grabbing}
   .cortex-svg{position:absolute;inset:0;width:100%;height:100%}
-  .cortex-hud{position:absolute;left:12px;bottom:12px;z-index:2;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;color:var(--text-dim);background:rgba(14,22,45,.72);border:1px solid rgba(90,138,224,.2);border-radius:9px;padding:7px 10px;backdrop-filter:blur(4px);pointer-events:none}
+  .cortex-hud{position:absolute;left:12px;bottom:12px;z-index:2;display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;color:var(--text-dim);background:rgba(14,22,45,.72);border:1px solid rgba(90,138,224,.2);border-radius:9px;padding:7px 10px;backdrop-filter:blur(4px);pointer-events:none}
+  .cortex-hud-text{white-space:nowrap}
+  .cortex-zoom-controls{display:inline-flex;gap:6px;pointer-events:auto}
+  .cortex-zoom-btn{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid rgba(90,138,224,.26);background:rgba(17,26,52,.78);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1;cursor:pointer;transition:all .15s ease;user-select:none}
+  .cortex-zoom-btn:hover{border-color:rgba(201,168,76,.38);color:#f0e7cc;background:rgba(201,168,76,.14)}
+  .cortex-zoom-btn:active{transform:translateY(1px) scale(.98);background:rgba(201,168,76,.22)}
   .cortex-info{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0;overflow:auto}
   .cortex-info-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
   .cortex-clear-btn{width:24px;height:24px;border-radius:50%;border:1px solid rgba(224,96,96,.45);background:rgba(224,96,96,.08);color:var(--red);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
@@ -922,7 +927,7 @@ function renderCortex(){
   </div>
   <div class="cortex-layout" id="cortex-layout">
     <div class="cortex-map-wrap">
-      <div class="cortex-graph" id="cortex-graph"><div class="cortex-hud">Glisser: orbite 3D · Shift+glisser: déplacer · Molette: zoom</div></div>
+      <div class="cortex-graph" id="cortex-graph"><div class="cortex-hud"><span class="cortex-hud-text">Glisser: orbite 3D · Shift + glisser: déplacer · Molette: zoom</span><div class="cortex-zoom-controls" aria-label="Contrôles de zoom"><button type="button" class="cortex-zoom-btn" data-cortex-zoom="in" aria-label="Zoom avant" title="Zoom avant">+</button><button type="button" class="cortex-zoom-btn" data-cortex-zoom="out" aria-label="Zoom arrière" title="Zoom arrière">−</button></div></div></div>
     </div>
     <div class="cortex-resizer" id="cortex-resizer" role="separator" aria-label="Redimensionner le panneau de fiche" aria-orientation="vertical" tabindex="0"></div>
     <div class="cortex-info" id="cortex-info"><div class="voir-aussi-label">Sélection</div><h3>Aucune fiche</h3><div class="view-subtitle">Clique sur un point pour voir ses détails et accéder à la fiche.</div></div>
@@ -1122,6 +1127,14 @@ function drawCortexGraph(){
   renderCortexScene();
 }
 
+function applyCortexZoom(factor){
+  if(!cortexGraphState||!Number.isFinite(factor)||factor<=0)return;
+  stopCortexFocusAnimation();
+  const next=cortexGraphState.zoom*factor;
+  cortexGraphState.zoom=Math.max(0.5,Math.min(2.8,next));
+  renderCortexScene();
+}
+
 function installCortexInteractions(){
   if(!cortexGraphState)return;
   const {graphEl}=cortexGraphState;
@@ -1161,12 +1174,16 @@ function installCortexInteractions(){
   };
   graphEl.onwheel=e=>{
     e.preventDefault();
-    if(!cortexGraphState)return;
-    stopCortexFocusAnimation();
-    const next=cortexGraphState.zoom*(e.deltaY<0?1.1:0.9);
-    cortexGraphState.zoom=Math.max(0.5,Math.min(2.8,next));
-    renderCortexScene();
+    applyCortexZoom(e.deltaY<0?1.1:0.9);
   };
+
+  graphEl.querySelectorAll('[data-cortex-zoom]').forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      applyCortexZoom(btn.dataset.cortexZoom==='in'?1.1:0.9);
+    };
+  });
   graphEl.onclick=e=>{
     if(!cortexGraphState||Date.now()<cortexGraphState.blockClickUntil)return;
     let nodeEl=e.target.closest('.cortex-node');
