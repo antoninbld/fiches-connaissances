@@ -866,42 +866,15 @@ function renderSidebar(){
   document.getElementById('nav-cortex').className='nav-home'+(state.view==='cortex'&&!state.search?' active':'');
   const el=document.getElementById('sidebar-cats');
   el.innerHTML=db.categories.map(cat=>{
-    const isOpen=openCats.has(cat.id);
     const isSel=state.catId===cat.id;
     const total=cntFiches({catId:cat.id});
-    const subs=cat.subcats||[];
-    let h=`<div class="n1 ${isSel&&!state.subcatId?'sel':''}" draggable="true" data-cat-id="${cat.id}" onclick="goCat('${cat.id}')">
+    return `<div class="n1 ${isSel&&!state.subcatId?'sel':''}" draggable="true" data-cat-id="${cat.id}" onclick="goCat('${cat.id}')">
       <div class="n1-left"><span class="n1-dot" style="background:${cat.color}"></span><span>${escH(cat.name)}</span></div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
         <span class="drag-handle" title="Glisser pour réordonner">⠿</span>
         <span class="badge">${total}</span>
-        ${subs.length?`<svg class="arrow ${isOpen?'open':''}" onclick="toggleCatOpen('${cat.id}',event)" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`:''}
       </div>
     </div>`;
-    if(isOpen&&subs.length){
-      subs.forEach(sub=>{
-        const subOpen=openSubs.has(sub.id);
-        const subSel=state.subcatId===sub.id;
-        const subTotal=cntFiches({catId:cat.id,subcatId:sub.id});
-        const themes=sub.subcats||[];
-        h+=`<div class="n2 ${subSel&&!state.themeId?'sel':''}" draggable="true" data-cat-id="${cat.id}" data-sub-id="${sub.id}" onclick="goSub('${cat.id}','${sub.id}')">
-          <div class="n2-left"><span class="drag-handle" title="Glisser pour réordonner">⠿</span><span style="color:var(--blue);margin-right:2px">▸</span><span>${escH(sub.name)}</span></div>
-          <div style="display:flex;align-items:center;gap:5px">
-            <span class="badge" style="font-size:9px">${subTotal}</span>
-            ${themes.length?`<svg class="arrow ${subOpen?'open':''}" onclick="toggleSubOpen('${sub.id}',event)" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`:''}
-          </div>
-        </div>`;
-        if(subOpen&&themes.length){
-          themes.forEach(th=>{
-            const thTotal=cntFiches({catId:cat.id,subcatId:sub.id,themeId:th.id});
-            h+=`<div class="n3 ${state.themeId===th.id?'sel':''}" onclick="goTheme('${cat.id}','${sub.id}','${th.id}')">
-              <span>${escH(th.name)}</span><span class="badge" style="font-size:9px">${thTotal}</span>
-            </div>`;
-          });
-        }
-      });
-    }
-    return h;
   }).join('');
 }
 
