@@ -149,7 +149,8 @@
   .cat-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3)}
   .cat-card:hover::before{opacity:1}
   .cat-card-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px}
-  .cat-card-summary{font-size:12px;line-height:1.45;color:var(--text-muted);margin:4px 0 10px;max-width:none;display:block;overflow:visible;white-space:normal}
+  .cat-card-summary{font-size:11px;line-height:1.45;color:var(--text-muted);margin:4px 0 10px;max-width:none;display:block;overflow:visible;white-space:normal;text-align:justify;text-justify:inter-word;hyphens:auto}
+  .home-categories-title{font-size:19px}
   .cat-card-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.05em}
   .cat-card-sub{margin-top:10px;display:flex;flex-wrap:wrap;gap:4px}
   .sub-tag{font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 7px;color:var(--text-muted)}
@@ -991,7 +992,7 @@ function renderHome(){
   if(!db.categories.length){
     html+=`<div class="empty-state"><p>Aucune catégorie — clique sur <strong>📁 Structure</strong> pour commencer !</p></div>`;
   }else{
-    html+=`<div class="section-header" style="margin-top:${_recent.length?'28px':'0'}"><div class="section-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
+    html+=`<div class="section-header" style="margin-top:${_recent.length?'28px':'0'}"><div class="section-title home-categories-title">Catégories</div><div class="section-count">${db.categories.length} catégorie${db.categories.length>1?'s':''}</div></div><div id="cat-grid">`;
     db.categories.forEach(cat=>{
       const fc=db.fiches.filter(f=>f.catId===cat.id).length;
       const subs=cat.subcats||[];
