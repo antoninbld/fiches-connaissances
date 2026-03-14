@@ -173,6 +173,7 @@
 
   .view-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;gap:16px}
   .view-title{font-family:'Playfair Display',serif;font-size:27px;font-weight:700;color:var(--text);margin-bottom:3px}
+  .view-summary{font-size:14px;line-height:1.4;color:var(--text);max-width:68ch;margin:3px 0 6px}
   .view-subtitle{font-size:13px;color:var(--text-muted);font-weight:300;font-style:italic}
   .section-sep{border:none;border-top:1px solid var(--border);margin:18px 0}
 
@@ -1542,10 +1543,12 @@ function renderView(){
   if(th){title=th.name;subtitle=`${escH(cat.name)} › ${escH(sub.name)}`;fiches=fiches.filter(f=>f.subcatId===sub.id&&f.themeId===th.id);}
   else if(sub){title=sub.name;subtitle=escH(cat.name);fiches=fiches.filter(f=>f.subcatId===sub.id);}
   else{title=cat.name;subtitle=`${fiches.length} fiche${fiches.length!==1?'s':''} au total`;}
+  const catSummary=(!sub&&!th&&(cat.summary||'').trim())?escH(cat.summary.trim()):'';
 
   let html=`<div class="view-header">
     <div>
       <div class="view-title" style="border-left:4px solid ${cat.color};padding-left:13px">${escH(title)}</div>
+      ${catSummary?`<div class="view-summary">${catSummary}</div>`:''}
       <div class="view-subtitle">${subtitle}</div>
     </div>
     <button class="btn btn-gold btn-sm" onclick="openAddFiche('${cat.id}','${sub?.id||''}','${th?.id||''}')">+ Nouvelle fiche</button>
