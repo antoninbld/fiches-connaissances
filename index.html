@@ -1617,8 +1617,11 @@ function renderView(){
         </div>`;
       });
       html+=`</div>`;
-      fichesToShow=fiches.filter(f=>!f.subcatId);
-      if(fichesToShow.length)html+=`<hr class="section-sep"><div class="folder-section-title">📄 Fiches sans sous-catégorie</div>`;
+    }
+    fichesToShow=fiches;
+    if(fichesToShow.length){
+      if(subs.length)html+=`<hr class="section-sep">`;
+      html+=`<div class="folder-section-title">📄 Toutes les fiches</div>`;
     }
   } else if(!th){
     // Show theme folders
