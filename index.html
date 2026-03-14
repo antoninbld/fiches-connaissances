@@ -424,7 +424,7 @@
     <div class="form-group">
       <label class="form-label">Synthèse courte</label>
       <textarea class="form-input" id="edit-cat-summary" placeholder="En quelques mots, à quoi sert cette catégorie ?" maxlength="250" style="min-height:92px;resize:vertical"></textarea>
-      <div class="form-hint" id="edit-cat-summary-hint">0 / 180</div>
+      <div class="form-hint" id="edit-cat-summary-hint">0 / 250</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('edit-cat-modal')">Annuler</button>
@@ -1988,7 +1988,7 @@ function updateCatSummaryHint(){
   const input=document.getElementById('edit-cat-summary');
   const hint=document.getElementById('edit-cat-summary-hint');
   if(!input||!hint)return;
-  hint.textContent=`${input.value.length} / 180`;
+  hint.textContent=`${input.value.length} / 250`;
 }
 function openEditCategoryModal(catId){
   const cat=getCat(catId);
