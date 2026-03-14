@@ -80,12 +80,6 @@
           "name": "Ressources et dépendances",
           "summary": "Fiches où l’accès à une ressource crée une dépendance, un levier d’influence ou un rapport de force entre acteurs. Ex. : gaz russe pour l’Europe, pétrole du Golfe pour l’Asie, eau dessalée, lithium, cuivre, terres rares, uranium.",
           "subcats": []
-        },
-        {
-          "id": "mmq7pky6exm8",
-          "name": "Risques et vulnérabilités",
-          "summary": "Fiches sur les fragilités d’un État, d’une région ou d’un système face à une rupture, une menace ou une contrainte. Ex. : sanctions, fermeture d’un détroit, sabotage de pipeline, dépendance logistique, instabilité politique, choc d’approvisionnement.",
-          "subcats": []
         }
       ],
       "summary": "Regroupe les fiches qui analysent les rapports de force entre États, régions ou puissances autour d’intérêts stratégiques, de ressources, de routes ou d’infrastructures. À utiliser quand la fiche cherche à comprendre qui dépend de quoi, qui contrôle quoi, et pourquoi cela compte."
