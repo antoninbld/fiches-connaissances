@@ -88,7 +88,14 @@
       "id": "mmp450cs2ys7",
       "name": "Pays, régions & territoires",
       "color": "#c9a84c",
-      "subcats": [],
+      "subcats": [
+        {
+          "id": "mmqhk70vwk91",
+          "name": "Pays",
+          "summary": "",
+          "subcats": []
+        }
+      ],
       "summary": "Regroupe les fiches centrées sur un espace géographique comme objet principal d’analyse. À utiliser quand la fiche vise à comprendre un pays, une région ou un territoire stratégique, son histoire, sa structure ou son importance géopolitique et énergétique."
     },
     {
