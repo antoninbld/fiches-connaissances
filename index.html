@@ -862,7 +862,7 @@ function expandAllSidebar(){
   renderSidebar();
 }
 function collapseAllSidebar(){
-  openCats=new Set(db.categories.map(c=>c.id));
+  openCats=new Set();
   openSubs=new Set();
   renderSidebar();
 }
