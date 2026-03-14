@@ -2181,12 +2181,13 @@ function lpTags(p,excl){
 function lpGet(p){return Array.from(_lpSel[p]||new Set());}
 
 /* ── §11c · Récemment consultées ───────────────────────────────── */
+const RECENT_ITEMS_LIMIT=10;
 function trackRecent(id){
   try{
     let r=JSON.parse(localStorage.getItem('kb_recent')||'[]');
     r=r.filter(function(x){return x.id!==id;});
     r.unshift({id:id,viewedAt:Date.now()});
-    localStorage.setItem('kb_recent',JSON.stringify(r.slice(0,5)));
+    localStorage.setItem('kb_recent',JSON.stringify(r.slice(0,RECENT_ITEMS_LIMIT)));
   }catch(e){}
 }
 function getRecent(){
