@@ -114,7 +114,14 @@
       "id": "mmp3nq09odp9",
       "name": "Événements historiques & conflits",
       "color": "#9a6edf",
-      "subcats": [],
+      "subcats": [
+        {
+          "id": "mmqibkehbd48",
+          "name": "Guerres, invasions et affrontements",
+          "summary": "",
+          "subcats": []
+        }
+      ],
       "summary": "Regroupe les fiches centrées sur un événement daté : guerre, invasion, putsch, assassinat, rupture politique ou épisode de violence. À utiliser quand la fiche cherche à expliquer ce qui s’est passé, pourquoi, avec quels acteurs, et quelles conséquences."
     }
   ],
