@@ -86,10 +86,10 @@
     },
     {
       "id": "mmp450cs2ys7",
-      "name": "Infrastructures",
+      "name": "Pays, régions & territoires",
       "color": "#c9a84c",
       "subcats": [],
-      "summary": "Pipelines, terminaux LNG, raffineries, réseaux, interconnexions, stockage, ports, câbles, data centers : étudier les actifs physiques et logistiques qui permettent de produire, transformer, transporter, stocker ou distribuer une ressource ou une énergie."
+      "summary": "Regroupe les fiches centrées sur un espace géographique comme objet principal d’analyse. À utiliser quand la fiche vise à comprendre un pays, une région ou un territoire stratégique, son histoire, sa structure ou son importance géopolitique et énergétique."
     },
     {
       "id": "mmp3nq09odp9",
