@@ -661,10 +661,25 @@ async function githubLoad(){
 async function githubSave(data){
   if(!getToken())return;
   const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
-  const body={message:`Mise à jour — ${new Date().toLocaleString('fr-FR')}`,content,branch:GH_BRANCH};
-  if(ghSha)body.sha=ghSha;
-  const res=await ghFetch(`contents/${GH_FILE}`,{method:'PUT',body:JSON.stringify(body)});
-  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||`HTTP ${res.status}`);}
+  const buildBody=()=>{
+    const body={message:`Mise à jour — ${new Date().toLocaleString('fr-FR')}`,content,branch:GH_BRANCH};
+    if(ghSha)body.sha=ghSha;
+    return body;
+  };
+
+  let res=await ghFetch(`contents/${GH_FILE}`,{method:'PUT',body:JSON.stringify(buildBody())});
+  if(!res.ok){
+    const e=await res.json().catch(()=>({}));
+    const shaMismatch=(res.status===409||res.status===422)&&String(e.message||'').includes('does not match');
+    if(!shaMismatch)throw new Error(e.message||`HTTP ${res.status}`);
+
+    const latest=await ghFetch(`contents/${GH_FILE}?ref=${GH_BRANCH}`);
+    if(!latest.ok)throw new Error(e.message||`HTTP ${res.status}`);
+    ghSha=(await latest.json()).sha;
+
+    res=await ghFetch(`contents/${GH_FILE}`,{method:'PUT',body:JSON.stringify(buildBody())});
+    if(!res.ok){const retryErr=await res.json().catch(()=>({}));throw new Error(retryErr.message||`HTTP ${res.status}`);}
+  }
   ghSha=(await res.json()).content.sha;
 }
 
