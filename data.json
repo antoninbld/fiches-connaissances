@@ -2,7 +2,7 @@
   "categories": [
     {
       "id": "mmh7cnz6xska",
-      "name": "Energie",
+      "name": "Concepts & mécanismes",
       "color": "#5a8ae0",
       "subcats": [
         {
@@ -43,7 +43,7 @@
           "summary": ""
         }
       ],
-      "summary": "Électricité, gaz, pétrole et systèmes associés : comprendre le rôle des ressources et des actifs dans le système énergétique — production, consommation, mix, sécurité d’approvisionnement, transition et politiques énergétiques."
+      "summary": "Regroupe les fiches qui expliquent une notion, un procédé, un mécanisme ou une logique de fonctionnement. À utiliser quand l’objectif principal est de comprendre comment quelque chose marche, avant d’en étudier les usages, le marché ou les implications géopolitiques"
     },
     {
       "id": "mmh7d5w832vp",
