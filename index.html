@@ -170,11 +170,12 @@
   .subcat-content{min-width:0;display:flex;flex-direction:column;gap:8px}
   .subcat-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
   .subcat-card .folder-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:600;line-height:1.06;letter-spacing:.01em;color:#f0e9d5}
-  .subcat-arrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:.04em;opacity:.6;transition:transform .2s ease,opacity .2s ease;flex-shrink:0;padding-top:4px}
-  .subcat-card:hover .subcat-arrow{opacity:1;transform:translateX(4px)}
+  .subcat-edit-btn{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:8px;border:1px solid rgba(90,138,224,.35);background:rgba(13,13,20,.72);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .16s ease;z-index:2}
+  .subcat-edit-btn:hover{border-color:var(--gold-dim);color:var(--gold);background:rgba(201,168,76,.08)}
   .subcat-card .folder-count{font-size:11px;letter-spacing:.04em;color:#9797b7}
   .subcat-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .subcat-pill{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);padding:5px 8px;border-radius:999px;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.26)}
+  .subcat-summary{font-size:13px;line-height:1.4;color:var(--text-muted);font-style:italic}
   
   /* FICHE GRID */
   #fiche-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:13px}
@@ -450,7 +451,31 @@
     </div>
   </div>
 </div>
-  
+
+<!-- MODAL Edit Subcategory -->
+<div class="modal-overlay" id="edit-subcat-modal">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-close" onclick="closeModal('edit-subcat-modal')">✕</button>
+    <div class="modal-title">✏️ Modifier la sous-catégorie</div>
+    <div class="modal-sub">Ajuste le nom et la synthèse courte (niveau 2).</div>
+    <input type="hidden" id="edit-subcat-cat-id">
+    <input type="hidden" id="edit-subcat-id">
+    <div class="form-group">
+      <label class="form-label">Nom de la sous-catégorie *</label>
+      <input class="form-input" id="edit-subcat-name" placeholder="Nom de la sous-catégorie…" maxlength="80">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Synthèse courte</label>
+      <textarea class="form-input" id="edit-subcat-summary" placeholder="En quelques mots, que couvre cette sous-catégorie ?" maxlength="300" style="min-height:92px;resize:vertical"></textarea>
+      <div class="form-hint" id="edit-subcat-summary-hint">0 / 300</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('edit-subcat-modal')">Annuler</button>
+      <button class="btn btn-gold btn-sm" onclick="saveSubcategoryEdit()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL Add Fiche -->
 <div class="modal-overlay" id="add-modal">
   <div class="modal">
@@ -741,7 +766,7 @@ function migrate(raw){
     if(cat.subcats.length&&typeof cat.subcats[0]==='string'){
       cat.subcats=cat.subcats.map(name=>({id:uid(),name,subcats:[]}));
     }
-    cat.subcats.forEach(sub=>{if(!sub.subcats)sub.subcats=[];});
+    cat.subcats.forEach(sub=>{if(!sub.subcats)sub.subcats=[];if(typeof sub.summary!=='string')sub.summary='';});
   });
   (raw.fiches||[]).forEach(f=>{
     if(f.subcat!==undefined&&f.subcatId===undefined){
@@ -1582,15 +1607,17 @@ function renderView(){
       subs.forEach(s=>{
         const cnt=cntFiches({catId:cat.id,subcatId:s.id});
         const tCnt=(s.subcats||[]).length;
+        const subSummary=(s.summary||'').trim();
         html+=`<div class="folder-card subcat-card" onclick="goSub('${cat.id}','${s.id}')">
+          <button class="subcat-edit-btn" title="Modifier la sous-catégorie" aria-label="Modifier la sous-catégorie" onclick="openEditSubcategoryModal('${cat.id}','${s.id}');event.stopPropagation();">✏</button>
           <div class="subcat-icon-wrap"><span class="folder-icon">📂</span></div>
           <div class="subcat-content">
             <div class="subcat-title-row">
               <div class="folder-name">${escH(s.name)}</div>
-              <span class="subcat-arrow">ouvrir ↗</span>
             </div>
             <div class="folder-count">${cnt} fiche${cnt!==1?'s':''} · ${tCnt} thème${tCnt!==1?'s':''}</div>
             <div class="subcat-meta"><span class="subcat-pill">Niveau 2</span></div>
+            ${subSummary?`<div class="subcat-summary">${escH(subSummary)}</div>`:''}
           </div>
         </div>`;
       });
@@ -1735,7 +1762,7 @@ function resolveLoc(p){
   let subcatId=document.getElementById(`${p}-subcat`).value;
   if(newSubName){
     let sub=cat.subcats.find(s=>s.name===newSubName);
-    if(!sub){sub={id:uid(),name:newSubName,subcats:[]};cat.subcats.push(sub);}
+    if(!sub){sub={id:uid(),name:newSubName,summary:'',subcats:[]};cat.subcats.push(sub);}
     subcatId=sub.id;
   }
   let themeId='';
@@ -2015,6 +2042,12 @@ function updateCatSummaryHint(){
   if(!input||!hint)return;
   hint.textContent=`${input.value.length} / 300`;
 }
+function updateSubcatSummaryHint(){
+  const input=document.getElementById('edit-subcat-summary');
+  const hint=document.getElementById('edit-subcat-summary-hint');
+  if(!input||!hint)return;
+  hint.textContent=`${input.value.length} / 300`;
+}
 function openEditCategoryModal(catId){
   const cat=getCat(catId);
   if(!cat)return;
@@ -2042,12 +2075,43 @@ function saveCategoryEdit(){
   closeModal('edit-cat-modal');
   toast('Catégorie mise à jour.','success');
 }
+function openEditSubcategoryModal(catId,subId){
+  const cat=getCat(catId);
+  const sub=getSub(cat,subId);
+  if(!cat||!sub)return;
+  document.getElementById('edit-subcat-cat-id').value=cat.id;
+  document.getElementById('edit-subcat-id').value=sub.id;
+  document.getElementById('edit-subcat-name').value=sub.name||'';
+  document.getElementById('edit-subcat-summary').value=sub.summary||'';
+  updateSubcatSummaryHint();
+  openModal('edit-subcat-modal');
+  document.getElementById('edit-subcat-name')?.focus();
+}
+function saveSubcategoryEdit(){
+  const catId=document.getElementById('edit-subcat-cat-id').value;
+  const subId=document.getElementById('edit-subcat-id').value;
+  const cat=getCat(catId);
+  const sub=getSub(cat,subId);
+  if(!cat||!sub){toast('Sous-catégorie introuvable.','error');return;}
+  const name=document.getElementById('edit-subcat-name').value.trim();
+  const summary=document.getElementById('edit-subcat-summary').value.trim().slice(0,300);
+  if(!name){toast('Nom requis.','error');return;}
+  const duplicate=(cat.subcats||[]).find(s=>s.id!==subId&&s.name.toLowerCase()===name.toLowerCase());
+  if(duplicate){toast('Une sous-catégorie avec ce nom existe déjà.','error');return;}
+  sub.name=name;
+  sub.summary=summary;
+  scheduleSave();
+  renderTree();
+  render();
+  closeModal('edit-subcat-modal');
+  toast('Sous-catégorie mise à jour.','success');
+}
   
 function showAddSub(catId){treeOpen1.add(catId);renderTree();const el=document.getElementById(`iadd-sub-${catId}`);if(el){el.style.display='flex';document.getElementById(`inew-sub-${catId}`)?.focus();}}
 function confirmSub(catId){
   const name=document.getElementById(`inew-sub-${catId}`)?.value.trim();if(!name)return;
   const cat=getCat(catId);
-  if(!cat.subcats.find(s=>s.name===name)){const newSub={id:uid(),name,subcats:[]};cat.subcats.push(newSub);openCats.add(catId);openSubs.add(newSub.id);scheduleSave();render();}
+  if(!cat.subcats.find(s=>s.name===name)){const newSub={id:uid(),name,summary:'',subcats:[]};cat.subcats.push(newSub);openCats.add(catId);openSubs.add(newSub.id);scheduleSave();render();}
   renderTree();toast('Sous-catégorie créée !','success');
 }
 function showAddTheme(catId,subId){treeOpen1.add(catId);treeOpen2.add(subId);renderTree();const el=document.getElementById(`iadd-th-${subId}`);if(el){el.style.display='flex';document.getElementById(`inew-th-${subId}`)?.focus();}}
@@ -2146,6 +2210,7 @@ function closeModal(id){
 }
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 document.getElementById('edit-cat-summary')?.addEventListener('input',updateCatSummaryHint);
+document.getElementById('edit-subcat-summary')?.addEventListener('input',updateSubcatSummaryHint);
 
 /* ── §11b · Fiches liées — Link Picker ─────────────────────────── */
 const _lpSel={};
