@@ -158,22 +158,21 @@
   .folder-name{font-size:13px;color:var(--text);font-weight:500;line-height:1.3}
   .folder-count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:2px}
 
-  .folder-grid.subcat-grid{grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px;margin-bottom:30px}
-  .folder-card.subcat-card{position:relative;align-items:flex-start;padding:20px 18px 18px 16px;gap:11px;border-radius:16px;background:
+  .folder-grid.subcat-grid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:30px}
+  .folder-card.subcat-card{position:relative;display:block;padding:18px 16px 16px;border-radius:16px;background:
     linear-gradient(145deg,rgba(90,138,224,.10),rgba(19,19,30,.75) 45%,rgba(201,168,76,.06)),
     var(--surface);border-color:rgba(90,138,224,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.02),0 10px 24px rgba(0,0,0,.28)}
   .folder-card.subcat-card::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(120deg,rgba(90,138,224,.12),transparent 45%,rgba(201,168,76,.12));opacity:.5;pointer-events:none;transition:opacity .22s ease}
   .folder-card.subcat-card:hover{transform:translateY(-3px);border-color:rgba(201,168,76,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 14px 34px rgba(0,0,0,.4),0 0 0 1px rgba(201,168,76,.14)}
   .folder-card.subcat-card:hover::before{opacity:.9}
-  .subcat-icon-wrap{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(13,13,20,.55);border:1px solid rgba(90,138,224,.35);box-shadow:inset 0 0 0 1px rgba(201,168,76,.1)}
-  .subcat-icon-wrap .folder-icon{font-size:20px;filter:drop-shadow(0 2px 8px rgba(201,168,76,.22))}
-  .subcat-content{min-width:0;display:flex;flex-direction:column;gap:8px;flex:1}
-  .subcat-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-  .subcat-card .folder-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:600;line-height:1.06;letter-spacing:.01em;color:#f0e9d5}
+  .subcat-content{min-width:0;display:flex;flex-direction:column;gap:8px;width:100%}
+  .subcat-title-row{display:flex;align-items:flex-start;justify-content:center;gap:8px;width:100%}
+  .subcat-card .folder-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;line-height:1.08;letter-spacing:.01em;color:#f0e9d5;text-align:center;width:100%}
   .subcat-edit-btn{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:8px;border:1px solid rgba(90,138,224,.35);background:rgba(13,13,20,.72);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .16s ease;z-index:2}
   .subcat-edit-btn:hover{border-color:var(--gold-dim);color:var(--gold);background:rgba(201,168,76,.08)}
   .subcat-card .folder-count{font-size:11px;letter-spacing:.04em;color:#9797b7;margin-bottom:2px}
   .subcat-summary{font-size:14px;line-height:1.56;color:#d5b86a;font-style:italic;text-align:justify;text-justify:inter-word;hyphens:auto}
+  @media (min-width:1460px){.folder-grid.subcat-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
   
   /* FICHE GRID */
   #fiche-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:13px}
@@ -1608,7 +1607,6 @@ function renderView(){
         const subSummary=(s.summary||'').trim();
         html+=`<div class="folder-card subcat-card" onclick="goSub('${cat.id}','${s.id}')">
           <button class="subcat-edit-btn" title="Modifier la sous-catégorie" aria-label="Modifier la sous-catégorie" onclick="openEditSubcategoryModal('${cat.id}','${s.id}');event.stopPropagation();">✏</button>
-          <div class="subcat-icon-wrap"><span class="folder-icon">📂</span></div>
           <div class="subcat-content">
             <div class="subcat-title-row">
               <div class="folder-name">${escH(s.name)}</div>
