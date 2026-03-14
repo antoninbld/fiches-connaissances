@@ -68,7 +68,14 @@
       "id": "mmp43k4rq4nq",
       "name": "Marchés, systèmes & chaînes de valeur",
       "color": "#4ab8c0",
-      "subcats": [],
+      "subcats": [
+        {
+          "id": "mmqh0m8hh7c7",
+          "name": "Marchés de matières premières",
+          "summary": "",
+          "subcats": []
+        }
+      ],
       "summary": "Regroupe les fiches qui expliquent le fonctionnement d’un marché, d’un système sectoriel ou d’une chaîne industrielle complète. À utiliser quand la fiche cherche à comprendre comment s’organise un secteur, de la production aux échanges, aux prix ou à la régulation."
     },
     {
