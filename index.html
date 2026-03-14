@@ -54,6 +54,9 @@
   #sidebar{width:272px;min-width:272px;background:var(--surface);border-right:1px solid var(--border);padding:18px 0;overflow-y:auto;position:sticky;top:64px;height:calc(100vh - 64px)}
   .sidebar-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);padding:0 16px 8px}
   .sidebar-divider{border:none;border-top:1px solid var(--border);margin:11px 0}
+  .sidebar-header-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:14px}
+  .sidebar-actions{display:flex;align-items:center;gap:6px}
+  .sidebar-actions .btn{padding:4px 7px;font-size:9px;letter-spacing:.05em}
   .nav-home{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;font-size:14px;color:var(--text-muted);user-select:none}
   .nav-home:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border2)}
   .nav-home.active{background:var(--gold-glow);color:var(--gold);border-left-color:var(--gold)}
@@ -99,6 +102,7 @@
   .n2.sel{background:rgba(201,168,76,.07);border-left-color:var(--gold-dim)}
   .n2-left{display:flex;align-items:center;gap:7px;font-size:13px;color:#b9c9ee}
   .n2.sel .n2-left{color:var(--text)}
+  .n2-dot{width:6px;height:6px;border-radius:50%;opacity:.9;flex-shrink:0}
 
   /* Level 3 */
   .n3{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 6px 54px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none;font-size:12px;color:var(--text-dim);font-style:italic}
@@ -372,7 +376,13 @@
       Cortex
     </div>
     <div class="sidebar-divider"></div>
-    <div class="sidebar-label">Catégories</div>
+    <div class="sidebar-header-row">
+      <div class="sidebar-label" style="padding-bottom:0">Catégories</div>
+      <div class="sidebar-actions">
+        <button class="btn btn-outline" type="button" onclick="expandAllSidebar()">Tout développer</button>
+        <button class="btn btn-outline" type="button" onclick="collapseAllSidebar()">Tout regrouper</button>
+      </div>
+    </div>
     <div id="sidebar-cats"></div>
   </nav>
   <main id="main">
@@ -846,7 +856,16 @@ function goSub(catId,subcatId){state={view:'sub',catId,subcatId,themeId:null,sea
 function goTheme(catId,subcatId,themeId){state={view:'theme',catId,subcatId,themeId,search:''};openCats.add(catId);openSubs.add(subcatId);render();}
 function toggleCatOpen(catId,e){e.stopPropagation();openCats.has(catId)?openCats.delete(catId):openCats.add(catId);renderSidebar();}
 function toggleSubOpen(subId,e){e.stopPropagation();openSubs.has(subId)?openSubs.delete(subId):openSubs.add(subId);renderSidebar();}
-
+function expandAllSidebar(){
+  openCats=new Set(db.categories.map(c=>c.id));
+  openSubs=new Set(db.categories.flatMap(c=>(c.subcats||[]).map(s=>s.id)));
+  renderSidebar();
+}
+function collapseAllSidebar(){
+  openCats=new Set(db.categories.map(c=>c.id));
+  openSubs=new Set();
+  renderSidebar();
+}
 
 /* ════════════════════════════════════════════════════════════════════
    §6 · RENDU — sidebar, breadcrumb, orchestration
@@ -866,15 +885,38 @@ function renderSidebar(){
   document.getElementById('nav-cortex').className='nav-home'+(state.view==='cortex'&&!state.search?' active':'');
   const el=document.getElementById('sidebar-cats');
   el.innerHTML=db.categories.map(cat=>{
-    const isSel=state.catId===cat.id;
+    const isCatSel=state.catId===cat.id;
+    const catOpen=openCats.has(cat.id);
     const total=cntFiches({catId:cat.id});
-    return `<div class="n1 ${isSel&&!state.subcatId?'sel':''}" draggable="true" data-cat-id="${cat.id}" onclick="goCat('${cat.id}')">
+    const subcats=(cat.subcats||[]).map(sub=>{
+      const isSubSel=state.subcatId===sub.id;
+      const subOpen=openSubs.has(sub.id);
+      const subTotal=cntFiches({catId:cat.id,subcatId:sub.id});
+      const themes=(sub.subcats||[]).map(th=>{
+        const isThemeSel=state.themeId===th.id;
+        const thTotal=cntFiches({catId:cat.id,subcatId:sub.id,themeId:th.id});
+        return `<div class="n3 ${isThemeSel?'sel':''}" onclick="goTheme('${cat.id}','${sub.id}','${th.id}')">
+          <div class="n3-left">${escH(th.name)}</div>
+          <span class="badge">${thTotal}</span>
+        </div>`;
+      }).join('');
+      return `<div class="n2 ${isSubSel&&!state.themeId?'sel':''}" draggable="true" data-sub-id="${sub.id}" data-cat-id="${cat.id}" onclick="goSub('${cat.id}','${sub.id}')">
+        <div class="n2-left"><span class="n2-dot" style="background:${cat.color}"></span><span>${escH(sub.name)}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+          ${(sub.subcats||[]).length?`<span class="arrow ${subOpen?'open':''}" onclick="toggleSubOpen('${sub.id}',event)">▸</span>`:''}
+          <span class="drag-handle" title="Glisser pour réordonner">⠿</span>
+          <span class="badge">${subTotal}</span>
+        </div>
+      </div>${subOpen?themes:''}`;
+    }).join('');
+    return `<div class="n1 ${isCatSel&&!state.subcatId?'sel':''}" draggable="true" data-cat-id="${cat.id}" onclick="goCat('${cat.id}')">
       <div class="n1-left"><span class="n1-dot" style="background:${cat.color}"></span><span>${escH(cat.name)}</span></div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        ${(cat.subcats||[]).length?`<span class="arrow ${catOpen?'open':''}" onclick="toggleCatOpen('${cat.id}',event)">▸</span>`:''}
         <span class="drag-handle" title="Glisser pour réordonner">⠿</span>
         <span class="badge">${total}</span>
       </div>
-    </div>`;
+    </div>${catOpen?subcats:''}`;
   }).join('');
 }
 
