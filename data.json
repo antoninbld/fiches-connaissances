@@ -94,6 +94,12 @@
           "name": "Pays",
           "summary": "",
           "subcats": []
+        },
+        {
+          "id": "mmqhkjkzc694",
+          "name": "Régions stratégiques / énergétiques",
+          "summary": "",
+          "subcats": []
         }
       ],
       "summary": "Regroupe les fiches centrées sur un espace géographique comme objet principal d’analyse. À utiliser quand la fiche vise à comprendre un pays, une région ou un territoire stratégique, son histoire, sa structure ou son importance géopolitique et énergétique."
