@@ -85,9 +85,7 @@
   .chronos-day-callout{position:absolute;pointer-events:none;z-index:32}
   .chronos-day-callout .stem{position:absolute;left:50%;transform:translateX(-50%);width:1px;background:rgba(201,168,76,.62)}
   .chronos-day-callout .label{position:absolute;left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:6px;border:1px solid rgba(201,168,76,.34);background:rgba(19,19,30,.92);font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.25;color:#efe5c9;white-space:nowrap;letter-spacing:.02em}
-  .chronos-day-callout.up .stem{bottom:14px}
-  .chronos-day-callout.up .label{bottom:0}
-  .chronos-day-callout.down .stem{top:14px}
+  .chronos-day-callout.up .label{top:0}
   .chronos-day-callout.down .label{top:0}
   .chronos-empty{padding:60px 24px;text-align:center;color:var(--text-dim)}
   .chronos-tooltip{position:fixed;z-index:2300;display:none;max-width:300px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 11px;pointer-events:none;box-shadow:0 8px 26px rgba(0,0,0,.35)}
@@ -2421,7 +2419,7 @@ function toDayTs(d){return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());}
 function fmtChronosDayLabel(raw){
   const parsed=parseSingleEventDate(String(raw||''));
   if(!parsed||parsed.error)return String(raw||'');
-  return parsed.startDate.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  return parsed.startDate.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
 }
 function chronosSort(a,b){
   if(a.startTs!==b.startTs)return a.startTs-b.startTs;
@@ -2529,8 +2527,9 @@ function renderChronos(){
     const label=fmtChronosDayLabel(it.rawValue||'');
     const extra=it.callout.level*calloutLevelStep;
     const stemHeight=stemBase+extra;
-    const top=it.callout.orientation==='up'?(dayTrackTop-(stemHeight+calloutGap+16)):(dayTrackTop+14);
-    const stemTop=it.callout.orientation==='up'?0:(16+calloutGap);
+    const labelHeight=16;
+    const top=it.callout.orientation==='up'?(dayTrackTop-(stemHeight+calloutGap+labelHeight)):(dayTrackTop+14);
+    const stemTop=it.callout.orientation==='up'?(labelHeight+calloutGap):0;
     return `<div class="chronos-day-callout ${it.callout.orientation}" style="left:${it.callout.left}px;top:${top}px"><div class="stem" style="height:${stemHeight}px;top:${stemTop}px"></div><div class="label">${escH(label)}</div></div>`;
   }).join('');
   content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">${items.length} événement${items.length>1?'s':''} daté${items.length>1?'s':''}</div></div>
