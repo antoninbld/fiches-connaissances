@@ -673,6 +673,7 @@
         <span id="zoom-val" onclick="vZoomReset()" title="Réinitialiser le zoom">100%</span>
         <button class="zoom-btn" onclick="vZoomAdj(+0.1)" title="Zoom avant">+</button>
       </div>
+      <button class="btn btn-outline btn-sm" id="viewer-edit-btn" onclick="editCurrentViewedFiche()" style="flex-shrink:0" title="Modifier cette fiche">✏ Modifier</button>
       <button class="btn btn-outline btn-sm" onclick="closeModal('viewer-modal')" style="flex-shrink:0">✕ Fermer</button>
     </div>
     <div id="viewer-wrap">
@@ -1912,6 +1913,7 @@ function saveFiche(){
 
 /* ── §8b · Viewer zoom ─────────────────────────────────────────── */
 let vZoom=1;
+let viewerCurrentFicheId='';
 function vZoomSet(z){
   vZoom=Math.round(Math.max(0.2,Math.min(3,z))*10)/10;
   const wrap=document.getElementById('viewer-wrap');
@@ -1928,6 +1930,7 @@ function vZoomReset(){vZoomSet(1);}
 
 function viewFiche(id){
   const f=db.fiches.find(x=>x.id===id);if(!f)return;
+  viewerCurrentFicheId=id;
   trackRecent(id);
   if(f.html==='__EXTERNAL__'){
     if(_htmlCache[id]){_openViewer(f,_htmlCache[id]);return;}
@@ -1953,6 +1956,12 @@ function viewFiche(id){
   }
   _openViewer(f,f.html);
 }
+
+function editCurrentViewedFiche(){
+  if(!viewerCurrentFicheId)return;
+  editFiche(viewerCurrentFicheId);
+}
+
 function _openViewer(f,html){
   document.getElementById('viewer-title').textContent=f.title;
   vZoom=1;document.getElementById('zoom-val').textContent='100%';
@@ -2052,6 +2061,7 @@ function updateFiche(){
     _htmlCache[id]=html;
     Object.assign(f,{title,...loc,html:'__EXTERNAL__',dateEvenement:dateEventResult.value,links:lpGet('ef')});
     closeModal('edit-modal');toast('Fiche mise à jour — sync en cours, patiente quelques secondes…','success');render();
+    if(viewerCurrentFicheId===id&&document.getElementById('viewer-modal').classList.contains('open'))viewFiche(id);
     if(getToken())ghSaveFile(`fiches/${id}.html`,html,f.externalSha||null)
       .then(sha=>{f.externalSha=sha;scheduleSave();toast('Fiche lourde synchronisée ✓','success');})
       .catch(e=>toast('Erreur sync fiche : '+e.message,'error'));
@@ -2061,6 +2071,7 @@ function updateFiche(){
     delete _htmlCache[id];
     Object.assign(f,{title,...loc,html,dateEvenement:dateEventResult.value,links:lpGet('ef'),externalSha:null});
     scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
+    if(viewerCurrentFicheId===id&&document.getElementById('viewer-modal').classList.contains('open'))viewFiche(id);
   }
 }
 
@@ -2482,13 +2493,16 @@ function toast(msg,type=''){const el=document.getElementById('toast');el.textCon
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){
   document.getElementById(id).classList.remove('open');
-  if(id==='viewer-modal'&&window._viewerBlobUrl){
-    URL.revokeObjectURL(window._viewerBlobUrl);
-    window._viewerBlobUrl=null;
-    document.getElementById('viewer-frame').removeAttribute('src');
+  if(id==='viewer-modal'){
+    viewerCurrentFicheId='';
+    if(window._viewerBlobUrl){
+      URL.revokeObjectURL(window._viewerBlobUrl);
+      window._viewerBlobUrl=null;
+      document.getElementById('viewer-frame').removeAttribute('src');
+    }
   }
 }
-document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeModal(o.id);}));
 document.getElementById('edit-cat-summary')?.addEventListener('input',updateCatSummaryHint);
 document.getElementById('edit-subcat-summary')?.addEventListener('input',updateSubcatSummaryHint);
 
