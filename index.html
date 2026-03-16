@@ -2449,41 +2449,14 @@ function renderChronos(){
   const dayItems=items.filter(it=>it.type==='day'&&!it.label.includes(' - '));
   const topOffset=56;
   const rowHeight=46;
-  const stemBase=22;
-  const calloutGap=3;
-  const calloutLevelStep=20;
-  const dayLabelMinGap=52;
-  const upLevels=[];
-  const downLevels=[];
-  dayItems.forEach((it,index)=>{
-    const left=((it.startTs-minTs)/dayMs)*pxPerDay+60+6;
-    const preferred=index%2===0?'up':'down';
-    const nextLevel=(levels)=>{
-      for(let lvl=0;lvl<10;lvl++){
-        const bucket=levels[lvl]||[];
-        const overlap=bucket.some(x=>Math.abs(x-left)<dayLabelMinGap);
-        if(!overlap)return lvl;
-      }
-      return levels.length;
-    };
-    const count=(levels)=>levels.reduce((sum,b)=>sum+(b?.length||0),0);
-    const levelUp=nextLevel(upLevels);
-    const levelDown=nextLevel(downLevels);
-    const upCount=count(upLevels);
-    const downCount=count(downLevels);
-    const score=(orientation,level)=>{
-      const sidePenalty=orientation===preferred?0:0.35;
-      const balancePenalty=orientation==='up'
-        ?Math.max(0,upCount-downCount)*0.18
-        :Math.max(0,downCount-upCount)*0.18;
-      return level+sidePenalty+balancePenalty;
-    };
-    const orientation=score('up',levelUp)<=score('down',levelDown)?'up':'down';
-    const level=orientation==='up'?levelUp:levelDown;
-    if(!((orientation==='up'?upLevels:downLevels)[level]))(orientation==='up'?upLevels:downLevels)[level]=[];
-    (orientation==='up'?upLevels:downLevels)[level].push(left);
-    it.callout={orientation,level,left};
-  });
+  const dayMarkerSize=12;
+  const stemBase=24;
+  const calloutGap=5;
+  const calloutLevelStep=22;
+  const labelHeight=16;
+  const labelCharWidth=6.2;
+  const layoutPadding=4;
+  const maxDayLevels=16;
   const tracks=[];
   items.forEach(it=>{
     let row=0;
@@ -2496,11 +2469,87 @@ function renderChronos(){
     tracks[row].push(it);
     it.row=row;
   });
-  const upHeight=stemBase+calloutGap+16+(upLevels.length?((upLevels.length-1)*calloutLevelStep):0);
-  const downHeight=stemBase+calloutGap+16+(downLevels.length?((downLevels.length-1)*calloutLevelStep):0);
-  const dayTrackTop=Math.max(topOffset+2*rowHeight,upHeight+10);
+  const dayTrackTop=Math.max(topOffset+2*rowHeight,topOffset+36);
+  const dayAnchorBaseY=dayTrackTop+6;
+  const dayPlacements=[];
+  const daySideCounts={up:0,down:0};
+  dayItems
+    .slice()
+    .sort((a,b)=>a.startTs-b.startTs||a.id.localeCompare(b.id))
+    .forEach((it,index)=>{
+      const left=((it.startTs-minTs)/dayMs)*pxPerDay+66;
+      const label=fmtChronosDayLabel(it.rawValue||'');
+      const labelWidth=Math.max(56,label.length*labelCharWidth+14);
+      const previous=dayPlacements[dayPlacements.length-1]||null;
+      const preferred=(previous&&Math.abs(previous.left-left)<68)
+        ?(previous.orientation==='up'?'down':'up')
+        :(daySideCounts.up<=daySideCounts.down?'up':'down');
+      const makePlacement=(orientation,level)=>{
+        const direction=orientation==='up'?-1:1;
+        const stemHeight=stemBase+level*calloutLevelStep;
+        const markerCenterY=dayAnchorBaseY+direction*stemHeight;
+        const markerTop=markerCenterY-(dayMarkerSize/2);
+        const markerBox={
+          left:left-(dayMarkerSize/2),
+          right:left+(dayMarkerSize/2),
+          top:markerTop,
+          bottom:markerTop+dayMarkerSize
+        };
+        const labelTop=orientation==='up'
+          ?(markerTop-(calloutGap+labelHeight))
+          :(markerTop+dayMarkerSize+calloutGap);
+        const labelBox={
+          left:left-(labelWidth/2),
+          right:left+(labelWidth/2),
+          top:labelTop,
+          bottom:labelTop+labelHeight
+        };
+        return{orientation,level,left,label,stemHeight,labelWidth,markerTop,markerCenterY,markerBox,labelBox};
+      };
+      const boxOverlap=(a,b,padding=0)=>!(a.right+padding<=b.left-padding||a.left-padding>=b.right+padding||a.bottom+padding<=b.top-padding||a.top-padding>=b.bottom+padding);
+      const collides=placement=>dayPlacements.some(existing=>{
+        if(boxOverlap(placement.labelBox,existing.labelBox,layoutPadding))return true;
+        if(boxOverlap(placement.markerBox,existing.markerBox,layoutPadding))return true;
+        if(boxOverlap(placement.labelBox,existing.markerBox,layoutPadding))return true;
+        if(boxOverlap(placement.markerBox,existing.labelBox,layoutPadding))return true;
+        return false;
+      });
+      let best=null;
+      for(let level=0;level<maxDayLevels;level++){
+        ['up','down'].forEach(orientation=>{
+          const candidate=makePlacement(orientation,level);
+          if(collides(candidate))return;
+          const sidePenalty=orientation===preferred?0:0.45;
+          const balancePenalty=orientation==='up'
+            ?Math.max(0,daySideCounts.up-daySideCounts.down)*0.15
+            :Math.max(0,daySideCounts.down-daySideCounts.up)*0.15;
+          const nearBonus=(previous&&orientation!==previous.orientation&&Math.abs(previous.left-left)<78)?-0.1:0;
+          const score=level+sidePenalty+balancePenalty+nearBonus+(index*0.0001);
+          if(!best||score<best.score)best={placement:candidate,score};
+        });
+        if(best)break;
+      }
+      const finalPlacement=best?best.placement:makePlacement(preferred,maxDayLevels);
+      dayPlacements.push(finalPlacement);
+      daySideCounts[finalPlacement.orientation]++;
+      it.callout=finalPlacement;
+    });
+  const minDayTop=dayPlacements.length?Math.min(...dayPlacements.map(p=>Math.min(p.labelBox.top,p.markerBox.top))):dayTrackTop;
+  const dayShift=minDayTop<topOffset?(topOffset-minDayTop):0;
+  if(dayShift){
+    dayPlacements.forEach(p=>{
+      p.markerTop+=dayShift;
+      p.markerCenterY+=dayShift;
+      p.markerBox.top+=dayShift;
+      p.markerBox.bottom+=dayShift;
+      p.labelBox.top+=dayShift;
+      p.labelBox.bottom+=dayShift;
+    });
+  }
+  const dayAnchorY=dayAnchorBaseY+dayShift;
   const baseCanvasHeight=topOffset+Math.max(1,tracks.length)*rowHeight+26;
-  const canvasHeight=Math.max(baseCanvasHeight,dayTrackTop+14+downHeight+12);
+  const maxDayBottom=dayPlacements.length?Math.max(...dayPlacements.map(p=>Math.max(p.labelBox.bottom,p.markerBox.bottom))):dayTrackTop;
+  const canvasHeight=Math.max(baseCanvasHeight,maxDayBottom+16);
   const minDate=new Date(minTs),maxDate=new Date(maxTs);
   let years='';
   for(let y=minDate.getUTCFullYear();y<=maxDate.getUTCFullYear();y++){
@@ -2517,20 +2566,16 @@ function renderChronos(){
   const nodes=items.map(it=>{
     const left=((it.startTs-minTs)/dayMs)*pxPerDay+60;
     const width=Math.max(it.type==='day'?12:8,((it.endTs-it.startTs)/dayMs+1)*pxPerDay);
-    const top=it.type==='day'&&it.callout?dayTrackTop:topOffset+it.row*rowHeight;
+    const top=it.type==='day'&&it.callout?it.callout.markerTop:topOffset+it.row*rowHeight;
     const z=it.type==='day'?30:it.type==='month'?20:10;
     const caption=it.type==='day'&&it.callout?'':escH(it.title);
     return `<div class="chronos-track ${it.type}" style="left:${left}px;top:${top}px;width:${width}px;z-index:${z}" data-fiche-id="${it.id}" data-title="${escH(it.title)}" data-date="${escH(it.label)}" data-cat="${escH(it.cat)}"><div class="chronos-caption">${caption}</div></div>`;
   }).join('');
   const dayCallouts=dayItems.map(it=>{
     if(!it.callout)return '';
-    const label=fmtChronosDayLabel(it.rawValue||'');
-    const extra=it.callout.level*calloutLevelStep;
-    const stemHeight=stemBase+extra;
-    const labelHeight=16;
-    const top=it.callout.orientation==='up'?(dayTrackTop-(stemHeight+calloutGap+labelHeight)):(dayTrackTop+14);
-    const stemTop=it.callout.orientation==='up'?(labelHeight+calloutGap):0;
-    return `<div class="chronos-day-callout ${it.callout.orientation}" style="left:${it.callout.left}px;top:${top}px"><div class="stem" style="height:${stemHeight}px;top:${stemTop}px"></div><div class="label">${escH(label)}</div></div>`;
+    const stemTop=Math.min(dayAnchorY,it.callout.markerCenterY);
+    const stemHeight=Math.abs(dayAnchorY-it.callout.markerCenterY);
+    return `<div class="chronos-day-callout ${it.callout.orientation}" style="left:${it.callout.left}px;top:0"><div class="stem" style="height:${stemHeight}px;top:${stemTop}px"></div><div class="label" style="top:${it.callout.labelBox.top}px;min-width:${Math.round(it.callout.labelWidth)}px">${escH(it.callout.label)}</div></div>`;
   }).join('');
   content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">${items.length} événement${items.length>1?'s':''} daté${items.length>1?'s':''}</div></div>
   <div class="view-subtitle" style="margin-bottom:12px">Frise chronologique à l'échelle, avec superposition des granularités année / mois / jour.</div>
