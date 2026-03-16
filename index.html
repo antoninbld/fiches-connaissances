@@ -2449,6 +2449,7 @@ function renderChronos(){
   const dayItems=items.filter(it=>it.type==='day'&&!it.label.includes(' - '));
   const topOffset=56;
   const rowHeight=46;
+  const laneGap=14;
   const dayMarkerSize=12;
   const calloutGap=5;
   const labelHeight=16;
@@ -2457,21 +2458,29 @@ function renderChronos(){
   const minDayStem=18;
   const dayTopLimit=topOffset+8;
   const dayLowerPadding=22;
-  const tracks=[];
-  items.forEach(it=>{
-    let row=0;
-    while(true){
-      if(!tracks[row]){tracks[row]=[];break;}
-      const overlap=tracks[row].some(o=>!(it.startTs>o.endTs||it.endTs<o.startTs));
-      if(!overlap)break;
-      row++;
-    }
-    tracks[row].push(it);
-    it.row=row;
-  });
-  const dayTrackTop=Math.max(topOffset+2*rowHeight,topOffset+36);
+  const assignRows=list=>{
+    const tracks=[];
+    list.forEach(it=>{
+      let row=0;
+      while(true){
+        if(!tracks[row]){tracks[row]=[];break;}
+        const overlap=tracks[row].some(o=>!(it.startTs>o.endTs||it.endTs<o.startTs));
+        if(!overlap)break;
+        row++;
+      }
+      tracks[row].push(it);
+      it.row=row;
+    });
+    return Math.max(1,tracks.length);
+  };
+  const yearRows=assignRows(items.filter(it=>it.type==='year'));
+  const monthRows=assignRows(items.filter(it=>it.type==='month'));
+  const dayRows=assignRows(items.filter(it=>it.type==='day'));
+  const monthTrackTop=topOffset+(yearRows*rowHeight)+laneGap;
+  const dayTrackTop=monthTrackTop+(monthRows*rowHeight)+laneGap;
+  const laneTopByType={year:topOffset,month:monthTrackTop,day:dayTrackTop};
   const dayAnchorBaseY=dayTrackTop+6;
-  const baseCanvasHeight=topOffset+Math.max(1,tracks.length)*rowHeight+26;
+  const baseCanvasHeight=dayTrackTop+Math.max(1,dayRows)*rowHeight+26;
   const dayBottomLimit=Math.max(dayTrackTop+dayMarkerSize+calloutGap+labelHeight+8,baseCanvasHeight-dayLowerPadding);
   const dayPlacements=[];
   const daySideCounts={up:0,down:0};
@@ -2596,7 +2605,9 @@ function renderChronos(){
   const nodes=items.map(it=>{
     const left=((it.startTs-minTs)/dayMs)*pxPerDay+60;
     const width=Math.max(it.type==='day'?12:8,((it.endTs-it.startTs)/dayMs+1)*pxPerDay);
-    const top=it.type==='day'&&it.callout?it.callout.markerTop:topOffset+it.row*rowHeight;
+    const top=it.type==='day'&&it.callout
+      ?it.callout.markerTop
+      :laneTopByType[it.type]+it.row*rowHeight;
     const z=it.type==='day'?30:it.type==='month'?20:10;
     const caption=it.type==='day'&&it.callout?'':escH(it.title);
     return `<div class="chronos-track ${it.type}" style="left:${left}px;top:${top}px;width:${width}px;z-index:${z}" data-fiche-id="${it.id}" data-title="${escH(it.title)}" data-date="${escH(it.label)}" data-cat="${escH(it.cat)}"><div class="chronos-caption">${caption}</div></div>`;
