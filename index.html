@@ -572,7 +572,7 @@
         </div>
         <div>
           <input class="form-input" id="f-date-evenement" type="text" placeholder="ex: 1975, 051975, 17051975" oninput="validateDateField('f')">
-          <div class="form-hint" id="f-date-hint">Formats acceptés : AAAA, MMAAAA, JJMMAAAA.</div>
+          <div class="form-hint" id="f-date-hint">Formats acceptés : AAAA, MMAAAA, JJMMAAAA et leurs intervalles homogènes (AAAA-AAAA, MMAAAA-MMAAAA, JJMMAAAA-JJMMAAAA).</div>
         </div>
       </div>
       <div class="form-hint" id="f-date-error" style="color:var(--red);display:none"></div>
@@ -644,7 +644,7 @@
         </div>
         <div>
           <input class="form-input" id="ef-date-evenement" type="text" placeholder="ex: 1975, 051975, 17051975" oninput="validateDateField('ef')">
-          <div class="form-hint" id="ef-date-hint">Formats acceptés : AAAA, MMAAAA, JJMMAAAA.</div>
+          <div class="form-hint" id="ef-date-hint">Formats acceptés : AAAA, MMAAAA, JJMMAAAA et leurs intervalles homogènes (AAAA-AAAA, MMAAAA-MMAAAA, JJMMAAAA-JJMMAAAA).</div>
         </div>
       </div>
       <div class="form-hint" id="ef-date-error" style="color:var(--red);display:none"></div>
@@ -2312,9 +2312,10 @@ function fmtDate(ts){return ts?new Date(ts).toLocaleDateString('fr-FR',{day:'2-d
 function hlText(text,q){return escH(text).replace(new RegExp(`(${escH(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),'<span class="highlight">$1</span>');}
 
 function guessDateKind(raw){
-  if(/^\d{4}$/.test(raw||''))return 'year';
-  if(/^\d{6}$/.test(raw||''))return 'month';
-  if(/^\d{8}$/.test(raw||''))return 'day';
+  const value=(raw||'').trim();
+  if(/^\d{4}$/.test(value)||/^\d{4}-\d{4}$/.test(value))return 'year';
+  if(/^\d{6}$/.test(value)||/^\d{6}-\d{6}$/.test(value))return 'month';
+  if(/^\d{8}$/.test(value)||/^\d{8}-\d{8}$/.test(value))return 'day';
   return '';
 }
 function onDateKindChange(p){
@@ -2322,17 +2323,14 @@ function onDateKindChange(p){
   const input=document.getElementById(`${p}-date-evenement`);
   const hint=document.getElementById(`${p}-date-hint`);
   if(!input||!hint)return;
-  if(kind==='year'){input.placeholder='ex: 1975';hint.textContent='Saisis exactement 4 chiffres (AAAA).';}
-  else if(kind==='month'){input.placeholder='ex: 051975';hint.textContent='Saisis 6 chiffres : MM puis AAAA (de 01 à 12).';}
-  else if(kind==='day'){input.placeholder='ex: 17051975';hint.textContent='Saisis 8 chiffres : JJMMAAAA (date réelle).';}
-  else{input.placeholder='ex: 1975, 051975, 17051975';hint.textContent='Formats acceptés : AAAA, MMAAAA, JJMMAAAA.';}
+  if(kind==='year'){input.placeholder='ex: 1975 ou 1975-1978';hint.textContent='Saisis AAAA (date simple) ou AAAA-AAAA (intervalle année à année).';}
+  else if(kind==='month'){input.placeholder='ex: 051975 ou 051975-101976';hint.textContent='Saisis MMAAAA ou MMAAAA-MMAAAA (MM entre 01 et 12).';}
+  else if(kind==='day'){input.placeholder='ex: 17051975 ou 17051975-22051975';hint.textContent='Saisis JJMMAAAA ou JJMMAAAA-JJMMAAAA (date réelle).';}
+  else{input.placeholder='ex: 1975, 051975, 17051975, 1975-1978';hint.textContent='Formats acceptés : AAAA, MMAAAA, JJMMAAAA et leurs intervalles homogènes.';}
   validateDateField(p);
 }
-function parseEventDate(rawValue){
-  const raw=(rawValue||'').trim();
-  if(!raw)return null;
-  if(!/^\d+$/.test(raw))return{error:'Utilise uniquement des chiffres (sans séparateur).'};
-  if(raw.length===4){
+function parseSingleEventDate(raw){
+  if(/^\d{4}$/.test(raw)){
     const year=Number(raw);
     if(year<1)return{error:'Année invalide.'};
     return{type:'year',rawValue:raw,startDate:new Date(year,0,1),endDate:new Date(year,11,31),displayLabel:`${year}`};
@@ -2345,7 +2343,7 @@ function parseEventDate(rawValue){
     const monthLabel=new Date(year,month-1,1).toLocaleDateString('fr-FR',{month:'long'});
     return{type:'month',rawValue:raw,startDate:new Date(year,month-1,1),endDate:new Date(year,month-1,endDay),displayLabel:`${monthLabel} ${year}`};
   }
-  if(raw.length===8){
+  if(/^\d{8}$/.test(raw)){
     const day=Number(raw.slice(0,2)),month=Number(raw.slice(2,4)),year=Number(raw.slice(4));
     if(month<1||month>12)return{error:'Le mois doit être compris entre 01 et 12.'};
     if(year<1)return{error:'Année invalide.'};
@@ -2353,9 +2351,30 @@ function parseEventDate(rawValue){
     if(day<1||day>maxDay)return{error:'Le jour saisi n\'existe pas pour ce mois.'};
     const d=new Date(year,month-1,day);
     const dl=d.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-    return{type:'day',rawValue:raw,startDate:d,endDate:null,displayLabel:dl};
+    return{type:'day',rawValue:raw,startDate:d,endDate:d,displayLabel:dl};
   }
-  return{error:'Format invalide. Utilise AAAA, MMAAAA ou JJMMAAAA.'};
+  return null;
+}
+function parseEventDate(rawValue){
+  const raw=(rawValue||'').trim();
+  if(!raw)return null;
+  if(raw.includes('-')){
+    if(!/^\d+-\d+$/.test(raw))return{error:'Format invalide. Utilise uniquement un tiret pour séparer deux dates numériques.'};
+    const parts=raw.split('-');
+    if(parts.length!==2||!parts[0]||!parts[1])return{error:'Intervalle invalide. Utilise exactement un format début-fin.'};
+    const start=parseSingleEventDate(parts[0]);
+    const end=parseSingleEventDate(parts[1]);
+    if(!start||!end)return{error:'Format invalide. Utilise AAAA, MMAAAA, JJMMAAAA ou leurs intervalles homogènes.'};
+    if(start.error)return start;
+    if(end.error)return end;
+    if(start.type!==end.type)return{error:'Format mixte interdit : le type avant et après le tiret doit être identique.'};
+    if(toDayTs(end.endDate)<toDayTs(start.startDate))return{error:'Intervalle incohérent : la fin doit être postérieure ou égale au début.'};
+    return{type:start.type,rawValue:raw,startDate:start.startDate,endDate:end.endDate,displayLabel:`${start.displayLabel} - ${end.displayLabel}`,isRange:true};
+  }
+  if(!/^\d+$/.test(raw))return{error:'Utilise uniquement des chiffres (ou un tiret pour un intervalle).'};
+  const single=parseSingleEventDate(raw);
+  if(single)return single;
+  return{error:'Format invalide. Utilise AAAA, MMAAAA, JJMMAAAA ou leurs intervalles homogènes.'};
 }
 function validateDateField(prefix,showToast){
   const input=document.getElementById(`${prefix}-date-evenement`);
@@ -2397,7 +2416,7 @@ function renderChronos(){
   }).filter(Boolean).sort(chronosSort);
   const content=document.getElementById('content');
   if(!items.length){
-    content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">0 événement daté</div></div><div class="chronos-empty">Ajoute une DATE EVENEMENT (AAAA, MMAAAA ou JJMMAAAA) dans tes fiches pour alimenter la frise.</div>`;
+    content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">0 événement daté</div></div><div class="chronos-empty">Ajoute une DATE EVENEMENT (AAAA, MMAAAA, JJMMAAAA ou intervalle homogène) dans tes fiches pour alimenter la frise.</div>`;
     return;
   }
   const minTs=Math.min(...items.map(i=>i.startTs));
