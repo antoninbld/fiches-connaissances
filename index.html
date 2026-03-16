@@ -82,6 +82,13 @@
   .chronos-track.day:hover{box-shadow:0 0 0 2px rgba(201,168,76,.45),0 0 14px rgba(201,168,76,.35)}
   .chronos-caption{position:absolute;top:30px;left:0;right:0;font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px}
   .chronos-track.day .chronos-caption{top:13px;left:-32px;right:auto;max-width:140px}
+  .chronos-day-callout{position:absolute;pointer-events:none;z-index:32}
+  .chronos-day-callout .stem{position:absolute;left:50%;transform:translateX(-50%);width:1px;background:rgba(201,168,76,.62)}
+  .chronos-day-callout .label{position:absolute;left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:6px;border:1px solid rgba(201,168,76,.34);background:rgba(19,19,30,.92);font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.25;color:#efe5c9;white-space:nowrap;letter-spacing:.02em}
+  .chronos-day-callout.up .stem{bottom:14px}
+  .chronos-day-callout.up .label{bottom:0}
+  .chronos-day-callout.down .stem{top:14px}
+  .chronos-day-callout.down .label{top:0}
   .chronos-empty{padding:60px 24px;text-align:center;color:var(--text-dim)}
   .chronos-tooltip{position:fixed;z-index:2300;display:none;max-width:300px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 11px;pointer-events:none;box-shadow:0 8px 26px rgba(0,0,0,.35)}
   .chronos-tooltip-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);margin-bottom:4px}
@@ -2411,6 +2418,11 @@ function validateDateField(prefix,showToast){
   return{ok:true,value:raw};
 }
 function toDayTs(d){return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());}
+function fmtChronosDayLabel(raw){
+  const parsed=parseSingleEventDate(String(raw||''));
+  if(!parsed||parsed.error)return String(raw||'');
+  return parsed.startDate.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
 function chronosSort(a,b){
   if(a.startTs!==b.startTs)return a.startTs-b.startTs;
   const pr={year:0,month:1,day:2};
@@ -2423,7 +2435,7 @@ function renderChronos(){
     if(!parsed||parsed.error)return null;
     const startTs=toDayTs(parsed.startDate);
     const endDate=parsed.endDate||parsed.startDate;
-    return{id:f.id,title:f.title,cat:getCat(f.catId)?.name||'',type:parsed.type,label:parsed.displayLabel,startTs,endTs:toDayTs(endDate)};
+    return{id:f.id,title:f.title,cat:getCat(f.catId)?.name||'',type:parsed.type,label:parsed.displayLabel,rawValue:parsed.rawValue,startTs,endTs:toDayTs(endDate)};
   }).filter(Boolean).sort(chronosSort);
   const content=document.getElementById('content');
   if(!items.length){
@@ -2436,6 +2448,44 @@ function renderChronos(){
   const totalDays=Math.max(1,Math.round((maxTs-minTs)/dayMs)+1);
   const pxPerDay=Math.max(0.9,Math.min(3.2,1600/totalDays));
   const axisWidth=Math.max(960,Math.ceil(totalDays*pxPerDay)+120);
+  const dayItems=items.filter(it=>it.type==='day'&&!it.label.includes(' - '));
+  const topOffset=56;
+  const rowHeight=46;
+  const stemBase=22;
+  const calloutGap=3;
+  const calloutLevelStep=20;
+  const dayLabelMinGap=52;
+  const upLevels=[];
+  const downLevels=[];
+  dayItems.forEach((it,index)=>{
+    const left=((it.startTs-minTs)/dayMs)*pxPerDay+60+6;
+    const preferred=index%2===0?'up':'down';
+    const nextLevel=(levels)=>{
+      for(let lvl=0;lvl<10;lvl++){
+        const bucket=levels[lvl]||[];
+        const overlap=bucket.some(x=>Math.abs(x-left)<dayLabelMinGap);
+        if(!overlap)return lvl;
+      }
+      return levels.length;
+    };
+    const count=(levels)=>levels.reduce((sum,b)=>sum+(b?.length||0),0);
+    const levelUp=nextLevel(upLevels);
+    const levelDown=nextLevel(downLevels);
+    const upCount=count(upLevels);
+    const downCount=count(downLevels);
+    const score=(orientation,level)=>{
+      const sidePenalty=orientation===preferred?0:0.35;
+      const balancePenalty=orientation==='up'
+        ?Math.max(0,upCount-downCount)*0.18
+        :Math.max(0,downCount-upCount)*0.18;
+      return level+sidePenalty+balancePenalty;
+    };
+    const orientation=score('up',levelUp)<=score('down',levelDown)?'up':'down';
+    const level=orientation==='up'?levelUp:levelDown;
+    if(!((orientation==='up'?upLevels:downLevels)[level]))(orientation==='up'?upLevels:downLevels)[level]=[];
+    (orientation==='up'?upLevels:downLevels)[level].push(left);
+    it.callout={orientation,level,left};
+  });
   const tracks=[];
   items.forEach(it=>{
     let row=0;
@@ -2448,7 +2498,11 @@ function renderChronos(){
     tracks[row].push(it);
     it.row=row;
   });
-  const rowHeight=46,topOffset=56,canvasHeight=topOffset+Math.max(1,tracks.length)*rowHeight+26;
+  const upHeight=stemBase+calloutGap+16+(upLevels.length?((upLevels.length-1)*calloutLevelStep):0);
+  const downHeight=stemBase+calloutGap+16+(downLevels.length?((downLevels.length-1)*calloutLevelStep):0);
+  const dayTrackTop=Math.max(topOffset+2*rowHeight,upHeight+10);
+  const baseCanvasHeight=topOffset+Math.max(1,tracks.length)*rowHeight+26;
+  const canvasHeight=Math.max(baseCanvasHeight,dayTrackTop+14+downHeight+12);
   const minDate=new Date(minTs),maxDate=new Date(maxTs);
   let years='';
   for(let y=minDate.getUTCFullYear();y<=maxDate.getUTCFullYear();y++){
@@ -2465,14 +2519,24 @@ function renderChronos(){
   const nodes=items.map(it=>{
     const left=((it.startTs-minTs)/dayMs)*pxPerDay+60;
     const width=Math.max(it.type==='day'?12:8,((it.endTs-it.startTs)/dayMs+1)*pxPerDay);
-    const top=topOffset+it.row*rowHeight;
+    const top=it.type==='day'&&it.callout?dayTrackTop:topOffset+it.row*rowHeight;
     const z=it.type==='day'?30:it.type==='month'?20:10;
-    return `<div class="chronos-track ${it.type}" style="left:${left}px;top:${top}px;width:${width}px;z-index:${z}" data-fiche-id="${it.id}" data-title="${escH(it.title)}" data-date="${escH(it.label)}" data-cat="${escH(it.cat)}"><div class="chronos-caption">${escH(it.title)}</div></div>`;
+    const caption=it.type==='day'&&it.callout?'':escH(it.title);
+    return `<div class="chronos-track ${it.type}" style="left:${left}px;top:${top}px;width:${width}px;z-index:${z}" data-fiche-id="${it.id}" data-title="${escH(it.title)}" data-date="${escH(it.label)}" data-cat="${escH(it.cat)}"><div class="chronos-caption">${caption}</div></div>`;
+  }).join('');
+  const dayCallouts=dayItems.map(it=>{
+    if(!it.callout)return '';
+    const label=fmtChronosDayLabel(it.rawValue||'');
+    const extra=it.callout.level*calloutLevelStep;
+    const stemHeight=stemBase+extra;
+    const top=it.callout.orientation==='up'?(dayTrackTop-(stemHeight+calloutGap+16)):(dayTrackTop+14);
+    const stemTop=it.callout.orientation==='up'?0:(16+calloutGap);
+    return `<div class="chronos-day-callout ${it.callout.orientation}" style="left:${it.callout.left}px;top:${top}px"><div class="stem" style="height:${stemHeight}px;top:${stemTop}px"></div><div class="label">${escH(label)}</div></div>`;
   }).join('');
   content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">${items.length} événement${items.length>1?'s':''} daté${items.length>1?'s':''}</div></div>
   <div class="view-subtitle" style="margin-bottom:12px">Frise chronologique à l'échelle, avec superposition des granularités année / mois / jour.</div>
   <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-legend"><span><i class="chronos-dot" style="background:rgba(201,168,76,.4)"></i>Année</span><span><i class="chronos-dot" style="background:rgba(90,138,224,.5)"></i>Mois</span><span><i class="chronos-dot" style="background:var(--gold)"></i>Jour</span></div><div class="view-subtitle" style="margin:0">Défilement horizontal si nécessaire.</div></div>
-    <div class="chronos-scroll"><div class="chronos-canvas" style="width:${axisWidth}px;height:${canvasHeight}px"><div class="chronos-axis">${years}</div><div class="chronos-month-grid">${months}</div>${nodes}</div></div>
+    <div class="chronos-scroll"><div class="chronos-canvas" style="width:${axisWidth}px;height:${canvasHeight}px"><div class="chronos-axis">${years}</div><div class="chronos-month-grid">${months}</div>${nodes}${dayCallouts}</div></div>
   </div><div id="chronos-tooltip" class="chronos-tooltip"></div>`;
   bindChronosEvents();
 }
