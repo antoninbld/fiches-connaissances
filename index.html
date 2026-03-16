@@ -2490,9 +2490,19 @@ function bindChronosEvents(){
   
 let toastTm;
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`show ${type}`;clearTimeout(toastTm);toastTm=setTimeout(()=>{el.className=''},3200);}
-function openModal(id){document.getElementById(id).classList.add('open');}
+function openModal(id){
+  const modal=document.getElementById(id);
+  if(!modal)return;
+  const topZ=[...document.querySelectorAll('.modal-overlay.open')]
+    .reduce((max,el)=>Math.max(max,parseInt(getComputedStyle(el).zIndex,10)||2000),2000);
+  modal.style.zIndex=String(topZ+1);
+  modal.classList.add('open');
+}
 function closeModal(id){
-  document.getElementById(id).classList.remove('open');
+  const modal=document.getElementById(id);
+  if(!modal)return;
+  modal.classList.remove('open');
+  modal.style.removeProperty('z-index');
   if(id==='viewer-modal'){
     viewerCurrentFicheId='';
     if(window._viewerBlobUrl){
