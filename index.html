@@ -83,8 +83,8 @@
   .chronos-caption{position:absolute;top:30px;left:0;right:0;font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px}
   .chronos-track.day .chronos-caption{top:13px;left:-32px;right:auto;max-width:140px}
   .chronos-day-callout{position:absolute;pointer-events:none;z-index:32}
-  .chronos-day-callout .stem{position:absolute;left:50%;transform:translateX(-50%);width:1px;background:rgba(201,168,76,.62)}
-  .chronos-day-callout .label{position:absolute;left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:6px;border:1px solid rgba(201,168,76,.34);background:rgba(19,19,30,.92);font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.25;color:#efe5c9;white-space:nowrap;letter-spacing:.02em}
+  .chronos-day-callout .stem{position:absolute;left:50%;transform:translateX(-50%);width:1px;background:rgba(201,168,76,.62);z-index:0}
+  .chronos-day-callout .label{position:absolute;left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:6px;border:1px solid rgba(201,168,76,.34);background:rgba(19,19,30,.95);font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.25;color:#efe5c9;white-space:nowrap;letter-spacing:.02em;z-index:2}
   .chronos-day-callout.up .label{top:0}
   .chronos-day-callout.down .label{top:0}
   .chronos-empty{padding:60px 24px;text-align:center;color:var(--text-dim)}
@@ -2450,13 +2450,13 @@ function renderChronos(){
   const topOffset=56;
   const rowHeight=46;
   const dayMarkerSize=12;
-  const stemBase=24;
   const calloutGap=5;
-  const calloutLevelStep=22;
   const labelHeight=16;
   const labelCharWidth=6.2;
   const layoutPadding=4;
-  const maxDayLevels=16;
+  const minDayStem=18;
+  const dayTopLimit=topOffset+8;
+  const dayLowerPadding=22;
   const tracks=[];
   items.forEach(it=>{
     let row=0;
@@ -2471,8 +2471,11 @@ function renderChronos(){
   });
   const dayTrackTop=Math.max(topOffset+2*rowHeight,topOffset+36);
   const dayAnchorBaseY=dayTrackTop+6;
+  const baseCanvasHeight=topOffset+Math.max(1,tracks.length)*rowHeight+26;
+  const dayBottomLimit=Math.max(dayTrackTop+dayMarkerSize+calloutGap+labelHeight+8,baseCanvasHeight-dayLowerPadding);
   const dayPlacements=[];
   const daySideCounts={up:0,down:0};
+  const boxOverlap=(a,b,padding=0)=>!(a.right+padding<=b.left-padding||a.left-padding>=b.right+padding||a.bottom+padding<=b.top-padding||a.top-padding>=b.bottom+padding);
   dayItems
     .slice()
     .sort((a,b)=>a.startTs-b.startTs||a.id.localeCompare(b.id))
@@ -2481,13 +2484,31 @@ function renderChronos(){
       const label=fmtChronosDayLabel(it.rawValue||'');
       const labelWidth=Math.max(56,label.length*labelCharWidth+14);
       const previous=dayPlacements[dayPlacements.length-1]||null;
-      const preferred=(previous&&Math.abs(previous.left-left)<68)
+      const nearPrevious=previous&&Math.abs(previous.left-left)<78;
+      const preferred=(nearPrevious)
         ?(previous.orientation==='up'?'down':'up')
         :(daySideCounts.up<=daySideCounts.down?'up':'down');
-      const makePlacement=(orientation,level)=>{
-        const direction=orientation==='up'?-1:1;
-        const stemHeight=stemBase+level*calloutLevelStep;
-        const markerCenterY=dayAnchorBaseY+direction*stemHeight;
+      const minCenterUp=dayTopLimit+labelHeight+calloutGap+dayMarkerSize/2;
+      const maxCenterUp=dayAnchorBaseY-minDayStem;
+      const minCenterDown=dayAnchorBaseY+minDayStem;
+      const maxCenterDown=dayBottomLimit-(dayMarkerSize/2+calloutGap+labelHeight);
+      const buildLevels=(minCenter,maxCenter)=>{
+        if(maxCenter<minCenter)return [];
+        const levels=[];
+        const span=maxCenter-minCenter;
+        const levelCount=Math.max(4,Math.min(14,Math.ceil(span/26)+1));
+        for(let i=0;i<levelCount;i++){
+          const ratio=levelCount===1?0:i/(levelCount-1);
+          levels.push(minCenter+ratio*span);
+        }
+        return levels;
+      };
+      const centerLevels={
+        up:buildLevels(minCenterUp,maxCenterUp),
+        down:buildLevels(minCenterDown,maxCenterDown)
+      };
+      const makePlacement=(orientation,markerCenterY)=>{
+        const stemHeight=Math.abs(dayAnchorBaseY-markerCenterY);
         const markerTop=markerCenterY-(dayMarkerSize/2);
         const markerBox={
           left:left-(dayMarkerSize/2),
@@ -2504,50 +2525,59 @@ function renderChronos(){
           top:labelTop,
           bottom:labelTop+labelHeight
         };
-        return{orientation,level,left,label,stemHeight,labelWidth,markerTop,markerCenterY,markerBox,labelBox};
+        return{orientation,left,label,stemHeight,labelWidth,markerTop,markerCenterY,markerBox,labelBox};
       };
-      const boxOverlap=(a,b,padding=0)=>!(a.right+padding<=b.left-padding||a.left-padding>=b.right+padding||a.bottom+padding<=b.top-padding||a.top-padding>=b.bottom+padding);
       const collides=placement=>dayPlacements.some(existing=>{
         if(boxOverlap(placement.labelBox,existing.labelBox,layoutPadding))return true;
         if(boxOverlap(placement.markerBox,existing.markerBox,layoutPadding))return true;
         if(boxOverlap(placement.labelBox,existing.markerBox,layoutPadding))return true;
         if(boxOverlap(placement.markerBox,existing.labelBox,layoutPadding))return true;
+        const closeX=Math.abs(existing.left-placement.left)<Math.max(existing.labelWidth,placement.labelWidth)*0.5;
+        if(!closeX)return false;
+        const thisTop=Math.min(placement.markerCenterY,dayAnchorBaseY);
+        const thisBottom=Math.max(placement.markerCenterY,dayAnchorBaseY);
+        const otherTop=Math.min(existing.markerCenterY,dayAnchorBaseY);
+        const otherBottom=Math.max(existing.markerCenterY,dayAnchorBaseY);
+        const stemOverlap=!(thisBottom+1<=otherTop-1||thisTop-1>=otherBottom+1);
+        if(stemOverlap)return true;
         return false;
       });
+      const computeScore=(placement)=>{
+        const sidePenalty=placement.orientation===preferred?0:0.55;
+        const balancePenalty=placement.orientation==='up'
+          ?Math.max(0,daySideCounts.up-daySideCounts.down)*0.12
+          :Math.max(0,daySideCounts.down-daySideCounts.up)*0.12;
+        const anchorDistance=Math.abs(dayAnchorBaseY-placement.markerCenterY);
+        const normalizedDistance=anchorDistance/Math.max(1,dayBottomLimit-dayTopLimit);
+        const spreadBonus=-Math.min(1,normalizedDistance)*0.7;
+        const nearBonus=(nearPrevious&&placement.orientation!==previous.orientation)?-0.16:0;
+        return sidePenalty+balancePenalty+spreadBonus+nearBonus+(index*0.0001);
+      };
       let best=null;
-      for(let level=0;level<maxDayLevels;level++){
-        ['up','down'].forEach(orientation=>{
-          const candidate=makePlacement(orientation,level);
+      ['up','down'].forEach(orientation=>{
+        centerLevels[orientation].forEach(centerY=>{
+          const candidate=makePlacement(orientation,centerY);
           if(collides(candidate))return;
-          const sidePenalty=orientation===preferred?0:0.45;
-          const balancePenalty=orientation==='up'
-            ?Math.max(0,daySideCounts.up-daySideCounts.down)*0.15
-            :Math.max(0,daySideCounts.down-daySideCounts.up)*0.15;
-          const nearBonus=(previous&&orientation!==previous.orientation&&Math.abs(previous.left-left)<78)?-0.1:0;
-          const score=level+sidePenalty+balancePenalty+nearBonus+(index*0.0001);
+          const score=computeScore(candidate);
           if(!best||score<best.score)best={placement:candidate,score};
         });
-        if(best)break;
+      });
+      if(!best){
+        ['up','down'].forEach(orientation=>{
+          const levels=centerLevels[orientation];
+          if(!levels.length)return;
+          const fallbackCenter=orientation==='up'?levels[0]:levels[levels.length-1];
+          const candidate=makePlacement(orientation,fallbackCenter);
+          const score=computeScore(candidate)+0.8;
+          if(!best||score<best.score)best={placement:candidate,score};
+        });
       }
-      const finalPlacement=best?best.placement:makePlacement(preferred,maxDayLevels);
+      const finalPlacement=best?best.placement:makePlacement(preferred,dayAnchorBaseY+minDayStem);
       dayPlacements.push(finalPlacement);
       daySideCounts[finalPlacement.orientation]++;
       it.callout=finalPlacement;
     });
-  const minDayTop=dayPlacements.length?Math.min(...dayPlacements.map(p=>Math.min(p.labelBox.top,p.markerBox.top))):dayTrackTop;
-  const dayShift=minDayTop<topOffset?(topOffset-minDayTop):0;
-  if(dayShift){
-    dayPlacements.forEach(p=>{
-      p.markerTop+=dayShift;
-      p.markerCenterY+=dayShift;
-      p.markerBox.top+=dayShift;
-      p.markerBox.bottom+=dayShift;
-      p.labelBox.top+=dayShift;
-      p.labelBox.bottom+=dayShift;
-    });
-  }
-  const dayAnchorY=dayAnchorBaseY+dayShift;
-  const baseCanvasHeight=topOffset+Math.max(1,tracks.length)*rowHeight+26;
+  const dayAnchorY=dayAnchorBaseY;
   const maxDayBottom=dayPlacements.length?Math.max(...dayPlacements.map(p=>Math.max(p.labelBox.bottom,p.markerBox.bottom))):dayTrackTop;
   const canvasHeight=Math.max(baseCanvasHeight,maxDayBottom+16);
   const minDate=new Date(minTs),maxDate=new Date(maxTs);
