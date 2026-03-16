@@ -62,6 +62,31 @@
   .nav-home:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border2)}
   .nav-home.active{background:var(--gold-glow);color:var(--gold);border-left-color:var(--gold)}
 
+  .chronos-shell{border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,rgba(22,22,34,.96),rgba(14,14,22,.96));overflow:hidden}
+  .chronos-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(10,10,16,.5)}
+  .chronos-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.05em;text-transform:uppercase}
+  .chronos-legend span{display:inline-flex;align-items:center;gap:6px}
+  .chronos-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .chronos-scroll{overflow-x:auto;overflow-y:hidden;padding:14px 0 10px}
+  .chronos-canvas{position:relative;min-height:320px;padding-bottom:20px}
+  .chronos-axis{position:absolute;left:0;right:0;top:8px;height:40px;border-bottom:1px solid var(--border2)}
+  .chronos-year-tick{position:absolute;top:0;height:100%;border-left:1px solid rgba(201,168,76,.22)}
+  .chronos-year-tick label{position:absolute;top:0;left:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:.06em}
+  .chronos-month-grid{position:absolute;top:40px;bottom:0;left:0;right:0;pointer-events:none}
+  .chronos-month-line{position:absolute;top:0;bottom:0;border-left:1px dashed rgba(90,138,224,.12)}
+  .chronos-track{position:absolute;height:28px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
+  .chronos-track:hover{transform:translateY(-1px);border-color:var(--gold-dim);box-shadow:0 4px 12px rgba(0,0,0,.32)}
+  .chronos-track.year{background:rgba(201,168,76,.18);border-color:rgba(201,168,76,.26);height:24px}
+  .chronos-track.month{background:rgba(90,138,224,.22);border-color:rgba(90,138,224,.35);height:18px;top:3px}
+  .chronos-track.day{width:12px!important;height:12px;border-radius:3px;background:var(--gold);border-color:rgba(13,13,20,.9);box-shadow:0 0 0 2px rgba(201,168,76,.28)}
+  .chronos-track.day:hover{box-shadow:0 0 0 2px rgba(201,168,76,.45),0 0 14px rgba(201,168,76,.35)}
+  .chronos-caption{position:absolute;top:30px;left:0;right:0;font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px}
+  .chronos-track.day .chronos-caption{top:13px;left:-32px;right:auto;max-width:140px}
+  .chronos-empty{padding:60px 24px;text-align:center;color:var(--text-dim)}
+  .chronos-tooltip{position:fixed;z-index:2300;display:none;max-width:300px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 11px;pointer-events:none;box-shadow:0 8px 26px rgba(0,0,0,.35)}
+  .chronos-tooltip-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);margin-bottom:4px}
+  .chronos-tooltip-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);line-height:1.6;letter-spacing:.05em}
+  
   .cortex-layout{display:flex;align-items:stretch;min-height:20vh;gap:0}
   .cortex-graph{position:relative;background:radial-gradient(circle at 20% 10%,rgba(90,138,224,.12),transparent 40%),var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;height:100%;min-height:0;flex:1 1 auto}
   .cortex-map-wrap{flex:1 1 auto;min-width:0;padding-right:10px;display:flex;min-height:0}
@@ -344,6 +369,8 @@
     #main{padding:18px 14px}
     .n1-left,.n2-left,.n3-left{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .n1,.n2,.n3{padding-right:12px}
+    .chronos-toolbar{display:block}
+    .chronos-legend{margin-top:8px}
   }
   
 </style>
@@ -376,6 +403,10 @@
     <div class="nav-home" id="nav-cortex" onclick="goCortex()">
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="5" cy="17" r="2"/><circle cx="19" cy="17" r="2"/><path d="M7 8.2 10 10M17 8.2 14 10M7 15.8 10 14M17 15.8 14 14"/></svg>
       Cortex
+    </div>
+    <div class="nav-home" id="nav-chronos" onclick="goChronos()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>
+      Chronos
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-header-row">
@@ -529,6 +560,24 @@
       <div class="form-hint">Le HTML est stocké intégralement et rendu dans un iframe dédié.</div>
     </div>
     <div class="form-group">
+      <label class="form-label">Date événement</label>
+      <div class="form-row" style="grid-template-columns:160px 1fr">
+        <div>
+          <select class="form-select" id="f-date-kind" onchange="onDateKindChange('f')">
+            <option value="">— Aucune —</option>
+            <option value="year">Année (AAAA)</option>
+            <option value="month">Mois + année (MMAAAA)</option>
+            <option value="day">Date précise (JJMMAAAA)</option>
+          </select>
+        </div>
+        <div>
+          <input class="form-input" id="f-date-evenement" type="text" placeholder="ex: 1975, 051975, 17051975" oninput="validateDateField('f')">
+          <div class="form-hint" id="f-date-hint">Formats acceptés : AAAA, MMAAAA, JJMMAAAA.</div>
+        </div>
+      </div>
+      <div class="form-hint" id="f-date-error" style="color:var(--red);display:none"></div>
+    </div>
+    <div class="form-group">
       <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel)</span></label>
       <div class="link-picker-wrap"><input class="link-picker-search" id="f-lp-search" placeholder="Rechercher une fiche…"><div class="link-picker-list" id="f-lp-list"></div></div>
       <div class="link-tags" id="f-lp-tags"></div>
@@ -581,6 +630,24 @@
     <div class="form-group">
       <label class="form-label">Contenu HTML</label>
       <textarea class="form-textarea" id="ef-html"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date événement</label>
+      <div class="form-row" style="grid-template-columns:160px 1fr">
+        <div>
+          <select class="form-select" id="ef-date-kind" onchange="onDateKindChange('ef')">
+            <option value="">— Aucune —</option>
+            <option value="year">Année (AAAA)</option>
+            <option value="month">Mois + année (MMAAAA)</option>
+            <option value="day">Date précise (JJMMAAAA)</option>
+          </select>
+        </div>
+        <div>
+          <input class="form-input" id="ef-date-evenement" type="text" placeholder="ex: 1975, 051975, 17051975" oninput="validateDateField('ef')">
+          <div class="form-hint" id="ef-date-hint">Formats acceptés : AAAA, MMAAAA, JJMMAAAA.</div>
+        </div>
+      </div>
+      <div class="form-hint" id="ef-date-error" style="color:var(--red);display:none"></div>
     </div>
     <div class="form-group">
       <label class="form-label">Fiches liées <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel)</span></label>
@@ -645,7 +712,7 @@ const PALETTE=['#c9a84c','#5a8ae0','#5aad7a','#9a6edf','#e06060','#e07a40','#4ab
 /*
   DATA MODEL v2
   categories: [{id,name,color, subcats:[{id,name, subcats:[{id,name}]}]}]
-  fiches:     [{id,title,catId,subcatId,themeId,html,date}]
+  fiches:     [{id,title,catId,subcatId,themeId,html,date,dateEvenement}]
 */
 let db={categories:[],fiches:[]};
 const HEAVY_THRESHOLD=150_000; // chars (~150KB) — au-delà, stockage GitHub séparé
@@ -800,6 +867,7 @@ function migrate(raw){
     }
     if(!f.subcatId)f.subcatId='';
     if(!f.themeId)f.themeId='';
+    if(typeof f.dateEvenement!=='string')f.dateEvenement='';
   });
   return raw;
 }
@@ -853,6 +921,7 @@ function expandSidebarByDefault(){
 
 function goHome(){state={view:'home',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
 function goCortex(){state={view:'cortex',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
+function goChronos(){state={view:'chronos',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
 function goCat(catId){state={view:'cat',catId,subcatId:null,themeId:null,search:''};openCats.add(catId);render();}
 function goSub(catId,subcatId){state={view:'sub',catId,subcatId,themeId:null,search:''};openCats.add(catId);openSubs.add(subcatId);render();}
 function goTheme(catId,subcatId,themeId){state={view:'theme',catId,subcatId,themeId,search:''};openCats.add(catId);openSubs.add(subcatId);render();}
@@ -872,7 +941,7 @@ function collapseAllSidebar(){
 /* ════════════════════════════════════════════════════════════════════
    §6 · RENDU — sidebar, breadcrumb, orchestration
 ════════════════════════════════════════════════════════════════════ */
-function render(){renderSidebar();renderBreadcrumb();if(state.search)renderSearch();else if(state.view==='home')renderHome();else if(state.view==='cortex')renderCortex();else renderView();}
+function render(){renderSidebar();renderBreadcrumb();if(state.search)renderSearch();else if(state.view==='home')renderHome();else if(state.view==='cortex')renderCortex();else if(state.view==='chronos')renderChronos();else renderView();}
   
 function cntFiches(f){return db.fiches.filter(x=>{
   if(f.catId&&x.catId!==f.catId)return false;
@@ -885,6 +954,7 @@ function cntFiches(f){return db.fiches.filter(x=>{
 function renderSidebar(){
   document.getElementById('nav-home').className='nav-home'+(state.view==='home'&&!state.search?' active':'');
   document.getElementById('nav-cortex').className='nav-home'+(state.view==='cortex'&&!state.search?' active':'');
+  document.getElementById('nav-chronos').className='nav-home'+(state.view==='chronos'&&!state.search?' active':'');
   const el=document.getElementById('sidebar-cats');
   el.innerHTML=db.categories.map(cat=>{
     const isCatSel=state.catId===cat.id;
@@ -927,6 +997,7 @@ function renderBreadcrumb(){
   let h=`<span class="crumb" onclick="goHome()">Accueil</span>`;
   if(state.search){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Recherche</span>`;}
   else if(state.view==='cortex'){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Cortex</span>`;}
+  else if(state.view==='chronos'){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Chronos</span>`;}
   else if(state.catId){
     const cat=getCat(state.catId);
     if(cat){
@@ -1734,7 +1805,11 @@ function renderSearch(){
 ════════════════════════════════════════════════════════════════════ */
 function openAddFiche(preCatId='',preSubId='',preThId=''){
   fillCatSel('f-cat');
-  ['f-title','f-html','f-new-subcat','f-new-theme'].forEach(i=>document.getElementById(i).value='');
+  ['f-title','f-html','f-new-subcat','f-new-theme','f-date-evenement'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f-date-kind').value='';
+  document.getElementById('f-date-error').style.display='none';
+  document.getElementById('f-date-error').textContent='';
+  onDateKindChange('f');
   document.getElementById('f-l2-wrap').style.display='none';
   document.getElementById('f-l3-wrap').style.display='none';
   if(preCatId){
@@ -1815,9 +1890,11 @@ function saveFiche(){
   if(!title){toast('Titre requis.','error');return;}
   const loc=resolveLoc('f');if(!loc){toast('Catégorie requise.','error');return;}
   if(!html){toast('Contenu HTML requis.','error');return;}
+  const dateEventResult=validateDateField('f',true);
+  if(!dateEventResult.ok)return;
   const id=uid();
   const isHeavy=html.length>HEAVY_THRESHOLD;
-  const fiche={id,title,...loc,html:isHeavy?'__EXTERNAL__':html,date:Date.now(),links:lpGet('f'),externalSha:null};
+  const fiche={id,title,...loc,html:isHeavy?'__EXTERNAL__':html,date:Date.now(),dateEvenement:dateEventResult.value,links:lpGet('f'),externalSha:null};
   db.fiches.push(fiche);
   if(isHeavy){
     _htmlCache[id]=html;
@@ -1928,6 +2005,11 @@ function editFiche(id){
     document.getElementById('ef-id').value=f.id;
     document.getElementById('ef-title').value=f.title;
     document.getElementById('ef-html').value=htmlVal;
+    document.getElementById('ef-date-evenement').value=f.dateEvenement||'';
+    document.getElementById('ef-date-kind').value=guessDateKind(f.dateEvenement||'');
+    document.getElementById('ef-date-error').style.display='none';
+    document.getElementById('ef-date-error').textContent='';
+    onDateKindChange('ef');
     ['ef-new-subcat','ef-new-theme'].forEach(i=>document.getElementById(i).value='');
     fillCatSel('ef-cat');document.getElementById('ef-cat').value=f.catId;
     document.getElementById('ef-l2-wrap').style.display='';
@@ -1962,11 +2044,13 @@ function updateFiche(){
   const title=document.getElementById('ef-title').value.trim(),html=document.getElementById('ef-html').value.trim();
   if(!title||!html){toast('Champs requis manquants.','error');return;}
   const loc=resolveLoc('ef');if(!loc){toast('Catégorie requise.','error');return;}
+  const dateEventResult=validateDateField('ef',true);
+  if(!dateEventResult.ok)return;
   const isHeavy=html.length>HEAVY_THRESHOLD;
   const wasHeavy=f.html==='__EXTERNAL__';
   if(isHeavy){
     _htmlCache[id]=html;
-    Object.assign(f,{title,...loc,html:'__EXTERNAL__',links:lpGet('ef')});
+    Object.assign(f,{title,...loc,html:'__EXTERNAL__',dateEvenement:dateEventResult.value,links:lpGet('ef')});
     closeModal('edit-modal');toast('Fiche mise à jour — sync en cours, patiente quelques secondes…','success');render();
     if(getToken())ghSaveFile(`fiches/${id}.html`,html,f.externalSha||null)
       .then(sha=>{f.externalSha=sha;scheduleSave();toast('Fiche lourde synchronisée ✓','success');})
@@ -1975,7 +2059,7 @@ function updateFiche(){
   }else{
     if(wasHeavy&&getToken()&&f.externalSha)ghDeleteFile(`fiches/${id}.html`,f.externalSha).catch(()=>{});
     delete _htmlCache[id];
-    Object.assign(f,{title,...loc,html,links:lpGet('ef'),externalSha:null});
+    Object.assign(f,{title,...loc,html,dateEvenement:dateEventResult.value,links:lpGet('ef'),externalSha:null});
     scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
   }
 }
@@ -2227,6 +2311,153 @@ function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function fmtDate(ts){return ts?new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):''}
 function hlText(text,q){return escH(text).replace(new RegExp(`(${escH(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),'<span class="highlight">$1</span>');}
 
+function guessDateKind(raw){
+  if(/^\d{4}$/.test(raw||''))return 'year';
+  if(/^\d{6}$/.test(raw||''))return 'month';
+  if(/^\d{8}$/.test(raw||''))return 'day';
+  return '';
+}
+function onDateKindChange(p){
+  const kind=document.getElementById(`${p}-date-kind`)?.value||'';
+  const input=document.getElementById(`${p}-date-evenement`);
+  const hint=document.getElementById(`${p}-date-hint`);
+  if(!input||!hint)return;
+  if(kind==='year'){input.placeholder='ex: 1975';hint.textContent='Saisis exactement 4 chiffres (AAAA).';}
+  else if(kind==='month'){input.placeholder='ex: 051975';hint.textContent='Saisis 6 chiffres : MM puis AAAA (de 01 à 12).';}
+  else if(kind==='day'){input.placeholder='ex: 17051975';hint.textContent='Saisis 8 chiffres : JJMMAAAA (date réelle).';}
+  else{input.placeholder='ex: 1975, 051975, 17051975';hint.textContent='Formats acceptés : AAAA, MMAAAA, JJMMAAAA.';}
+  validateDateField(p);
+}
+function parseEventDate(rawValue){
+  const raw=(rawValue||'').trim();
+  if(!raw)return null;
+  if(!/^\d+$/.test(raw))return{error:'Utilise uniquement des chiffres (sans séparateur).'};
+  if(raw.length===4){
+    const year=Number(raw);
+    if(year<1)return{error:'Année invalide.'};
+    return{type:'year',rawValue:raw,startDate:new Date(year,0,1),endDate:new Date(year,11,31),displayLabel:`${year}`};
+  }
+  if(raw.length===6){
+    const month=Number(raw.slice(0,2)),year=Number(raw.slice(2));
+    if(month<1||month>12)return{error:'Le mois doit être compris entre 01 et 12.'};
+    if(year<1)return{error:'Année invalide.'};
+    const endDay=new Date(year,month,0).getDate();
+    const monthLabel=new Date(year,month-1,1).toLocaleDateString('fr-FR',{month:'long'});
+    return{type:'month',rawValue:raw,startDate:new Date(year,month-1,1),endDate:new Date(year,month-1,endDay),displayLabel:`${monthLabel} ${year}`};
+  }
+  if(raw.length===8){
+    const day=Number(raw.slice(0,2)),month=Number(raw.slice(2,4)),year=Number(raw.slice(4));
+    if(month<1||month>12)return{error:'Le mois doit être compris entre 01 et 12.'};
+    if(year<1)return{error:'Année invalide.'};
+    const maxDay=new Date(year,month,0).getDate();
+    if(day<1||day>maxDay)return{error:'Le jour saisi n\'existe pas pour ce mois.'};
+    const d=new Date(year,month-1,day);
+    const dl=d.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+    return{type:'day',rawValue:raw,startDate:d,endDate:null,displayLabel:dl};
+  }
+  return{error:'Format invalide. Utilise AAAA, MMAAAA ou JJMMAAAA.'};
+}
+function validateDateField(prefix,showToast){
+  const input=document.getElementById(`${prefix}-date-evenement`);
+  const kind=document.getElementById(`${prefix}-date-kind`);
+  const errEl=document.getElementById(`${prefix}-date-error`);
+  if(!input||!kind||!errEl)return{ok:true,value:''};
+  const raw=(input.value||'').trim();
+  if(!raw){errEl.style.display='none';errEl.textContent='';return{ok:true,value:''};}
+  const parsed=parseEventDate(raw);
+  if(parsed?.error){
+    errEl.style.display='block';errEl.textContent=parsed.error;
+    if(showToast)toast(`DATE EVENEMENT : ${parsed.error}`,'error');
+    return{ok:false};
+  }
+  if(kind.value&&kind.value!==parsed.type){
+    const map={year:'Année',month:'Mois + année',day:'Date précise'};
+    const msg=`Le format ne correspond pas au niveau choisi (${map[kind.value]}).`;
+    errEl.style.display='block';errEl.textContent=msg;
+    if(showToast)toast(`DATE EVENEMENT : ${msg}`,'error');
+    return{ok:false};
+  }
+  errEl.style.display='none';errEl.textContent='';
+  return{ok:true,value:raw};
+}
+function toDayTs(d){return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());}
+function chronosSort(a,b){
+  if(a.startTs!==b.startTs)return a.startTs-b.startTs;
+  const pr={year:0,month:1,day:2};
+  if(pr[a.type]!==pr[b.type])return pr[a.type]-pr[b.type];
+  return a.title.localeCompare(b.title,'fr');
+}
+function renderChronos(){
+  const items=db.fiches.map(f=>{
+    const parsed=parseEventDate(f.dateEvenement||'');
+    if(!parsed||parsed.error)return null;
+    const startTs=toDayTs(parsed.startDate);
+    const endDate=parsed.endDate||parsed.startDate;
+    return{id:f.id,title:f.title,cat:getCat(f.catId)?.name||'',type:parsed.type,label:parsed.displayLabel,startTs,endTs:toDayTs(endDate)};
+  }).filter(Boolean).sort(chronosSort);
+  const content=document.getElementById('content');
+  if(!items.length){
+    content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">0 événement daté</div></div><div class="chronos-empty">Ajoute une DATE EVENEMENT (AAAA, MMAAAA ou JJMMAAAA) dans tes fiches pour alimenter la frise.</div>`;
+    return;
+  }
+  const minTs=Math.min(...items.map(i=>i.startTs));
+  const maxTs=Math.max(...items.map(i=>i.endTs));
+  const dayMs=86400000;
+  const totalDays=Math.max(1,Math.round((maxTs-minTs)/dayMs)+1);
+  const pxPerDay=Math.max(0.9,Math.min(3.2,1600/totalDays));
+  const axisWidth=Math.max(960,Math.ceil(totalDays*pxPerDay)+120);
+  const tracks=[];
+  items.forEach(it=>{
+    let row=0;
+    while(true){
+      if(!tracks[row]){tracks[row]=[];break;}
+      const overlap=tracks[row].some(o=>!(it.startTs>o.endTs||it.endTs<o.startTs));
+      if(!overlap)break;
+      row++;
+    }
+    tracks[row].push(it);
+    it.row=row;
+  });
+  const rowHeight=46,topOffset=56,canvasHeight=topOffset+Math.max(1,tracks.length)*rowHeight+26;
+  const minDate=new Date(minTs),maxDate=new Date(maxTs);
+  let years='';
+  for(let y=minDate.getUTCFullYear();y<=maxDate.getUTCFullYear();y++){
+    const left=((Date.UTC(y,0,1)-minTs)/dayMs)*pxPerDay+60;
+    years+=`<div class="chronos-year-tick" style="left:${left}px"><label>${y}</label></div>`;
+  }
+  let months='';
+  const cur=new Date(Date.UTC(minDate.getUTCFullYear(),minDate.getUTCMonth(),1));
+  while(cur.getTime()<=maxTs){
+    const left=((cur.getTime()-minTs)/dayMs)*pxPerDay+60;
+    months+=`<div class="chronos-month-line" style="left:${left}px"></div>`;
+    cur.setUTCMonth(cur.getUTCMonth()+1);
+  }
+  const nodes=items.map(it=>{
+    const left=((it.startTs-minTs)/dayMs)*pxPerDay+60;
+    const width=Math.max(it.type==='day'?12:8,((it.endTs-it.startTs)/dayMs+1)*pxPerDay);
+    const top=topOffset+it.row*rowHeight;
+    const z=it.type==='day'?30:it.type==='month'?20:10;
+    return `<div class="chronos-track ${it.type}" style="left:${left}px;top:${top}px;width:${width}px;z-index:${z}" data-fiche-id="${it.id}" data-title="${escH(it.title)}" data-date="${escH(it.label)}" data-cat="${escH(it.cat)}"><div class="chronos-caption">${escH(it.title)}</div></div>`;
+  }).join('');
+  content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">${items.length} événement${items.length>1?'s':''} daté${items.length>1?'s':''}</div></div>
+  <div class="view-subtitle" style="margin-bottom:12px">Frise chronologique à l'échelle, avec superposition des granularités année / mois / jour.</div>
+  <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-legend"><span><i class="chronos-dot" style="background:rgba(201,168,76,.4)"></i>Année</span><span><i class="chronos-dot" style="background:rgba(90,138,224,.5)"></i>Mois</span><span><i class="chronos-dot" style="background:var(--gold)"></i>Jour</span></div><div class="view-subtitle" style="margin:0">Défilement horizontal si nécessaire.</div></div>
+    <div class="chronos-scroll"><div class="chronos-canvas" style="width:${axisWidth}px;height:${canvasHeight}px"><div class="chronos-axis">${years}</div><div class="chronos-month-grid">${months}</div>${nodes}</div></div>
+  </div><div id="chronos-tooltip" class="chronos-tooltip"></div>`;
+  bindChronosEvents();
+}
+function bindChronosEvents(){
+  const tooltip=document.getElementById('chronos-tooltip');
+  const hide=()=>{if(tooltip)tooltip.style.display='none';};
+  document.querySelectorAll('.chronos-track[data-fiche-id]').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{if(!tooltip)return;tooltip.style.display='block';tooltip.innerHTML=`<div class="chronos-tooltip-title">${el.dataset.title||''}</div><div class="chronos-tooltip-meta">DATE : ${el.dataset.date||''}<br>CATÉGORIE : ${el.dataset.cat||'—'}<br>Cliquer pour ouvrir la fiche</div>`;});
+    el.addEventListener('mousemove',e=>{if(!tooltip)return;tooltip.style.left=(e.clientX+14)+'px';tooltip.style.top=(e.clientY+14)+'px';});
+    el.addEventListener('mouseleave',hide);
+    el.addEventListener('click',()=>viewFiche(el.dataset.ficheId));
+  });
+  if(!window.__chronosTooltipBound){window.__chronosTooltipBound=true;window.addEventListener('scroll',hide,{passive:true});}
+}
+  
 let toastTm;
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`show ${type}`;clearTimeout(toastTm);toastTm=setTimeout(()=>{el.className=''},3200);}
 function openModal(id){document.getElementById(id).classList.add('open');}
