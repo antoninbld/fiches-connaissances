@@ -2458,6 +2458,7 @@ function renderChronos(){
   const minDayStem=18;
   const dayTopLimit=topOffset+8;
   const dayLowerPadding=22;
+  const extraDayStackHeight=Math.max(96,Math.min(280,dayItems.length*40));
   const assignRows=list=>{
     const tracks=[];
     list.forEach(it=>{
@@ -2480,7 +2481,7 @@ function renderChronos(){
   const dayTrackTop=monthTrackTop+(monthRows*rowHeight)+laneGap;
   const laneTopByType={year:topOffset,month:monthTrackTop,day:dayTrackTop};
   const dayAnchorBaseY=dayTrackTop+6;
-  const baseCanvasHeight=dayTrackTop+Math.max(1,dayRows)*rowHeight+26;
+  const baseCanvasHeight=dayTrackTop+Math.max(1,dayRows)*rowHeight+26+extraDayStackHeight;
   const dayBottomLimit=Math.max(dayTrackTop+dayMarkerSize+calloutGap+labelHeight+8,baseCanvasHeight-dayLowerPadding);
   const dayPlacements=[];
   const daySideCounts={up:0,down:0};
@@ -2505,7 +2506,8 @@ function renderChronos(){
         if(maxCenter<minCenter)return [];
         const levels=[];
         const span=maxCenter-minCenter;
-        const levelCount=Math.max(4,Math.min(14,Math.ceil(span/26)+1));
+        const densityBoost=Math.max(0,Math.min(8,dayItems.length-2));
+        const levelCount=Math.max(5+densityBoost,Math.min(18,Math.ceil(span/22)+1));
         for(let i=0;i<levelCount;i++){
           const ratio=levelCount===1?0:i/(levelCount-1);
           levels.push(minCenter+ratio*span);
