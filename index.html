@@ -2495,6 +2495,12 @@ function renderChronos(){
       const labelWidth=Math.max(56,label.length*labelCharWidth+14);
       const previous=dayPlacements[dayPlacements.length-1]||null;
       const nearPrevious=previous&&Math.abs(previous.left-left)<78;
+      const leftNeighbor=dayItems[index-1]||null;
+      const rightNeighbor=dayItems[index+1]||null;
+      const gapLeft=leftNeighbor?Math.abs(left-(((leftNeighbor.startTs-minTs)/dayMs)*pxPerDay+66)):Infinity;
+      const gapRight=rightNeighbor?Math.abs((((rightNeighbor.startTs-minTs)/dayMs)*pxPerDay+66)-left):Infinity;
+      const nearestGap=Math.min(gapLeft,gapRight);
+      const densityFactor=Math.max(0,Math.min(1,(120-Math.min(nearestGap,120))/120));
       const preferred=(nearPrevious)
         ?(previous.orientation==='up'?'down':'up')
         :(daySideCounts.up<=daySideCounts.down?'up':'down');
@@ -2502,6 +2508,7 @@ function renderChronos(){
       const maxCenterUp=dayAnchorBaseY-minDayStem;
       const minCenterDown=dayAnchorBaseY+minDayStem;
       const maxCenterDown=dayBottomLimit-(dayMarkerSize/2+calloutGap+labelHeight);
+      const targetStem=Math.round(minDayStem+(densityFactor*118));
       const buildLevels=(minCenter,maxCenter)=>{
         if(maxCenter<minCenter)return [];
         const levels=[];
@@ -2559,10 +2566,10 @@ function renderChronos(){
           ?Math.max(0,daySideCounts.up-daySideCounts.down)*0.12
           :Math.max(0,daySideCounts.down-daySideCounts.up)*0.12;
         const anchorDistance=Math.abs(dayAnchorBaseY-placement.markerCenterY);
-        const normalizedDistance=anchorDistance/Math.max(1,dayBottomLimit-dayTopLimit);
-        const spreadBonus=-Math.min(1,normalizedDistance)*0.7;
+        const stemPenalty=Math.abs(anchorDistance-targetStem)/Math.max(22,targetStem)*0.85;
+        const longStemPenalty=Math.max(0,(anchorDistance-(targetStem+18))/120)*0.32;
         const nearBonus=(nearPrevious&&placement.orientation!==previous.orientation)?-0.16:0;
-        return sidePenalty+balancePenalty+spreadBonus+nearBonus+(index*0.0001);
+        return sidePenalty+balancePenalty+stemPenalty+longStemPenalty+nearBonus+(index*0.0001);
       };
       let best=null;
       ['up','down'].forEach(orientation=>{
