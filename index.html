@@ -2501,25 +2501,41 @@ function renderChronos(){
   };
   const anchorLevels=buildLevels(dayAnchorBandTop+(dayMarkerSize/2),dayAnchorBandBottom-(dayMarkerSize/2),4,8,14);
   const boxOverlap=(a,b,padding=0)=>!(a.right+padding<=b.left-padding||a.left-padding>=b.right+padding||a.bottom+padding<=b.top-padding||a.top-padding>=b.bottom+padding);
-  dayItems
+  const sortedDayItems=dayItems
     .slice()
-    .sort((a,b)=>a.startTs-b.startTs||a.id.localeCompare(b.id))
-    .forEach((it,index)=>{
+    .sort((a,b)=>a.startTs-b.startTs||a.id.localeCompare(b.id));
+  sortedDayItems.forEach((it,index)=>{
       const left=((it.startTs-minTs)/dayMs)*pxPerDay+66;
       const label=fmtChronosDayLabel(it.rawValue||'');
       const labelWidth=Math.max(56,label.length*labelCharWidth+14);
       const previous=dayPlacements[dayPlacements.length-1]||null;
       const nearPrevious=previous&&Math.abs(previous.left-left)<78;
-      const leftNeighbor=dayItems[index-1]||null;
-      const rightNeighbor=dayItems[index+1]||null;
+      const leftNeighbor=sortedDayItems[index-1]||null;
+      const rightNeighbor=sortedDayItems[index+1]||null;
       const gapLeft=leftNeighbor?Math.abs(left-(((leftNeighbor.startTs-minTs)/dayMs)*pxPerDay+66)):Infinity;
       const gapRight=rightNeighbor?Math.abs((((rightNeighbor.startTs-minTs)/dayMs)*pxPerDay+66)-left):Infinity;
       const nearestGap=Math.min(gapLeft,gapRight);
       const densityFactor=Math.max(0,Math.min(1,(150-Math.min(nearestGap,150))/150));
+      let clusterIndex=0;
+      for(let i=index-1;i>=0;i--){
+        const neighborLeft=((sortedDayItems[i].startTs-minTs)/dayMs)*pxPerDay+66;
+        if(Math.abs(left-neighborLeft)>92)break;
+        clusterIndex++;
+      }
+      const clusterSpan=1+clusterIndex+(()=>{
+        let count=0;
+        for(let i=index+1;i<sortedDayItems.length;i++){
+          const neighborLeft=((sortedDayItems[i].startTs-minTs)/dayMs)*pxPerDay+66;
+          if(Math.abs(neighborLeft-left)>92)break;
+          count++;
+        }
+        return count;
+      })();
+      const clusterParity=clusterIndex%2===0?1:-1;
       const preferred=(nearPrevious)
         ?(previous.orientation==='up'?'down':'up')
         :(daySideCounts.up<=daySideCounts.down?'up':'down');
-      const targetStem=Math.round(minDayStem+(densityFactor*138));
+      const targetStem=Math.round(minDayStem+(densityFactor*138)+(clusterIndex*16));
       const minCenterUp=dayTopLimit+labelHeight+calloutGap+dayMarkerSize/2;
       const maxCenterUp=dayAnchorBandTop-(minDayStem*(0.45+densityFactor*0.35));
       const minCenterDown=dayAnchorBandBottom+(minDayStem*(0.85+densityFactor*0.3));
@@ -2540,29 +2556,33 @@ function renderChronos(){
         const labelTop=orientation==='up'
           ?(markerTop-(calloutGap+labelHeight))
           :(markerTop+dayMarkerSize+calloutGap);
-        const horizontalShift=Math.max(-36,Math.min(36,((index%2===0?-1:1)*(8+(densityFactor*28)))));
-        const labelCenterX=left+(orientation==='down'?horizontalShift:horizontalShift*0.55);
+        const shiftBase=10+(densityFactor*30)+(Math.min(3,clusterIndex)*8);
+        const horizontalShift=Math.max(-54,Math.min(54,clusterParity*shiftBase));
+        const labelCenterX=left+(orientation==='down'?horizontalShift:horizontalShift*0.7);
         const labelBox={
           left:labelCenterX-(labelWidth/2),
           right:labelCenterX+(labelWidth/2),
           top:labelTop,
           bottom:labelTop+labelHeight
         };
-        return{orientation,left,label,stemHeight,labelWidth,markerTop,markerCenterY,markerBox,labelBox,anchorY,labelCenterX};
+        return{orientation,left,label,stemHeight,labelWidth,markerTop,markerCenterY,markerBox,labelBox,anchorY,labelCenterX,clusterIndex,clusterSpan};
       };
       const collides=placement=>dayPlacements.some(existing=>{
         if(boxOverlap(placement.labelBox,existing.labelBox,layoutPadding))return true;
         if(boxOverlap(placement.markerBox,existing.markerBox,layoutPadding))return true;
         if(boxOverlap(placement.labelBox,existing.markerBox,layoutPadding))return true;
         if(boxOverlap(placement.markerBox,existing.labelBox,layoutPadding))return true;
-        const closeX=Math.abs(existing.left-placement.left)<Math.max(existing.labelWidth,placement.labelWidth)*0.62;
+        const deltaX=Math.abs(existing.left-placement.left);
+        const closeX=deltaX<Math.max(existing.labelWidth,placement.labelWidth)*0.62;
         if(!closeX)return false;
         const thisTop=Math.min(placement.markerCenterY,placement.anchorY);
         const thisBottom=Math.max(placement.markerCenterY,placement.anchorY);
         const otherTop=Math.min(existing.markerCenterY,existing.anchorY);
         const otherBottom=Math.max(existing.markerCenterY,existing.anchorY);
         const stemOverlap=!(thisBottom+2<=otherTop-2||thisTop-2>=otherBottom+2);
-        if(stemOverlap&&Math.abs(existing.left-placement.left)<22)return true;
+        if(stemOverlap&&deltaX<22)return true;
+        const sameBand=Math.abs(existing.markerCenterY-placement.markerCenterY)<(dayMarkerSize+layoutPadding+Math.min(14,placement.clusterSpan*2));
+        if(sameBand&&deltaX<Math.max(42,placement.labelWidth*0.36))return true;
         return false;
       });
       const computeScore=(placement)=>{
@@ -2576,7 +2596,15 @@ function renderChronos(){
         const anchorSpreadPenalty=previous?Math.max(0,(18-Math.abs(placement.anchorY-previous.anchorY))/18)*0.22:0;
         const nearBonus=(nearPrevious&&placement.orientation!==previous.orientation)?-0.18:0;
         const depthBonus=placement.orientation==='down'?-(0.1+densityFactor*0.2):-(densityFactor*0.05);
-        return sidePenalty+balancePenalty+stemPenalty+longStemPenalty+anchorSpreadPenalty+nearBonus+depthBonus+(index*0.0001);
+        const clusterDepthBonus=-(Math.min(3,placement.clusterIndex)*0.08);
+        const sameBandPenalty=dayPlacements.reduce((sum,existing)=>{
+          const deltaX=Math.abs(existing.left-placement.left);
+          if(deltaX>92)return sum;
+          const deltaY=Math.abs(existing.markerCenterY-placement.markerCenterY);
+          if(deltaY>24)return sum;
+          return sum+((24-deltaY)/24)*0.42;
+        },0);
+        return sidePenalty+balancePenalty+stemPenalty+longStemPenalty+anchorSpreadPenalty+nearBonus+depthBonus+clusterDepthBonus+sameBandPenalty+(index*0.0001);
       };
       let best=null;
       ['up','down'].forEach(orientation=>{
