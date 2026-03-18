@@ -141,7 +141,14 @@
       "name": "Personnalités & Acteurs",
       "summary": "",
       "color": "#5aad7a",
-      "subcats": []
+      "subcats": [
+        {
+          "id": "mmwcyubvd10k",
+          "name": "Figures politiques, militaires et révolutionnaires",
+          "summary": "",
+          "subcats": []
+        }
+      ]
     }
   ],
   "fiches": [
