@@ -2545,8 +2545,11 @@ function renderChronos(){
     .sort((a,b)=>a.startTs-b.startTs||a.id.localeCompare(b.id));
   let activeCluster=[];
   let previousClusterLeft=null;
+  let clusterCounter=0;
   const finalizeCluster=cluster=>{
+    const clusterId=clusterCounter++;
     cluster.forEach((entry,clusterOrder)=>{
+      entry.item.clusterId=clusterId;
       entry.item.clusterOrder=clusterOrder;
       entry.item.clusterSpan=cluster.length;
     });
@@ -2605,11 +2608,13 @@ function renderChronos(){
       const gapRight=rightNeighbor?Math.abs((((rightNeighbor.startTs-minTs)/dayMs)*pxPerDay+66)-left):Infinity;
       const nearestGap=Math.min(gapLeft,gapRight);
       const densityFactor=Math.max(0,Math.min(1,(150-Math.min(nearestGap,150))/150));
+      const clusterId=Number.isInteger(it.clusterId)?it.clusterId:null;
       const clusterIndex=Number.isInteger(it.clusterOrder)?it.clusterOrder:0;
       const clusterSpan=Math.max(1,it.clusterSpan||1);
       const clustered=clusterSpan>1;
       const clusterParity=clusterIndex%2===0?1:-1;
       const patternSlot=clustered?clusteredDayPattern[clusterIndex%clusteredDayPattern.length]:null;
+      const clusterSeparation=Math.max(18,Math.min(34,dayMarkerSize+layoutPadding+Math.min(16,clusterSpan*3)));
       const preferred=patternSlot?.orientation||(nearPrevious
         ?(previous.orientation==='up'?'down':'up')
         :(daySideCounts.up<=daySideCounts.down?'up':'down'));
@@ -2627,6 +2632,30 @@ function renderChronos(){
         up:buildClusterAwareLevels(buildLevels(minCenterUp,maxCenterUp,6,20,20),patternSlot?.orientation==='up'?targetCenter:null),
         down:buildClusterAwareLevels(buildLevels(minCenterDown,maxCenterDown,7,24,20),patternSlot?.orientation==='down'?targetCenter:null)
       };
+      const clusterSpecificLevels=(orientation,levels)=>{
+        if(!clustered||!patternSlot||patternSlot.orientation!==orientation)return levels;
+        const target=targetCenter;
+        if(typeof target!=='number')return levels;
+        const prioritized=[];
+        const seen=new Set();
+        [0,-18,18,-36,36].forEach(delta=>{
+          const candidate=Math.max(levels[0],Math.min(levels[levels.length-1],target+delta));
+          const key=Math.round(candidate*100)/100;
+          if(seen.has(key))return;
+          seen.add(key);
+          prioritized.push(candidate);
+        });
+        levels.forEach(level=>{
+          const key=Math.round(level*100)/100;
+          if(seen.has(key))return;
+          seen.add(key);
+          prioritized.push(level);
+        });
+        return prioritized;
+      };
+      const candidateOrientations=clustered&&patternSlot
+        ?[patternSlot.orientation,patternSlot.orientation==='up'?'down':'up']
+        :['up','down'];
       const makePlacement=(orientation,markerCenterY,anchorY)=>{
         const stemHeight=Math.abs(anchorY-markerCenterY);
         const markerTop=markerCenterY-(dayMarkerSize/2);
@@ -2655,6 +2684,8 @@ function renderChronos(){
         if(boxOverlap(placement.markerBox,existing.markerBox,layoutPadding))return true;
         if(boxOverlap(placement.labelBox,existing.markerBox,layoutPadding))return true;
         if(boxOverlap(placement.markerBox,existing.labelBox,layoutPadding))return true;
+        const sameCluster=clusterId!==null&&clusterId===existing.clusterId;
+        if(sameCluster&&Math.abs(existing.markerCenterY-placement.markerCenterY)<clusterSeparation)return true;
         const deltaX=Math.abs(existing.left-placement.left);
         const closeX=deltaX<Math.max(existing.labelWidth,placement.labelWidth)*0.62;
         if(!closeX)return false;
@@ -2693,6 +2724,8 @@ function renderChronos(){
         return sidePenalty+balancePenalty+stemPenalty+longStemPenalty+anchorSpreadPenalty+nearBonus+depthBonus+clusterDepthBonus+sameBandPenalty+(patternPenalty*1.4)+(index*0.0001);
       };
       let best=null;
+      candidateOrientations.forEach(orientation=>{
+        clusterSpecificLevels(orientation,centerLevels[orientation]).forEach(centerY=>{
       ['up','down'].forEach(orientation=>{
         centerLevels[orientation].forEach(centerY=>{
           anchorLevels.forEach(anchorY=>{
@@ -2704,10 +2737,12 @@ function renderChronos(){
         });
       });
       if(!best){
-        ['up','down'].forEach(orientation=>{
-          const levels=centerLevels[orientation];
+        candidateOrientations.forEach(orientation=>{
+          const levels=clusterSpecificLevels(orientation,centerLevels[orientation]);
           if(!levels.length||!anchorLevels.length)return;
-          const fallbackCenter=orientation==='up'?levels[0]:levels[levels.length-1];
+          const fallbackCenter=patternSlot&&patternSlot.orientation===orientation&&typeof targetCenter==='number'
+            ?levels[0]
+            :(orientation==='up'?levels[0]:levels[levels.length-1]);
           const fallbackAnchor=anchorLevels[Math.min(anchorLevels.length-1,index%anchorLevels.length)];
           const candidate=makePlacement(orientation,fallbackCenter,fallbackAnchor);
           const score=computeScore(candidate)+0.8;
