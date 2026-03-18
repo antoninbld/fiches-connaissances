@@ -2612,7 +2612,6 @@ function renderChronos(){
       const clusterIndex=Number.isInteger(it.clusterOrder)?it.clusterOrder:0;
       const clusterSpan=Math.max(1,it.clusterSpan||1);
       const clustered=clusterSpan>1;
-      const clusterParity=clusterIndex%2===0?1:-1;
       const patternSlot=clustered?clusteredDayPattern[clusterIndex%clusteredDayPattern.length]:null;
       const clusterSeparation=Math.max(18,Math.min(34,dayMarkerSize+layoutPadding+Math.min(16,clusterSpan*3)));
       const preferred=patternSlot?.orientation||(nearPrevious
@@ -2668,9 +2667,7 @@ function renderChronos(){
         const labelTop=orientation==='up'
           ?(markerTop-(calloutGap+labelHeight))
           :(markerTop+dayMarkerSize+calloutGap);
-        const shiftBase=10+(densityFactor*30)+(Math.min(3,clusterIndex)*8);
-        const horizontalShift=Math.max(-54,Math.min(54,clusterParity*shiftBase));
-        const labelCenterX=left+(orientation==='down'?horizontalShift:horizontalShift*0.7);
+        const labelCenterX=left;
         const labelBox={
           left:labelCenterX-(labelWidth/2),
           right:labelCenterX+(labelWidth/2),
