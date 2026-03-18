@@ -2726,9 +2726,7 @@ function renderChronos(){
       let best=null;
       candidateOrientations.forEach(orientation=>{
         clusterSpecificLevels(orientation,centerLevels[orientation]).forEach(centerY=>{
-      ['up','down'].forEach(orientation=>{
-        centerLevels[orientation].forEach(centerY=>{
-          anchorLevels.forEach(anchorY=>{
+           anchorLevels.forEach(anchorY=>{
             const candidate=makePlacement(orientation,centerY,anchorY);
             if(collides(candidate))return;
             const score=computeScore(candidate);
