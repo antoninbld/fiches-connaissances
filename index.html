@@ -72,7 +72,11 @@
   .chronos-nav-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:1px solid var(--border2);background:rgba(20,20,30,.82);color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .15s ease}
   .chronos-nav-btn:hover{border-color:var(--gold-dim);color:var(--gold);transform:translateY(-1px)}
   .chronos-nav-btn:disabled{cursor:not-allowed;opacity:.45;transform:none}
-  .chronos-scroll{overflow-x:auto;overflow-y:hidden;padding:14px 0 10px}
+  .chronos-scroll{overflow-x:auto;overflow-y:hidden;padding:14px 0 10px;scrollbar-width:auto;scrollbar-color:var(--gold) rgba(255,255,255,.08)}
+  .chronos-scroll::-webkit-scrollbar{height:16px}
+  .chronos-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.08);border-radius:999px}
+  .chronos-scroll::-webkit-scrollbar-thumb{background:linear-gradient(90deg,rgba(201,168,76,.92),rgba(226,194,96,.98));border-radius:999px;border:3px solid rgba(14,14,22,.96);box-shadow:0 0 0 1px rgba(201,168,76,.18)}
+  .chronos-scroll::-webkit-scrollbar-thumb:hover{background:linear-gradient(90deg,rgba(214,180,82,.98),rgba(240,208,112,1));box-shadow:0 0 10px rgba(201,168,76,.32)}
   .chronos-canvas{position:relative;min-height:320px;padding-bottom:20px}
   .chronos-axis{position:absolute;left:0;right:0;top:8px;height:40px;border-bottom:1px solid var(--border2)}
   .chronos-year-tick{position:absolute;top:0;height:100%;border-left:1px solid rgba(201,168,76,.22)}
