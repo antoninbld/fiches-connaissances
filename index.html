@@ -2480,6 +2480,16 @@ function getNextChronosTrackFromViewport(tracks,scrollEl){
   const nextTrack=tracks.find(track=>track.offsetLeft>threshold);
   return nextTrack||null;
 }
+function getPreviousChronosTrackFromViewport(tracks,scrollEl){
+  if(!scrollEl||!(tracks||[]).length)return null;
+  const alignmentOffset=scrollEl.clientWidth*0.18;
+  const targetLeft=Math.max(0,scrollEl.scrollLeft+alignmentOffset);
+  const visibleTrack=tracks.find(track=>track.offsetLeft>=targetLeft-Math.max(8,scrollEl.clientWidth*0.02));
+  if(!visibleTrack)return tracks[tracks.length-1]||null;
+  const visibleIndex=tracks.indexOf(visibleTrack);
+  if(visibleIndex<=0)return null;
+  return tracks[visibleIndex-1]||null;
+}
 function renderChronos(){
   const items=db.fiches.map(f=>{
     const parsed=parseEventDate(f.dateEvenement||'');
@@ -2807,7 +2817,7 @@ function renderChronos(){
   }).join('');
   content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">${items.length} événement${items.length>1?'s':''} daté${items.length>1?'s':''}</div></div>
   <div class="view-subtitle" style="margin-bottom:12px">Frise chronologique à l'échelle, avec superposition des granularités année / mois / jour.</div>
-  <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-toolbar-main"><div class="chronos-legend"><span><i class="chronos-dot" style="background:rgba(201,168,76,.4)"></i>Année</span><span><i class="chronos-dot" style="background:rgba(90,138,224,.5)"></i>Mois</span><span><i class="chronos-dot" style="background:var(--gold)"></i>Jour</span></div><div class="view-subtitle" style="margin:0">Navigation rapide sur la frise.</div></div><div class="chronos-toolbar-actions"><button type="button" class="chronos-nav-btn" data-chronos-nav="first">⇤ Premier événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="next">→ Prochain événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="last">Dernier événement ⇥</button></div></div>
+  <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-toolbar-main"><div class="chronos-legend"><span><i class="chronos-dot" style="background:rgba(201,168,76,.4)"></i>Année</span><span><i class="chronos-dot" style="background:rgba(90,138,224,.5)"></i>Mois</span><span><i class="chronos-dot" style="background:var(--gold)"></i>Jour</span></div><div class="view-subtitle" style="margin:0">Navigation rapide sur la frise.</div></div><div class="chronos-toolbar-actions"><button type="button" class="chronos-nav-btn" data-chronos-nav="first">⇤ Premier événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="previous">← Evènement précédent</button><button type="button" class="chronos-nav-btn" data-chronos-nav="next">→ Prochain événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="last">Dernier événement ⇥</button></div></div>
     <div class="chronos-scroll" id="chronos-scroll"><div class="chronos-canvas" style="width:${axisWidth}px;height:${canvasHeight}px"><div class="chronos-axis">${years}</div><div class="chronos-month-grid">${months}</div>${nodes}${dayCallouts}</div></div>
   </div><div id="chronos-tooltip" class="chronos-tooltip"></div>`;
   bindChronosEvents();
@@ -2825,6 +2835,7 @@ function bindChronosEvents(){
     track
   });
   const getNextVisibleTrack=()=>getNextChronosTrackFromViewport(chronosTracks,scrollEl);
+  const getPreviousVisibleTrack=()=>getPreviousChronosTrackFromViewport(chronosTracks,scrollEl);
   const scrollToTrack=target=>{
     if(!scrollEl||!target)return;
     const targetLeft=Math.max(0,target.offsetLeft-(scrollEl.clientWidth*0.18));
@@ -2834,7 +2845,9 @@ function bindChronosEvents(){
     if(!scrollEl||!chronosTracks.length)return;
     const maxScrollLeft=Math.max(0,scrollEl.scrollWidth-scrollEl.clientWidth);
     const nextVisibleTrack=getNextVisibleTrack();
+    const previousVisibleTrack=getPreviousVisibleTrack();
     document.querySelectorAll('[data-chronos-nav="first"]').forEach(btn=>btn.disabled=scrollEl.scrollLeft<=4);
+    document.querySelectorAll('[data-chronos-nav="previous"]').forEach(btn=>btn.disabled=!previousVisibleTrack||scrollEl.scrollLeft<=4);
     document.querySelectorAll('[data-chronos-nav="last"]').forEach(btn=>btn.disabled=scrollEl.scrollLeft>=maxScrollLeft-4);
     document.querySelectorAll('[data-chronos-nav="next"]').forEach(btn=>btn.disabled=!nextVisibleTrack||scrollEl.scrollLeft>=maxScrollLeft-4);
   };
@@ -2853,6 +2866,11 @@ function bindChronosEvents(){
       }
       if(btn.dataset.chronosNav==='last'){
         scrollToTrack(chronosTracks[chronosTracks.length-1]);
+        return;
+      }
+      if(btn.dataset.chronosNav==='previous'){
+        const previousTarget=getPreviousVisibleTrack();
+        scrollToTrack(previousTarget||chronosTracks[0]);
         return;
       }
       const nextTarget=getNextVisibleTrack();
