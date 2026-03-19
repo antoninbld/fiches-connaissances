@@ -62,46 +62,58 @@
   .nav-home:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border2)}
   .nav-home.active{background:var(--gold-glow);color:var(--gold);border-left-color:var(--gold)}
 
-  .chronos-shell{border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,rgba(22,22,34,.96),rgba(14,14,22,.96));overflow:hidden}
-  .chronos-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(10,10,16,.5)}
+  .chronos-shell{position:relative;border:1px solid rgba(255,255,255,.09);border-radius:18px;background:
+    radial-gradient(circle at top left,rgba(201,168,76,.08),transparent 34%),
+    radial-gradient(circle at top right,rgba(90,138,224,.1),transparent 30%),
+    linear-gradient(180deg,rgba(24,24,36,.98),rgba(14,14,22,.98));overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 22px 48px rgba(0,0,0,.3)}
+  .chronos-shell::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.03),transparent 26%,transparent 78%,rgba(255,255,255,.015));opacity:.8}
+  .chronos-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(12,12,18,.82),rgba(10,10,16,.58));backdrop-filter:blur(8px)}
   .chronos-toolbar-main{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}
   .chronos-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
   .chronos-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.05em;text-transform:uppercase}
   .chronos-legend span{display:inline-flex;align-items:center;gap:6px}
-  .chronos-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .chronos-dot{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:0 0 0 1px rgba(255,255,255,.12),0 0 10px rgba(255,255,255,.08)}
   .chronos-nav-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:1px solid var(--border2);background:rgba(20,20,30,.82);color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .15s ease}
   .chronos-nav-btn:hover{border-color:var(--gold-dim);color:var(--gold);transform:translateY(-1px)}
   .chronos-nav-btn:disabled{cursor:not-allowed;opacity:.45;transform:none}
-  .chronos-scroll{overflow-x:auto;overflow-y:hidden;padding:14px 0 10px;scrollbar-width:auto;scrollbar-color:var(--gold) rgba(255,255,255,.08)}
+  .chronos-scroll{overflow-x:auto;overflow-y:hidden;padding:18px 0 12px;scrollbar-width:auto;scrollbar-color:var(--gold) rgba(255,255,255,.08);background:
+    linear-gradient(180deg,rgba(255,255,255,.012),transparent 26%),
+    linear-gradient(90deg,rgba(0,0,0,.12),transparent 6%,transparent 94%,rgba(0,0,0,.12))}
   .chronos-scroll::-webkit-scrollbar{height:16px}
   .chronos-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.08);border-radius:999px}
   .chronos-scroll::-webkit-scrollbar-thumb{background:linear-gradient(90deg,rgba(201,168,76,.92),rgba(226,194,96,.98));border-radius:999px;border:3px solid rgba(14,14,22,.96);box-shadow:0 0 0 1px rgba(201,168,76,.18)}
   .chronos-scroll::-webkit-scrollbar-thumb:hover{background:linear-gradient(90deg,rgba(214,180,82,.98),rgba(240,208,112,1));box-shadow:0 0 10px rgba(201,168,76,.32)}
   .chronos-canvas{position:relative;min-height:320px;padding-bottom:20px}
-  .chronos-axis{position:absolute;left:0;right:0;top:8px;height:40px;border-bottom:1px solid var(--border2)}
-  .chronos-year-tick{position:absolute;top:0;height:100%;border-left:1px solid rgba(201,168,76,.22)}
-  .chronos-year-tick label{position:absolute;top:0;left:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:.06em}
+  .chronos-axis{position:absolute;left:0;right:0;top:8px;height:40px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.018),transparent 88%)}
+  .chronos-year-tick{position:absolute;top:0;height:100%;border-left:1px solid rgba(201,168,76,.26)}
+  .chronos-year-tick label{position:absolute;top:0;left:6px;padding:2px 8px 3px;border-radius:999px;border:1px solid rgba(201,168,76,.18);background:rgba(12,12,18,.72);box-shadow:0 8px 16px rgba(0,0,0,.12);font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(242,215,130,.92);letter-spacing:.06em}
   .chronos-month-grid{position:absolute;top:40px;bottom:0;left:0;right:0;pointer-events:none}
-  .chronos-month-line{position:absolute;top:0;bottom:0;border-left:1px dashed rgba(90,138,224,.12)}
-  .chronos-track{position:absolute;height:28px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
-  .chronos-track:hover{transform:translateY(-1px);border-color:var(--gold-dim);box-shadow:0 4px 12px rgba(0,0,0,.32)}
-  .chronos-track.year{background:rgba(201,168,76,.18);border-color:rgba(201,168,76,.26);height:24px}
-  .chronos-track.month{background:rgba(90,138,224,.22);border-color:rgba(90,138,224,.35);height:18px;top:3px}
-  .chronos-track.day{width:12px!important;height:12px;border-radius:3px;background:var(--gold);border-color:rgba(13,13,20,.9);box-shadow:0 0 0 2px rgba(201,168,76,.28)}
-  .chronos-track.day:hover{box-shadow:0 0 0 2px rgba(201,168,76,.45),0 0 14px rgba(201,168,76,.35)}
-  .chronos-caption{position:absolute;left:6px;right:6px;bottom:2px;font-size:9px;line-height:1.05;color:var(--text-muted);white-space:nowrap;overflow:hidden;pointer-events:none;text-align:left}
-  .chronos-track.year .chronos-caption{color:rgba(226,221,208,.72);font-size:9px}
-  .chronos-track.month .chronos-caption{color:rgba(226,221,208,.7);font-size:8px}
-  .chronos-track.day .chronos-caption{top:13px;left:-32px;right:auto;max-width:140px;transform:none}
+  .chronos-month-line{position:absolute;top:0;bottom:0;border-left:1px dashed rgba(90,138,224,.14)}
+  .chronos-track{position:absolute;height:28px;border-radius:10px;border:1px solid transparent;cursor:pointer;overflow:hidden;backdrop-filter:blur(8px);transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,filter .16s ease}
+  .chronos-track::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.95}
+  .chronos-track::after{content:'';position:absolute;left:1px;right:1px;top:1px;height:42%;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0))}
+  .chronos-track:hover{transform:translateY(-1px) scale(1.01);border-color:rgba(255,255,255,.18);filter:saturate(1.04);box-shadow:0 10px 24px rgba(0,0,0,.34)}
+  .chronos-track.year{background:linear-gradient(180deg,rgba(201,168,76,.22),rgba(132,104,38,.2));border-color:rgba(201,168,76,.28);box-shadow:inset 0 1px 0 rgba(255,240,196,.08),0 8px 20px rgba(0,0,0,.16);height:24px}
+  .chronos-track.year::before{background:linear-gradient(90deg,rgba(244,215,126,.1),transparent 18%,transparent 82%,rgba(104,78,24,.12))}
+  .chronos-track.month{background:linear-gradient(180deg,rgba(97,151,241,.24),rgba(48,84,135,.26));border-color:rgba(110,162,245,.34);box-shadow:inset 0 1px 0 rgba(202,224,255,.07),0 7px 18px rgba(0,0,0,.15);height:18px;top:3px}
+  .chronos-track.month::before{background:linear-gradient(90deg,rgba(164,200,255,.08),transparent 24%,transparent 76%,rgba(38,63,104,.16))}
+  .chronos-track.day{width:12px!important;height:12px;border-radius:4px;background:linear-gradient(180deg,#f2d68d,#c59b36);border-color:rgba(13,13,20,.88);box-shadow:0 0 0 2px rgba(201,168,76,.32),0 8px 18px rgba(201,168,76,.18)}
+  .chronos-track.day::before{background:radial-gradient(circle at 35% 30%,rgba(255,251,233,.56),rgba(255,251,233,0) 58%)}
+  .chronos-track.day::after{display:none}
+  .chronos-track.day:hover{box-shadow:0 0 0 2px rgba(201,168,76,.48),0 0 18px rgba(201,168,76,.22),0 10px 22px rgba(0,0,0,.28)}
+  .chronos-caption{position:absolute;left:8px;right:8px;bottom:3px;font-size:9px;line-height:1.08;color:var(--text-muted);white-space:nowrap;overflow:hidden;pointer-events:none;text-align:left;text-shadow:0 1px 0 rgba(0,0,0,.24)}
+  .chronos-track.year .chronos-caption{color:rgba(247,239,214,.84);font-size:9px;font-weight:600}
+  .chronos-track.month .chronos-caption{color:rgba(228,236,250,.82);font-size:8px;font-weight:500}
+  .chronos-track.day .chronos-caption{top:16px;left:-36px;right:auto;max-width:160px;transform:none;color:rgba(242,231,198,.88);font-size:9px}
   .chronos-day-callout{position:absolute;pointer-events:none;z-index:32}
-  .chronos-day-callout .stem{position:absolute;left:50%;transform:translateX(-50%);width:1px;background:rgba(201,168,76,.62);z-index:0}
-  .chronos-day-callout .label{position:absolute;left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:6px;border:1px solid rgba(201,168,76,.34);background:rgba(19,19,30,.95);font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.25;color:#efe5c9;white-space:nowrap;letter-spacing:.02em;z-index:2}
+  .chronos-day-callout .stem{position:absolute;left:50%;transform:translateX(-50%);width:1px;background:linear-gradient(180deg,rgba(242,214,141,.8),rgba(201,168,76,.18));z-index:0}
+  .chronos-day-callout .label{position:absolute;left:50%;transform:translateX(-50%);padding:4px 9px;border-radius:999px;border:1px solid rgba(201,168,76,.3);background:linear-gradient(180deg,rgba(28,28,42,.96),rgba(18,18,28,.98));box-shadow:0 10px 20px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.06);font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.25;color:#efe5c9;white-space:nowrap;letter-spacing:.04em;z-index:2}
   .chronos-day-callout.up .label{top:0}
   .chronos-day-callout.down .label{top:0}
   .chronos-empty{padding:60px 24px;text-align:center;color:var(--text-dim)}
-  .chronos-tooltip{position:fixed;z-index:2300;display:none;max-width:300px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 11px;pointer-events:none;box-shadow:0 8px 26px rgba(0,0,0,.35)}
-  .chronos-tooltip-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);margin-bottom:4px}
-  .chronos-tooltip-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);line-height:1.6;letter-spacing:.05em}
+  .chronos-tooltip{position:fixed;z-index:2300;display:none;max-width:300px;background:linear-gradient(180deg,rgba(27,27,40,.96),rgba(16,16,24,.98));border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 13px;pointer-events:none;box-shadow:0 16px 36px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(10px)}
+  .chronos-tooltip-title{font-family:'Playfair Display',serif;font-size:15px;color:rgba(248,243,231,.96);margin-bottom:5px}
+  .chronos-tooltip-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(208,212,223,.8);line-height:1.65;letter-spacing:.05em}
   @media (max-width:1100px){
     .chronos-toolbar{align-items:flex-start;flex-direction:column}
     .chronos-toolbar-actions{width:100%;justify-content:flex-start}
