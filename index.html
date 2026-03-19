@@ -329,10 +329,19 @@
   .token-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);cursor:pointer}
   .token-toggle:hover{color:var(--gold)}
 
-  .color-opts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .color-opts{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+  .color-swatches{display:flex;gap:6px;flex-wrap:wrap}
   .color-opt{width:21px;height:21px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s}
   .color-opt:hover{transform:scale(1.2)}
   .color-opt.selected{border-color:var(--text)}
+  .color-custom{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .color-preview{width:32px;height:32px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+  .color-hex-wrap{display:flex;align-items:center;gap:8px;flex:1;min-width:220px}
+  .color-hex-wrap .form-input{font-family:'JetBrains Mono',monospace;font-size:13px}
+  .color-picker-input{width:42px;height:42px;padding:0;border:none;background:none;cursor:pointer}
+  .color-picker-input::-webkit-color-swatch-wrapper{padding:0}
+  .color-picker-input::-webkit-color-swatch{border:none;border-radius:10px}
+  .color-picker-input::-moz-color-swatch{border:none;border-radius:10px}
 
   .search-result-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s}
   .search-result-item:hover{border-color:var(--gold-dim);transform:translateX(3px)}
@@ -514,6 +523,7 @@
     <div class="form-group">
       <label class="form-label">Couleur</label>
       <div class="color-opts" id="edit-cat-colors"></div>
+      <div class="form-hint">Choisis une pastille ou saisis une couleur précise au format <code style="font-family:JetBrains Mono,monospace">#FF9999</code>.</div>
     </div>
     <div class="form-group">
       <label class="form-label">Synthèse courte</label>
@@ -2305,15 +2315,78 @@ function tDelTh(catId,subId,thId){
   scheduleSave();renderTree();render();toast('Thème supprimé.','success');
 }
 
+function normalizeHexColor(value){
+  const raw=(value||'').trim();
+  if(!raw)return '';
+  const withHash=raw.startsWith('#')?raw:`#${raw}`;
+  if(/^#([\da-f]{3})$/i.test(withHash)){
+    return '#'+withHash.slice(1).split('').map(v=>v+v).join('').toUpperCase();
+  }
+  if(/^#([\da-f]{6})$/i.test(withHash)){
+    return withHash.toUpperCase();
+  }
+  return '';
+}
+function syncPickerUI(cid,color){
+  const root=document.getElementById(cid);
+  if(!root)return;
+  root.querySelectorAll('.color-opt').forEach(opt=>opt.classList.toggle('selected',opt.dataset.color===color));
+  const preview=root.querySelector('.color-preview');
+  if(preview)preview.style.background=color;
+  const textInput=root.querySelector('.color-hex-input');
+  if(textInput){
+    textInput.value=color;
+    textInput.dataset.lastValid=color;
+  }
+  const nativeInput=root.querySelector('.color-picker-input');
+  if(nativeInput)nativeInput.value=color;
+}
+function setPickerColor(cid,color){
+  const normalized=normalizeHexColor(color)||PALETTE[0];
+  pickerColors[cid]=normalized;
+  syncPickerUI(cid,normalized);
+}
 function renderColorPicker(cid,selectedColor=PALETTE[0]){
-  const initialColor=PALETTE.includes(selectedColor)?selectedColor:PALETTE[0];
-  pickerColors[cid]=initialColor;
-  document.getElementById(cid).innerHTML=PALETTE.map(c=>`<div class="color-opt ${c===initialColor?'selected':''}" style="background:${c}" data-color="${c}" onclick="pickColor(this,'${cid}')"></div>`).join('');
+  const initialColor=normalizeHexColor(selectedColor)||PALETTE[0];
+  document.getElementById(cid).innerHTML=`
+    <div class="color-swatches">
+      ${PALETTE.map(c=>`<div class="color-opt ${c===initialColor?'selected':''}" style="background:${c}" data-color="${c}" onclick="pickColor(this,'${cid}')" title="${c}" aria-label="Choisir ${c}"></div>`).join('')}
+    </div>
+    <div class="color-custom">
+      <div class="color-preview" aria-hidden="true" style="background:${initialColor}"></div>
+      <div class="color-hex-wrap">
+        <input class="form-input color-hex-input" value="${initialColor}" placeholder="#FF9999" inputmode="text" spellcheck="false" maxlength="7" oninput="handleColorHexInput(this,'${cid}')" onchange="handleColorHexCommit(this,'${cid}')" aria-label="Couleur personnalisée au format hexadécimal">
+        <input class="color-picker-input" type="color" value="${initialColor}" oninput="handleNativeColorInput(this,'${cid}')" aria-label="Sélecteur de couleur précis">
+      </div>
+    </div>`;
+  setPickerColor(cid,initialColor);
 }
 function pickColor(el,cid){
-  document.querySelectorAll(`#${cid} .color-opt`).forEach(d=>d.classList.remove('selected'));
-  el.classList.add('selected');
-  pickerColors[cid]=el.dataset.color;
+  setPickerColor(cid,el.dataset.color);
+}
+function handleColorHexInput(input,cid){
+  const normalized=normalizeHexColor(input.value);
+  if(normalized){
+    setPickerColor(cid,normalized);
+    input.setCustomValidity('');
+  }else{
+    input.setCustomValidity('Entre une couleur valide au format #RRGGBB.');
+  }
+}
+function handleColorHexCommit(input,cid){
+  const normalized=normalizeHexColor(input.value);
+  if(normalized){
+    setPickerColor(cid,normalized);
+    input.setCustomValidity('');
+    return;
+  }
+  const fallback=input.dataset.lastValid||pickerColors[cid]||PALETTE[0];
+  input.value=fallback;
+  input.setCustomValidity('');
+  syncPickerUI(cid,fallback);
+}
+function handleNativeColorInput(input,cid){
+  setPickerColor(cid,input.value);
 }
 function getSelectedColor(cid){return pickerColors[cid]||PALETTE[0];}
 function addRootCat(){
