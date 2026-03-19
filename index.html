@@ -2467,6 +2467,12 @@ function chronosSort(a,b){
   if(pr[a.type]!==pr[b.type])return pr[a.type]-pr[b.type];
   return a.title.localeCompare(b.title,'fr');
 }
+function getNextFutureChronosItem(items,refTs=toDayTs(new Date())){
+  return(items||[])
+    .filter(it=>Number.isFinite(it.startTs)&&Number.isFinite(it.endTs)&&it.endTs>=refTs)
+    .map(it=>({item:it,effectiveTs:Math.max(it.startTs,refTs)}))
+    .sort((a,b)=>a.effectiveTs-b.effectiveTs||chronosSort(a.item,b.item))[0]?.item||null;
+}
 function renderChronos(){
   const items=db.fiches.map(f=>{
     const parsed=parseEventDate(f.dateEvenement||'');
@@ -2784,7 +2790,7 @@ function renderChronos(){
     const caption=it.type==='day'&&it.callout
       ?''
       :(it.type==='day'?it.title:fitChronosTrackLabel(it.title,width,it.type));
-    return `<div class="chronos-track ${it.type}" style="left:${left}px;top:${top}px;width:${width}px;z-index:${z}" data-fiche-id="${it.id}" data-title="${escH(it.title)}" data-date="${escH(it.label)}" data-cat="${escH(it.cat)}"><div class="chronos-caption">${escH(caption)}</div></div>`;
+    return `<div class="chronos-track ${it.type}" style="left:${left}px;top:${top}px;width:${width}px;z-index:${z}" data-fiche-id="${it.id}" data-title="${escH(it.title)}" data-date="${escH(it.label)}" data-cat="${escH(it.cat)}" data-start-ts="${it.startTs}" data-end-ts="${it.endTs}"><div class="chronos-caption">${escH(caption)}</div></div>`;
   }).join('');
   const dayCallouts=dayItems.map(it=>{
     if(!it.callout)return '';
@@ -2804,6 +2810,14 @@ function bindChronosEvents(){
   const scrollEl=document.getElementById('chronos-scroll');
   const hide=()=>{if(tooltip)tooltip.style.display='none';};
   const chronosTracks=[...document.querySelectorAll('.chronos-track[data-fiche-id]')].sort((a,b)=>a.offsetLeft-b.offsetLeft||a.offsetTop-b.offsetTop);
+  const getTrackChronosItem=track=>({
+    startTs:Number(track.dataset.startTs),
+    endTs:Number(track.dataset.endTs),
+    type:track.classList.contains('day')?'day':track.classList.contains('month')?'month':'year',
+    title:track.dataset.title||'',
+    track
+  });
+  const getNextFutureTrack=()=>getNextFutureChronosItem(chronosTracks.map(getTrackChronosItem))?.track||null;
   const scrollToTrack=target=>{
     if(!scrollEl||!target)return;
     const targetLeft=Math.max(0,target.offsetLeft-(scrollEl.clientWidth*0.18));
@@ -2812,10 +2826,10 @@ function bindChronosEvents(){
   const updateChronosNavState=()=>{
     if(!scrollEl||!chronosTracks.length)return;
     const maxScrollLeft=Math.max(0,scrollEl.scrollWidth-scrollEl.clientWidth);
-    const nextTarget=chronosTracks.find(track=>track.offsetLeft+track.offsetWidth>scrollEl.scrollLeft+scrollEl.clientWidth-24);
+    const nextFutureTrack=getNextFutureTrack();
     document.querySelectorAll('[data-chronos-nav="first"]').forEach(btn=>btn.disabled=scrollEl.scrollLeft<=4);
     document.querySelectorAll('[data-chronos-nav="last"]').forEach(btn=>btn.disabled=scrollEl.scrollLeft>=maxScrollLeft-4);
-    document.querySelectorAll('[data-chronos-nav="next"]').forEach(btn=>btn.disabled=!nextTarget||scrollEl.scrollLeft>=maxScrollLeft-4);
+    document.querySelectorAll('[data-chronos-nav="next"]').forEach(btn=>btn.disabled=!nextFutureTrack);
   };
   document.querySelectorAll('.chronos-track[data-fiche-id]').forEach(el=>{
     el.addEventListener('mouseenter',()=>{if(!tooltip)return;tooltip.style.display='block';tooltip.innerHTML=`<div class="chronos-tooltip-title">${el.dataset.title||''}</div><div class="chronos-tooltip-meta">DATE : ${el.dataset.date||''}<br>CATÉGORIE : ${el.dataset.cat||'—'}<br>Cliquer pour ouvrir la fiche</div>`;});
@@ -2834,8 +2848,7 @@ function bindChronosEvents(){
         scrollToTrack(chronosTracks[chronosTracks.length-1]);
         return;
       }
-      const threshold=scrollEl.scrollLeft+scrollEl.clientWidth-24;
-      const nextTarget=chronosTracks.find(track=>track.offsetLeft+track.offsetWidth>threshold);
+      const nextTarget=getNextFutureTrack();
       scrollToTrack(nextTarget||chronosTracks[chronosTracks.length-1]);
     });
   });
