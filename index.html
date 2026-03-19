@@ -2147,7 +2147,7 @@ const pickerColors={};
 let treeOpen1=new Set(),treeOpen2=new Set();
 
 function openTreeManager(){
-  treeOpen1=new Set(db.categories.map(c=>c.id));
+  treeOpen1=new Set();
   treeOpen2=new Set();
   renderColorPicker('new-cat-colors');
   renderTree();
