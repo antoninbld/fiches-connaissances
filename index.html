@@ -1519,6 +1519,8 @@ function renderCortexScene(){
       Math.min(255,Math.round(b*1.1+16))
     ];
   };
+  const mixRgb=(baseRgb,targetRgb,amount)=>baseRgb.map((channel,idx)=>Math.round(channel*(1-amount)+targetRgb[idx]*amount));
+  const goldHaloColor=(hex)=>mixRgb(activeColor(hex),[224,194,118],0.72);
   const computeOrganicEdgePath=(a,b,edgeKey)=>{
     const dx=b.x-a.x,dy=b.y-a.y;
     const len=Math.hypot(dx,dy)||1;
@@ -1579,8 +1581,9 @@ function renderCortexScene(){
     const shadowDx=(p.z/180)*6;
     const shadowDy=6+(p.z/260)*5;
     const [activeR,activeG,activeB]=activeColor(n.color);
+    const [haloOuterR,haloOuterG,haloOuterB]=goldHaloColor(n.color);
     const nodeFill=isActive?`rgb(${activeR},${activeG},${activeB})`:n.color;
-    const activeHaloOuter=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*2.1).toFixed(2)}" fill="rgba(${activeR},${activeG},${activeB},${(0.14*haze).toFixed(3)})" filter="url(#cortex-active-glow)"/>`:'';
+    const activeHaloOuter=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*2.1).toFixed(2)}" fill="rgba(${haloOuterR},${haloOuterG},${haloOuterB},${(0.16*haze).toFixed(3)})" filter="url(#cortex-active-glow)"/>`:'';
     const activeHaloInner=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*1.48).toFixed(2)}" fill="rgba(${activeR},${activeG},${activeB},${(0.22*haze).toFixed(3)})"/>`:'';
     const activeCore=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*0.58).toFixed(2)}" fill="rgba(255,245,222,0.36)"/>`:'';
     svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}">${activeHaloOuter}${activeHaloInner}<ellipse cx="${(p.x+shadowDx).toFixed(2)}" cy="${(p.y+shadowDy).toFixed(2)}" rx="${(nodeRadius*0.92).toFixed(2)}" ry="${(nodeRadius*0.5).toFixed(2)}" fill="rgba(0,0,0,0.22)" opacity="${(nodeOpacity*0.45*haze).toFixed(2)}" filter="url(#cortex-soft-shadow)"/><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${nodeFill}" opacity="${(nodeOpacity*haze).toFixed(2)}"/>${activeCore}${drawLabel?`<text class="cortex-node-label" x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${labelText}</text>`:''}</g>`;
