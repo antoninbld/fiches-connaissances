@@ -949,7 +949,7 @@ function seedDefault(){db.categories.push({id:uid(),name:'Général',summary:'',
 let state={view:'home',catId:null,subcatId:null,themeId:null,search:''};
 let cortexSelectedId=null;
 let cortexGraphState=null;
-let cortexSizeStrength=0.55;
+let cortexSizeStrength=1;
 let cortexFocusAnimFrame=null;
 let cortexPanelWidth=320;
 let isCortexResizing=false;
@@ -1133,7 +1133,6 @@ function renderCortex(){
   cortexSelectedId=null;
   const nbLinks=db.fiches.reduce((n,f)=>n+(f.links||[]).length,0);
   document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="section-count">${db.fiches.length} fiche${db.fiches.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div></div>
-  <div class="view-subtitle" style="margin-bottom:12px">Carte de liens entre fiches (inspirée de la vue graphe d'Obsidian).</div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)">
     <label for="cortex-size-strength" class="voir-aussi-label" style="margin:0">Taille selon liens</label>
     <input id="cortex-size-strength" type="range" min="0" max="100" step="1" value="${Math.round(cortexSizeStrength*100)}" oninput="setCortexSizeStrength(this.value)">
