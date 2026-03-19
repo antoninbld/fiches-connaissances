@@ -64,9 +64,14 @@
 
   .chronos-shell{border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,rgba(22,22,34,.96),rgba(14,14,22,.96));overflow:hidden}
   .chronos-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(10,10,16,.5)}
+  .chronos-toolbar-main{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}
+  .chronos-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
   .chronos-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.05em;text-transform:uppercase}
   .chronos-legend span{display:inline-flex;align-items:center;gap:6px}
   .chronos-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .chronos-nav-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:1px solid var(--border2);background:rgba(20,20,30,.82);color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .15s ease}
+  .chronos-nav-btn:hover{border-color:var(--gold-dim);color:var(--gold);transform:translateY(-1px)}
+  .chronos-nav-btn:disabled{cursor:not-allowed;opacity:.45;transform:none}
   .chronos-scroll{overflow-x:auto;overflow-y:hidden;padding:14px 0 10px}
   .chronos-canvas{position:relative;min-height:320px;padding-bottom:20px}
   .chronos-axis{position:absolute;left:0;right:0;top:8px;height:40px;border-bottom:1px solid var(--border2)}
@@ -93,6 +98,10 @@
   .chronos-tooltip{position:fixed;z-index:2300;display:none;max-width:300px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 11px;pointer-events:none;box-shadow:0 8px 26px rgba(0,0,0,.35)}
   .chronos-tooltip-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);margin-bottom:4px}
   .chronos-tooltip-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);line-height:1.6;letter-spacing:.05em}
+  @media (max-width:1100px){
+    .chronos-toolbar{align-items:flex-start;flex-direction:column}
+    .chronos-toolbar-actions{width:100%;justify-content:flex-start}
+  }
   
   .cortex-layout{display:flex;align-items:stretch;min-height:20vh;gap:0}
   .cortex-graph{position:relative;background:radial-gradient(circle at 20% 10%,rgba(90,138,224,.12),transparent 40%),var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;height:100%;min-height:0;flex:1 1 auto}
@@ -2785,20 +2794,55 @@ function renderChronos(){
   }).join('');
   content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">${items.length} événement${items.length>1?'s':''} daté${items.length>1?'s':''}</div></div>
   <div class="view-subtitle" style="margin-bottom:12px">Frise chronologique à l'échelle, avec superposition des granularités année / mois / jour.</div>
-  <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-legend"><span><i class="chronos-dot" style="background:rgba(201,168,76,.4)"></i>Année</span><span><i class="chronos-dot" style="background:rgba(90,138,224,.5)"></i>Mois</span><span><i class="chronos-dot" style="background:var(--gold)"></i>Jour</span></div><div class="view-subtitle" style="margin:0">Défilement horizontal si nécessaire.</div></div>
-    <div class="chronos-scroll"><div class="chronos-canvas" style="width:${axisWidth}px;height:${canvasHeight}px"><div class="chronos-axis">${years}</div><div class="chronos-month-grid">${months}</div>${nodes}${dayCallouts}</div></div>
+  <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-toolbar-main"><div class="chronos-legend"><span><i class="chronos-dot" style="background:rgba(201,168,76,.4)"></i>Année</span><span><i class="chronos-dot" style="background:rgba(90,138,224,.5)"></i>Mois</span><span><i class="chronos-dot" style="background:var(--gold)"></i>Jour</span></div><div class="view-subtitle" style="margin:0">Navigation rapide sur la frise.</div></div><div class="chronos-toolbar-actions"><button type="button" class="chronos-nav-btn" data-chronos-nav="first">⇤ Premier événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="next">→ Prochain événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="last">Dernier événement ⇥</button></div></div>
+    <div class="chronos-scroll" id="chronos-scroll"><div class="chronos-canvas" style="width:${axisWidth}px;height:${canvasHeight}px"><div class="chronos-axis">${years}</div><div class="chronos-month-grid">${months}</div>${nodes}${dayCallouts}</div></div>
   </div><div id="chronos-tooltip" class="chronos-tooltip"></div>`;
   bindChronosEvents();
 }
 function bindChronosEvents(){
   const tooltip=document.getElementById('chronos-tooltip');
+  const scrollEl=document.getElementById('chronos-scroll');
   const hide=()=>{if(tooltip)tooltip.style.display='none';};
+  const chronosTracks=[...document.querySelectorAll('.chronos-track[data-fiche-id]')].sort((a,b)=>a.offsetLeft-b.offsetLeft||a.offsetTop-b.offsetTop);
+  const scrollToTrack=target=>{
+    if(!scrollEl||!target)return;
+    const targetLeft=Math.max(0,target.offsetLeft-(scrollEl.clientWidth*0.18));
+    scrollEl.scrollTo({left:targetLeft,behavior:'smooth'});
+  };
+  const updateChronosNavState=()=>{
+    if(!scrollEl||!chronosTracks.length)return;
+    const maxScrollLeft=Math.max(0,scrollEl.scrollWidth-scrollEl.clientWidth);
+    const nextTarget=chronosTracks.find(track=>track.offsetLeft+track.offsetWidth>scrollEl.scrollLeft+scrollEl.clientWidth-24);
+    document.querySelectorAll('[data-chronos-nav="first"]').forEach(btn=>btn.disabled=scrollEl.scrollLeft<=4);
+    document.querySelectorAll('[data-chronos-nav="last"]').forEach(btn=>btn.disabled=scrollEl.scrollLeft>=maxScrollLeft-4);
+    document.querySelectorAll('[data-chronos-nav="next"]').forEach(btn=>btn.disabled=!nextTarget||scrollEl.scrollLeft>=maxScrollLeft-4);
+  };
   document.querySelectorAll('.chronos-track[data-fiche-id]').forEach(el=>{
     el.addEventListener('mouseenter',()=>{if(!tooltip)return;tooltip.style.display='block';tooltip.innerHTML=`<div class="chronos-tooltip-title">${el.dataset.title||''}</div><div class="chronos-tooltip-meta">DATE : ${el.dataset.date||''}<br>CATÉGORIE : ${el.dataset.cat||'—'}<br>Cliquer pour ouvrir la fiche</div>`;});
     el.addEventListener('mousemove',e=>{if(!tooltip)return;tooltip.style.left=(e.clientX+14)+'px';tooltip.style.top=(e.clientY+14)+'px';});
     el.addEventListener('mouseleave',hide);
     el.addEventListener('click',()=>viewFiche(el.dataset.ficheId));
   });
+  document.querySelectorAll('[data-chronos-nav]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(!scrollEl||!chronosTracks.length)return;
+      if(btn.dataset.chronosNav==='first'){
+        scrollEl.scrollTo({left:0,behavior:'smooth'});
+        return;
+      }
+      if(btn.dataset.chronosNav==='last'){
+        scrollToTrack(chronosTracks[chronosTracks.length-1]);
+        return;
+      }
+      const threshold=scrollEl.scrollLeft+scrollEl.clientWidth-24;
+      const nextTarget=chronosTracks.find(track=>track.offsetLeft+track.offsetWidth>threshold);
+      scrollToTrack(nextTarget||chronosTracks[chronosTracks.length-1]);
+    });
+  });
+  if(scrollEl){
+    scrollEl.addEventListener('scroll',updateChronosNavState,{passive:true});
+    updateChronosNavState();
+  }
   if(!window.__chronosTooltipBound){window.__chronosTooltipBound=true;window.addEventListener('scroll',hide,{passive:true});}
 }
   
