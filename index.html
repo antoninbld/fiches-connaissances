@@ -505,11 +505,15 @@
   <div class="modal" style="max-width:560px">
     <button class="modal-close" onclick="closeModal('edit-cat-modal')">✕</button>
     <div class="modal-title">✏️ Modifier la catégorie</div>
-    <div class="modal-sub">Ajuste le nom et la synthèse courte de la catégorie.</div>
+    <div class="modal-sub">Ajuste le nom, la couleur et la synthèse courte de la catégorie.</div>
     <input type="hidden" id="edit-cat-id">
     <div class="form-group">
       <label class="form-label">Nom de la catégorie *</label>
       <input class="form-input" id="edit-cat-name" placeholder="Nom de la catégorie…" maxlength="80">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Couleur</label>
+      <div class="color-opts" id="edit-cat-colors"></div>
     </div>
     <div class="form-group">
       <label class="form-label">Synthèse courte</label>
@@ -2120,7 +2124,7 @@ function deleteFiche(id){
 /* ════════════════════════════════════════════════════════════════════
    §9 · STRUCTURE — gestionnaire d'arborescence (catégories/sous-cat/thèmes)
 ════════════════════════════════════════════════════════════════════ */
-let selColor=PALETTE[0];
+const pickerColors={};
 let treeOpen1=new Set(),treeOpen2=new Set();
 
 function openTreeManager(){
@@ -2209,6 +2213,7 @@ function openEditCategoryModal(catId){
   if(!cat)return;
   document.getElementById('edit-cat-id').value=cat.id;
   document.getElementById('edit-cat-name').value=cat.name||'';
+  renderColorPicker('edit-cat-colors',cat.color||PALETTE[0]);
   document.getElementById('edit-cat-summary').value=cat.summary||'';
   updateCatSummaryHint();
   openModal('edit-cat-modal');
@@ -2224,6 +2229,7 @@ function saveCategoryEdit(){
   const duplicate=db.categories.find(c=>c.id!==catId&&c.name.toLowerCase()===name.toLowerCase());
   if(duplicate){toast('Une catégorie avec ce nom existe déjà.','error');return;}
   cat.name=name;
+  cat.color=getSelectedColor('edit-cat-colors');
   cat.summary=summary;
   scheduleSave();
   renderTree();
@@ -2299,16 +2305,22 @@ function tDelTh(catId,subId,thId){
   scheduleSave();renderTree();render();toast('Thème supprimé.','success');
 }
 
-function renderColorPicker(cid){
-  selColor=PALETTE[0];
-  document.getElementById(cid).innerHTML=PALETTE.map((c,i)=>`<div class="color-opt ${i===0?'selected':''}" style="background:${c}" data-color="${c}" onclick="pickColor(this,'${cid}')"></div>`).join('');
+function renderColorPicker(cid,selectedColor=PALETTE[0]){
+  const initialColor=PALETTE.includes(selectedColor)?selectedColor:PALETTE[0];
+  pickerColors[cid]=initialColor;
+  document.getElementById(cid).innerHTML=PALETTE.map(c=>`<div class="color-opt ${c===initialColor?'selected':''}" style="background:${c}" data-color="${c}" onclick="pickColor(this,'${cid}')"></div>`).join('');
 }
-function pickColor(el,cid){document.querySelectorAll(`#${cid} .color-opt`).forEach(d=>d.classList.remove('selected'));el.classList.add('selected');selColor=el.dataset.color;}
+function pickColor(el,cid){
+  document.querySelectorAll(`#${cid} .color-opt`).forEach(d=>d.classList.remove('selected'));
+  el.classList.add('selected');
+  pickerColors[cid]=el.dataset.color;
+}
+function getSelectedColor(cid){return pickerColors[cid]||PALETTE[0];}
 function addRootCat(){
   const name=document.getElementById('new-cat-name').value.trim();
   if(!name){toast('Nom requis.','error');return;}
   if(db.categories.find(c=>c.name.toLowerCase()===name.toLowerCase())){toast('Catégorie déjà existante.','error');return;}
-  const newCat={id:uid(),name,summary:'',color:selColor,subcats:[]};
+  const newCat={id:uid(),name,summary:'',color:getSelectedColor('new-cat-colors'),subcats:[]};
   db.categories.push(newCat);
   openCats.add(newCat.id);
   scheduleSave();document.getElementById('new-cat-name').value='';
