@@ -426,7 +426,7 @@
     </div>
     <div class="nav-home" id="nav-chronos" onclick="goChronos()">
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>
-      Chronos
+      Cronos
     </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-header-row">
@@ -1018,7 +1018,7 @@ function renderBreadcrumb(){
   let h=`<span class="crumb" onclick="goHome()">Accueil</span>`;
   if(state.search){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Recherche</span>`;}
   else if(state.view==='cortex'){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Cortex</span>`;}
-  else if(state.view==='chronos'){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Chronos</span>`;}
+  else if(state.view==='chronos'){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Cronos</span>`;}
   else if(state.catId){
     const cat=getCat(state.catId);
     if(cat){
@@ -2504,7 +2504,7 @@ function renderChronos(){
   }).filter(Boolean).sort(chronosSort);
   const content=document.getElementById('content');
   if(!items.length){
-    content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">0 événement daté</div></div><div class="chronos-empty">Ajoute une DATE EVENEMENT (AAAA, MMAAAA, JJMMAAAA ou intervalle homogène) dans tes fiches pour alimenter la frise.</div>`;
+    content.innerHTML=`<div class="section-header"><div class="section-title">Cronos</div><div class="section-count">0 événement daté</div></div><div class="chronos-empty">Ajoute une DATE EVENEMENT (AAAA, MMAAAA, JJMMAAAA ou intervalle homogène) dans tes fiches pour alimenter la frise.</div>`;
     return;
   }
   const minTs=Math.min(...items.map(i=>i.startTs));
@@ -2819,9 +2819,8 @@ function renderChronos(){
     const stemHeight=Math.abs(it.callout.anchorY-it.callout.markerCenterY);
     return `<div class="chronos-day-callout ${it.callout.orientation}" style="left:${it.callout.left}px;top:0"><div class="stem" style="height:${stemHeight}px;top:${stemTop}px"></div><div class="label" style="top:${it.callout.labelBox.top}px;left:${Math.round(it.callout.labelCenterX-it.callout.left)}px;min-width:${Math.round(it.callout.labelWidth)}px">${escH(it.callout.label)}</div></div>`;
   }).join('');
-  content.innerHTML=`<div class="section-header"><div class="section-title">Chronos</div><div class="section-count">${items.length} événement${items.length>1?'s':''} daté${items.length>1?'s':''}</div></div>
-  <div class="view-subtitle" style="margin-bottom:12px">Frise chronologique à l'échelle, avec superposition des granularités année / mois / jour.</div>
-  <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-toolbar-main"><div class="chronos-legend"><span><i class="chronos-dot" style="background:rgba(201,168,76,.4)"></i>Année</span><span><i class="chronos-dot" style="background:rgba(90,138,224,.5)"></i>Mois</span><span><i class="chronos-dot" style="background:var(--gold)"></i>Jour</span></div><div class="view-subtitle" style="margin:0">Navigation rapide sur la frise.</div></div><div class="chronos-toolbar-actions"><button type="button" class="chronos-nav-btn" data-chronos-nav="first">⇤ Premier événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="previous">← Evènement précédent</button><button type="button" class="chronos-nav-btn" data-chronos-nav="next">→ Prochain événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="last">Dernier événement ⇥</button></div></div>
+   content.innerHTML=`<div class="section-header"><div class="section-title">Cronos</div><div class="section-count">${items.length} événement${items.length>1?'s':''} daté${items.length>1?'s':''}</div></div>
+  <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-toolbar-main"><div class="chronos-legend"><span><i class="chronos-dot" style="background:rgba(201,168,76,.4)"></i>Année</span><span><i class="chronos-dot" style="background:rgba(90,138,224,.5)"></i>Mois</span><span><i class="chronos-dot" style="background:var(--gold)"></i>Jour</span></div></div><div class="chronos-toolbar-actions"><button type="button" class="chronos-nav-btn" data-chronos-nav="first">⇤ Premier événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="previous">← Evènement précédent</button><button type="button" class="chronos-nav-btn" data-chronos-nav="next">→ Prochain événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="last">Dernier événement ⇥</button></div></div>
     <div class="chronos-scroll" id="chronos-scroll"><div class="chronos-canvas" style="width:${axisWidth}px;height:${canvasHeight}px"><div class="chronos-axis">${years}</div><div class="chronos-month-grid">${months}</div>${nodes}${dayCallouts}</div></div>
   </div><div id="chronos-tooltip" class="chronos-tooltip"></div>`;
   bindChronosEvents();
