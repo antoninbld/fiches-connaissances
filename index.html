@@ -2473,6 +2473,13 @@ function getNextFutureChronosItem(items,refTs=toDayTs(new Date())){
     .map(it=>({item:it,effectiveTs:Math.max(it.startTs,refTs)}))
     .sort((a,b)=>a.effectiveTs-b.effectiveTs||chronosSort(a.item,b.item))[0]?.item||null;
 }
+function getNextChronosTrackFromViewport(tracks,scrollEl){
+  if(!scrollEl||!(tracks||[]).length)return null;
+  const alignmentOffset=scrollEl.clientWidth*0.18;
+  const threshold=scrollEl.scrollLeft+alignmentOffset+Math.max(20,scrollEl.clientWidth*0.04);
+  const nextTrack=tracks.find(track=>track.offsetLeft>threshold);
+  return nextTrack||null;
+}
 function renderChronos(){
   const items=db.fiches.map(f=>{
     const parsed=parseEventDate(f.dateEvenement||'');
@@ -2817,7 +2824,7 @@ function bindChronosEvents(){
     title:track.dataset.title||'',
     track
   });
-  const getNextFutureTrack=()=>getNextFutureChronosItem(chronosTracks.map(getTrackChronosItem))?.track||null;
+  const getNextVisibleTrack=()=>getNextChronosTrackFromViewport(chronosTracks,scrollEl);
   const scrollToTrack=target=>{
     if(!scrollEl||!target)return;
     const targetLeft=Math.max(0,target.offsetLeft-(scrollEl.clientWidth*0.18));
@@ -2826,10 +2833,10 @@ function bindChronosEvents(){
   const updateChronosNavState=()=>{
     if(!scrollEl||!chronosTracks.length)return;
     const maxScrollLeft=Math.max(0,scrollEl.scrollWidth-scrollEl.clientWidth);
-    const nextFutureTrack=getNextFutureTrack();
+    const nextVisibleTrack=getNextVisibleTrack();
     document.querySelectorAll('[data-chronos-nav="first"]').forEach(btn=>btn.disabled=scrollEl.scrollLeft<=4);
     document.querySelectorAll('[data-chronos-nav="last"]').forEach(btn=>btn.disabled=scrollEl.scrollLeft>=maxScrollLeft-4);
-    document.querySelectorAll('[data-chronos-nav="next"]').forEach(btn=>btn.disabled=!nextFutureTrack);
+    document.querySelectorAll('[data-chronos-nav="next"]').forEach(btn=>btn.disabled=!nextVisibleTrack||scrollEl.scrollLeft>=maxScrollLeft-4);
   };
   document.querySelectorAll('.chronos-track[data-fiche-id]').forEach(el=>{
     el.addEventListener('mouseenter',()=>{if(!tooltip)return;tooltip.style.display='block';tooltip.innerHTML=`<div class="chronos-tooltip-title">${el.dataset.title||''}</div><div class="chronos-tooltip-meta">DATE : ${el.dataset.date||''}<br>CATÉGORIE : ${el.dataset.cat||'—'}<br>Cliquer pour ouvrir la fiche</div>`;});
@@ -2848,7 +2855,7 @@ function bindChronosEvents(){
         scrollToTrack(chronosTracks[chronosTracks.length-1]);
         return;
       }
-      const nextTarget=getNextFutureTrack();
+      const nextTarget=getNextVisibleTrack();
       scrollToTrack(nextTarget||chronosTracks[chronosTracks.length-1]);
     });
   });
