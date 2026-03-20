@@ -92,18 +92,18 @@
   .chronos-track::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.95}
   .chronos-track::after{content:'';position:absolute;left:1px;right:1px;top:1px;height:42%;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0))}
   .chronos-track:hover{transform:translateY(-1px) scale(1.01);border-color:rgba(255,255,255,.18);filter:saturate(1.04);box-shadow:0 10px 24px rgba(0,0,0,.34)}
-  .chronos-track.year{background:linear-gradient(180deg,rgba(201,168,76,.22),rgba(132,104,38,.2));border-color:rgba(201,168,76,.28);box-shadow:inset 0 1px 0 rgba(255,240,196,.08),0 8px 20px rgba(0,0,0,.16);height:24px}
-  .chronos-track.year::before{background:linear-gradient(90deg,rgba(244,215,126,.1),transparent 18%,transparent 82%,rgba(104,78,24,.12))}
-  .chronos-track.month{background:linear-gradient(180deg,rgba(97,151,241,.24),rgba(48,84,135,.26));border-color:rgba(110,162,245,.34);box-shadow:inset 0 1px 0 rgba(202,224,255,.07),0 7px 18px rgba(0,0,0,.15);height:18px;top:3px}
-  .chronos-track.month::before{background:linear-gradient(90deg,rgba(164,200,255,.08),transparent 24%,transparent 76%,rgba(38,63,104,.16))}
-  .chronos-track.day{width:12px!important;height:12px;border-radius:4px;background:linear-gradient(180deg,#f2d68d,#c59b36);border-color:rgba(13,13,20,.88);box-shadow:0 0 0 2px rgba(201,168,76,.32),0 8px 18px rgba(201,168,76,.18)}
-  .chronos-track.day::before{background:radial-gradient(circle at 35% 30%,rgba(255,251,233,.56),rgba(255,251,233,0) 58%)}
+  .chronos-track.year{background:linear-gradient(180deg,var(--chronos-fill-top,rgba(201,168,76,.22)),var(--chronos-fill-bottom,rgba(132,104,38,.2)));border-color:var(--chronos-border,rgba(201,168,76,.28));box-shadow:inset 0 1px 0 rgba(255,240,196,.08),0 0 0 1px var(--chronos-outline,rgba(201,168,76,.14)),0 8px 20px rgba(0,0,0,.16),0 0 20px var(--chronos-halo,rgba(201,168,76,.1));height:24px}
+  .chronos-track.year::before{background:linear-gradient(90deg,var(--chronos-sheen-start,rgba(244,215,126,.1)),transparent 18%,transparent 82%,var(--chronos-sheen-end,rgba(104,78,24,.12)))}
+  .chronos-track.month{background:linear-gradient(180deg,var(--chronos-fill-top,rgba(97,151,241,.24)),var(--chronos-fill-bottom,rgba(48,84,135,.26)));border-color:var(--chronos-border,rgba(110,162,245,.34));box-shadow:inset 0 1px 0 rgba(202,224,255,.07),0 0 0 1px var(--chronos-outline,rgba(110,162,245,.14)),0 7px 18px rgba(0,0,0,.15),0 0 18px var(--chronos-halo,rgba(110,162,245,.1));height:18px;top:3px}
+  .chronos-track.month::before{background:linear-gradient(90deg,var(--chronos-sheen-start,rgba(164,200,255,.08)),transparent 24%,transparent 76%,var(--chronos-sheen-end,rgba(38,63,104,.16)))}
+  .chronos-track.day{width:12px!important;height:12px;border-radius:4px;background:linear-gradient(180deg,var(--chronos-fill-top,#f2d68d),var(--chronos-fill-bottom,#c59b36));border-color:var(--chronos-border,rgba(13,13,20,.88));box-shadow:0 0 0 1px var(--chronos-outline,rgba(255,255,255,.08)),0 0 0 3px var(--chronos-halo,rgba(201,168,76,.22)),0 8px 18px rgba(0,0,0,.18)}
+  .chronos-track.day::before{background:radial-gradient(circle at 35% 30%,var(--chronos-core-glow,rgba(255,251,233,.56)),rgba(255,251,233,0) 58%)}
   .chronos-track.day::after{display:none}
-  .chronos-track.day:hover{box-shadow:0 0 0 2px rgba(201,168,76,.48),0 0 18px rgba(201,168,76,.22),0 10px 22px rgba(0,0,0,.28)}
+  .chronos-track.day:hover{box-shadow:0 0 0 1px var(--chronos-outline-strong,rgba(255,255,255,.12)),0 0 0 4px var(--chronos-halo-strong,rgba(201,168,76,.3)),0 0 18px var(--chronos-halo,rgba(201,168,76,.22)),0 10px 22px rgba(0,0,0,.28)}
   .chronos-caption{position:absolute;left:8px;right:8px;bottom:3px;font-size:9px;line-height:1.08;color:var(--text-muted);white-space:nowrap;overflow:hidden;pointer-events:none;text-align:left;text-shadow:0 1px 0 rgba(0,0,0,.24)}
-  .chronos-track.year .chronos-caption{color:rgba(247,239,214,.84);font-size:9px;font-weight:600}
-  .chronos-track.month .chronos-caption{color:rgba(228,236,250,.82);font-size:8px;font-weight:500}
-  .chronos-track.day .chronos-caption{top:16px;left:-36px;right:auto;max-width:160px;transform:none;color:rgba(242,231,198,.88);font-size:9px}
+  .chronos-track.year .chronos-caption{color:var(--chronos-caption-color,rgba(247,239,214,.84));font-size:9px;font-weight:600}
+  .chronos-track.month .chronos-caption{color:var(--chronos-caption-color,rgba(228,236,250,.82));font-size:8px;font-weight:500}
+  .chronos-track.day .chronos-caption{top:16px;left:-36px;right:auto;max-width:160px;transform:none;color:var(--chronos-caption-color,rgba(242,231,198,.88));font-size:9px}
   .chronos-day-callout{position:absolute;pointer-events:none;z-index:32}
   .chronos-day-callout .stem{position:absolute;left:50%;transform:translateX(-50%);width:1px;background:linear-gradient(180deg,rgba(242,214,141,.8),rgba(201,168,76,.18));z-index:0}
   .chronos-day-callout .label{position:absolute;left:50%;transform:translateX(-50%);padding:4px 9px;border-radius:999px;border:1px solid rgba(201,168,76,.3);background:linear-gradient(180deg,rgba(28,28,42,.96),rgba(18,18,28,.98));box-shadow:0 10px 20px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.06);font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.25;color:#efe5c9;white-space:nowrap;letter-spacing:.04em;z-index:2}
@@ -2396,6 +2396,45 @@ function getSubDotStyle(cat,sub,subIndex){
   const borderColor=getSubBorderColor(cat,sub,subIndex);
   return `background:${fillColor};border-color:${borderColor}`;
 }
+function getChronosTrackPalette(catColor,subColor,type){
+  const fill=normalizeHexColor(catColor)||PALETTE[0];
+  const border=normalizeHexColor(subColor)||adjustHexColor(fill,30);
+  const fillTopDelta=type==='day'?46:type==='month'?28:22;
+  const fillBottomDelta=type==='day'?-26:type==='month'?-82:-98;
+  const sheenStartDelta=type==='day'?72:52;
+  const sheenEndDelta=type==='day'?-6:-36;
+  const captionDelta=type==='month'?160:182;
+  const coreGlowDelta=type==='day'?118:86;
+  return{
+    fillTop:hexToRgba(adjustHexColor(fill,fillTopDelta),type==='day'?0.94:type==='month'?0.34:0.3),
+    fillBottom:hexToRgba(adjustHexColor(fill,fillBottomDelta),type==='day'?0.96:type==='month'?0.3:0.26),
+    border:hexToRgba(border,type==='day'?0.98:0.62),
+    outline:hexToRgba(border,type==='day'?0.18:0.24),
+    outlineStrong:hexToRgba(adjustHexColor(border,22),type==='day'?0.32:0.3),
+    halo:hexToRgba(border,type==='day'?0.18:type==='month'?0.12:0.11),
+    haloStrong:hexToRgba(adjustHexColor(border,18),type==='day'?0.28:0.2),
+    sheenStart:hexToRgba(adjustHexColor(fill,sheenStartDelta),type==='day'?0.62:0.18),
+    sheenEnd:hexToRgba(adjustHexColor(fill,sheenEndDelta),type==='day'?0.08:0.16),
+    caption:hexToRgba(adjustHexColor(fill,captionDelta),0.92),
+    coreGlow:hexToRgba(adjustHexColor(fill,coreGlowDelta),0.58)
+  };
+}
+function getChronosTrackStyle(it){
+  const palette=getChronosTrackPalette(it.catColor,it.subBorderColor,it.type);
+  return[
+    `--chronos-fill-top:${palette.fillTop}`,
+    `--chronos-fill-bottom:${palette.fillBottom}`,
+    `--chronos-border:${palette.border}`,
+    `--chronos-outline:${palette.outline}`,
+    `--chronos-outline-strong:${palette.outlineStrong}`,
+    `--chronos-halo:${palette.halo}`,
+    `--chronos-halo-strong:${palette.haloStrong}`,
+    `--chronos-sheen-start:${palette.sheenStart}`,
+    `--chronos-sheen-end:${palette.sheenEnd}`,
+    `--chronos-caption-color:${palette.caption}`,
+    `--chronos-core-glow:${palette.coreGlow}`
+  ].join(';');
+}
 function normalizeHexColor(value){
   const raw=(value||'').trim();
   if(!raw)return '';
@@ -2675,9 +2714,26 @@ function renderChronos(){
   const items=db.fiches.map(f=>{
     const parsed=parseEventDate(f.dateEvenement||'');
     if(!parsed||parsed.error)return null;
+    const cat=getCat(f.catId);
+    const sub=cat?getSub(cat,f.subcatId):null;
+    const subIndex=cat?(cat.subcats||[]).findIndex(s=>s.id===f.subcatId):-1;
+    const catColor=cat?.color||PALETTE[0];
+    const subBorderColor=sub?getSubBorderColor(cat,sub,subIndex):adjustHexColor(catColor,28);
     const startTs=toDayTs(parsed.startDate);
     const endDate=parsed.endDate||parsed.startDate;
-    return{id:f.id,title:f.title,cat:getCat(f.catId)?.name||'',type:parsed.type,label:parsed.displayLabel,rawValue:parsed.rawValue,startTs,endTs:toDayTs(endDate)};
+    return{
+      id:f.id,
+      title:f.title,
+      cat:cat?.name||'',
+      subcat:sub?.name||'',
+      catColor,
+      subBorderColor,
+      type:parsed.type,
+      label:parsed.displayLabel,
+      rawValue:parsed.rawValue,
+      startTs,
+      endTs:toDayTs(endDate)
+    };
   }).filter(Boolean).sort(chronosSort);
   const content=document.getElementById('content');
   if(!items.length){
@@ -2985,10 +3041,11 @@ function renderChronos(){
       ?it.callout.markerTop
       :laneTopByType[it.type]+it.row*rowHeight;
     const z=it.type==='day'?30:it.type==='month'?20:10;
+    const style=getChronosTrackStyle(it);
     const caption=it.type==='day'&&it.callout
       ?''
       :(it.type==='day'?it.title:fitChronosTrackLabel(it.title,width,it.type));
-    return `<div class="chronos-track ${it.type}" style="left:${left}px;top:${top}px;width:${width}px;z-index:${z}" data-fiche-id="${it.id}" data-title="${escH(it.title)}" data-date="${escH(it.label)}" data-cat="${escH(it.cat)}" data-start-ts="${it.startTs}" data-end-ts="${it.endTs}"><div class="chronos-caption">${escH(caption)}</div></div>`;
+    return `<div class="chronos-track ${it.type}" style="left:${left}px;top:${top}px;width:${width}px;z-index:${z};${style}" data-fiche-id="${it.id}" data-title="${escH(it.title)}" data-date="${escH(it.label)}" data-cat="${escH(it.cat)}" data-subcat="${escH(it.subcat||'')}" data-start-ts="${it.startTs}" data-end-ts="${it.endTs}"><div class="chronos-caption">${escH(caption)}</div></div>`;
   }).join('');
   const dayCallouts=dayItems.map(it=>{
     if(!it.callout)return '';
@@ -2997,7 +3054,7 @@ function renderChronos(){
     return `<div class="chronos-day-callout ${it.callout.orientation}" style="left:${it.callout.left}px;top:0"><div class="stem" style="height:${stemHeight}px;top:${stemTop}px"></div><div class="label" style="top:${it.callout.labelBox.top}px;left:${Math.round(it.callout.labelCenterX-it.callout.left)}px;min-width:${Math.round(it.callout.labelWidth)}px">${escH(it.callout.label)}</div></div>`;
   }).join('');
    content.innerHTML=`<div class="section-header"><div class="section-title">Cronos</div><div class="section-count">${items.length} événement${items.length>1?'s':''} daté${items.length>1?'s':''}</div></div>
-  <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-toolbar-main"><div class="chronos-legend"><span><i class="chronos-dot" style="background:rgba(201,168,76,.4)"></i>Année</span><span><i class="chronos-dot" style="background:rgba(90,138,224,.5)"></i>Mois</span><span><i class="chronos-dot" style="background:var(--gold)"></i>Jour</span></div></div><div class="chronos-toolbar-actions"><button type="button" class="chronos-nav-btn" data-chronos-nav="first">⇤ Premier événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="previous">← Evènement précédent</button><button type="button" class="chronos-nav-btn" data-chronos-nav="next">→ Prochain événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="last">Dernier événement ⇥</button></div></div>
+  <div class="chronos-shell"><div class="chronos-toolbar"><div class="chronos-toolbar-main"><div class="chronos-legend"><span><i class="chronos-dot" style="background:linear-gradient(180deg,rgba(235,214,160,.92),rgba(133,95,36,.96));box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 0 3px rgba(201,168,76,.18)"></i>Intérieur = catégorie</span><span><i class="chronos-dot" style="background:rgba(16,16,24,.96);box-shadow:0 0 0 2px rgba(126,178,255,.74),0 0 0 4px rgba(126,178,255,.18)"></i>Bordure = sous-catégorie</span><span><i class="chronos-dot" style="background:rgba(255,255,255,.08);box-shadow:none;width:10px;height:2px;border-radius:999px"></i>Hauteur = granularité date</span></div></div><div class="chronos-toolbar-actions"><button type="button" class="chronos-nav-btn" data-chronos-nav="first">⇤ Premier événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="previous">← Evènement précédent</button><button type="button" class="chronos-nav-btn" data-chronos-nav="next">→ Prochain événement</button><button type="button" class="chronos-nav-btn" data-chronos-nav="last">Dernier événement ⇥</button></div></div>
     <div class="chronos-scroll" id="chronos-scroll"><div class="chronos-canvas" style="width:${axisWidth}px;height:${canvasHeight}px"><div class="chronos-axis">${years}</div><div class="chronos-month-grid">${months}</div>${nodes}${dayCallouts}</div></div>
   </div><div id="chronos-tooltip" class="chronos-tooltip"></div>`;
   bindChronosEvents();
@@ -3032,7 +3089,7 @@ function bindChronosEvents(){
     document.querySelectorAll('[data-chronos-nav="next"]').forEach(btn=>btn.disabled=!nextVisibleTrack||scrollEl.scrollLeft>=maxScrollLeft-4);
   };
   document.querySelectorAll('.chronos-track[data-fiche-id]').forEach(el=>{
-    el.addEventListener('mouseenter',()=>{if(!tooltip)return;tooltip.style.display='block';tooltip.innerHTML=`<div class="chronos-tooltip-title">${el.dataset.title||''}</div><div class="chronos-tooltip-meta">DATE : ${el.dataset.date||''}<br>CATÉGORIE : ${el.dataset.cat||'—'}<br>Cliquer pour ouvrir la fiche</div>`;});
+    el.addEventListener('mouseenter',()=>{if(!tooltip)return;tooltip.style.display='block';tooltip.innerHTML=`<div class="chronos-tooltip-title">${el.dataset.title||''}</div><div class="chronos-tooltip-meta">DATE : ${el.dataset.date||''}<br>CATÉGORIE : ${el.dataset.cat||'—'}<br>SOUS-CATÉGORIE : ${el.dataset.subcat||'—'}<br>Cliquer pour ouvrir la fiche</div>`;});
     el.addEventListener('mousemove',e=>{if(!tooltip)return;tooltip.style.left=(e.clientX+14)+'px';tooltip.style.top=(e.clientY+14)+'px';});
     el.addEventListener('mouseleave',hide);
     el.addEventListener('click',()=>viewFiche(el.dataset.ficheId));
