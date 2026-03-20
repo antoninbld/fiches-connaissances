@@ -170,7 +170,7 @@
   .n2.sel{background:rgba(201,168,76,.07);border-left-color:var(--gold-dim)}
   .n2-left{display:flex;align-items:center;gap:7px;font-size:13px;color:#b9c9ee}
   .n2.sel .n2-left{color:var(--text)}
-  .n2-dot{width:6px;height:6px;border-radius:50%;opacity:.9;flex-shrink:0}
+  .n2-dot{width:8px;height:8px;border-radius:50%;opacity:.95;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
 
   /* Level 3 */
   .n3{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 6px 54px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none;font-size:12px;color:var(--text-dim);font-style:italic}
@@ -2188,8 +2188,9 @@ function renderTree(){
         h+=`<div class="tree-node">
           <div class="tree-row l2">
             <svg class="t-toggle ${open2?'open':''}" onclick="t2toggle('${sub.id}')" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-            <div class="tree-row-name">📂 ${escH(sub.name)} <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--text-dim)">${sf} fiche${sf!==1?'s':''}</span></div>
+            <div class="tree-row-name"><span class="n2-dot" style="background:${cat.color}"></span>${escH(sub.name)} <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--text-dim)">${sf} fiche${sf!==1?'s':''}</span></div>
             <div class="tree-row-actions">
+              <button class="btn btn-outline btn-sm" onclick="openEditSubcategoryModal('${cat.id}','${sub.id}')">✏ Modifier</button>
               <button class="btn btn-outline btn-sm" onclick="showAddTheme('${cat.id}','${sub.id}')">+ Thème</button>
               <button class="btn btn-danger btn-sm" onclick="tDelSub('${cat.id}','${sub.id}')">✕</button>
             </div>
