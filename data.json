@@ -46,7 +46,7 @@
           "name": "Systèmes énergétiques",
           "summary": "Fiches qui décrivent l’organisation d’un système énergétique, ses règles, ses flux, ses acteurs et sa régulation. Ex. : marché de l’électricité et du gaz en France, CRE, architecture tarifaire et fonctionnement sectoriel.",
           "subcats": [],
-          "borderColor": ""
+          "borderColor": "#0093A3"
         },
         {
           "id": "mmqh16jr9nf7",
