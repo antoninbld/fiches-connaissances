@@ -2746,6 +2746,7 @@ function renderChronos(){
   const totalDays=Math.max(1,Math.round((maxTs-minTs)/dayMs)+1);
   const pxPerDay=Math.max(0.9,Math.min(3.2,1600/totalDays));
   const axisWidth=Math.max(960,Math.ceil(totalDays*pxPerDay)+120);
+  const minTrackWidthByType={year:40,month:28,day:12};
   const dayItems=items.filter(it=>it.type==='day'&&!it.label.includes(' - '));
   const topOffset=56;
   const rowHeight=46;
@@ -3036,7 +3037,8 @@ function renderChronos(){
   }
   const nodes=items.map(it=>{
     const left=((it.startTs-minTs)/dayMs)*pxPerDay+60;
-    const width=Math.max(it.type==='day'?12:8,((it.endTs-it.startTs)/dayMs+1)*pxPerDay);
+    const naturalWidth=((it.endTs-it.startTs)/dayMs+1)*pxPerDay;
+    const width=Math.max(minTrackWidthByType[it.type]||8,naturalWidth);
     const top=it.type==='day'&&it.callout
       ?it.callout.markerTop
       :laneTopByType[it.type]+it.row*rowHeight;
