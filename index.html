@@ -1592,17 +1592,22 @@ function renderCortexScene(){
     }
     const shadowDx=(p.z/180)*6;
     const shadowDy=6+(p.z/260)*5;
+    const baseRgb=hexToRgb(n.color);
     const [activeR,activeG,activeB]=activeColor(n.color);
     const [haloOuterR,haloOuterG,haloOuterB]=goldHaloColor(n.color);
-    const nodeFill=isActive?`rgb(${activeR},${activeG},${activeB})`:n.color;
+    const fillRgb=isActive?mixRgb(baseRgb,[255,241,210],0.42):mixRgb(baseRgb,[255,244,224],0.18);
+    const coreRgb=isActive?mixRgb(fillRgb,[255,250,240],0.44):mixRgb(fillRgb,[255,248,232],0.24);
+    const nodeFill=`rgb(${fillRgb[0]},${fillRgb[1]},${fillRgb[2]})`;
+    const nodeCoreFill=`rgba(${coreRgb[0]},${coreRgb[1]},${coreRgb[2]},${(isActive?0.5:0.3)*Math.max(0.62,Math.min(1.08,haze))})`;
     const subRingColor=n.subBorderColor||n.color;
-    const subRingOpacity=(isActive?0.96:(isHighlighted?0.86:0.3))*Math.max(0.52,Math.min(1,haze));
-    const subRingStrokeWidth=isActive?2.2:(isHighlighted?1.7:1.2);
-    const subRingRadius=nodeRadius+(isActive?3.2:2.4);
+    const subRingOpacity=(isActive?0.82:(isHighlighted?0.56:0.2))*Math.max(0.48,Math.min(0.94,haze));
+    const subRingStrokeWidth=isActive?1.9:(isHighlighted?1.35:0.95);
+    const subRingRadius=nodeRadius+(isActive?3.6:2.8);
     const activeHaloOuter=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*2.1).toFixed(2)}" fill="rgba(${haloOuterR},${haloOuterG},${haloOuterB},${(0.16*haze).toFixed(3)})" filter="url(#cortex-active-glow)"/>`:'';
     const activeHaloInner=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*1.48).toFixed(2)}" fill="rgba(${activeR},${activeG},${activeB},${(0.22*haze).toFixed(3)})"/>`:'';
-    const activeCore=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*0.58).toFixed(2)}" fill="rgba(255,245,222,0.36)"/>`:'';
-    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}">${activeHaloOuter}${activeHaloInner}<ellipse cx="${(p.x+shadowDx).toFixed(2)}" cy="${(p.y+shadowDy).toFixed(2)}" rx="${(nodeRadius*0.92).toFixed(2)}" ry="${(nodeRadius*0.5).toFixed(2)}" fill="rgba(0,0,0,0.22)" opacity="${(nodeOpacity*0.45*haze).toFixed(2)}" filter="url(#cortex-soft-shadow)"/><circle class="cortex-node-sub-ring" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${subRingRadius.toFixed(2)}" fill="none" stroke="${subRingColor}" stroke-width="${subRingStrokeWidth.toFixed(2)}" stroke-opacity="${subRingOpacity.toFixed(2)}"/><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${nodeFill}" opacity="${(nodeOpacity*haze).toFixed(2)}"/>${activeCore}${drawLabel?`<text class="cortex-node-label" x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${labelText}</text>`:''}</g>`;
+    const nodeCore=`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*(isActive?0.72:0.66)).toFixed(2)}" fill="${nodeCoreFill}"/>`;
+    const activeCore=isActive?`<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(nodeRadius*0.54).toFixed(2)}" fill="rgba(255,245,222,0.3)"/>`:'';
+    svg+=`<g class="cortex-node ${isActive?'active':''}" data-node-id="${n.id}">${activeHaloOuter}${activeHaloInner}<ellipse cx="${(p.x+shadowDx).toFixed(2)}" cy="${(p.y+shadowDy).toFixed(2)}" rx="${(nodeRadius*0.92).toFixed(2)}" ry="${(nodeRadius*0.5).toFixed(2)}" fill="rgba(0,0,0,0.22)" opacity="${(nodeOpacity*0.45*haze).toFixed(2)}" filter="url(#cortex-soft-shadow)"/><circle class="cortex-node-sub-ring" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${subRingRadius.toFixed(2)}" fill="none" stroke="${subRingColor}" stroke-width="${subRingStrokeWidth.toFixed(2)}" stroke-opacity="${subRingOpacity.toFixed(2)}"/><circle class="cortex-node-circle" cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${nodeRadius.toFixed(2)}" fill="${nodeFill}" opacity="${(nodeOpacity*Math.max(0.72,Math.min(1.08,haze))).toFixed(2)}"/>${nodeCore}${activeCore}${drawLabel?`<text class="cortex-node-label" x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" style="opacity:${labelOpacity.toFixed(2)}">${labelText}</text>`:''}</g>`;
   });
   svg+='</svg>';
   const hud=s.graphEl.querySelector('.cortex-hud');
