@@ -83,18 +83,18 @@
   .chronos-scroll::-webkit-scrollbar-thumb{background:linear-gradient(90deg,rgba(201,168,76,.92),rgba(226,194,96,.98));border-radius:999px;border:3px solid rgba(14,14,22,.96);box-shadow:0 0 0 1px rgba(201,168,76,.18)}
   .chronos-scroll::-webkit-scrollbar-thumb:hover{background:linear-gradient(90deg,rgba(214,180,82,.98),rgba(240,208,112,1));box-shadow:0 0 10px rgba(201,168,76,.32)}
   .chronos-canvas{position:relative;min-height:320px;padding-bottom:20px}
-  .chronos-axis{position:absolute;left:0;right:0;top:8px;height:40px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.018),transparent 88%)}
+  .chronos-axis{position:absolute;left:0;right:0;top:8px;height:48px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.018),transparent 88%)}
   .chronos-year-tick{position:absolute;top:0;height:100%;border-left:1px solid rgba(201,168,76,.26)}
   .chronos-year-tick label{position:absolute;top:0;left:6px;padding:2px 8px 3px;border-radius:999px;border:1px solid rgba(201,168,76,.18);background:rgba(12,12,18,.72);box-shadow:0 8px 16px rgba(0,0,0,.12);font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(242,215,130,.92);letter-spacing:.06em}
-  .chronos-month-grid{position:absolute;top:40px;bottom:0;left:0;right:0;pointer-events:none}
+  .chronos-month-grid{position:absolute;top:48px;bottom:0;left:0;right:0;pointer-events:none}
   .chronos-month-line{position:absolute;top:0;bottom:0;border-left:1px dashed rgba(90,138,224,.14)}
   .chronos-track{position:absolute;height:28px;border-radius:10px;border:1px solid transparent;cursor:pointer;overflow:hidden;backdrop-filter:blur(8px);transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,filter .16s ease}
   .chronos-track::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.95}
   .chronos-track::after{content:'';position:absolute;left:1px;right:1px;top:1px;height:42%;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0))}
   .chronos-track:hover{transform:translateY(-1px) scale(1.01);border-color:rgba(255,255,255,.18);filter:saturate(1.04);box-shadow:0 10px 24px rgba(0,0,0,.34)}
-  .chronos-track.year{background:linear-gradient(180deg,var(--chronos-fill-top,rgba(201,168,76,.22)),var(--chronos-fill-bottom,rgba(132,104,38,.2)));border-color:var(--chronos-border,rgba(201,168,76,.28));box-shadow:inset 0 1px 0 rgba(255,240,196,.08),0 0 0 1px var(--chronos-outline,rgba(201,168,76,.14)),0 8px 20px rgba(0,0,0,.16),0 0 20px var(--chronos-halo,rgba(201,168,76,.1));height:24px}
+  .chronos-track.year{background:linear-gradient(180deg,var(--chronos-fill-top,rgba(201,168,76,.22)),var(--chronos-fill-bottom,rgba(132,104,38,.2)));border-color:var(--chronos-border,rgba(201,168,76,.28));box-shadow:inset 0 1px 0 rgba(255,240,196,.08),0 0 0 1px var(--chronos-outline,rgba(201,168,76,.14)),0 8px 20px rgba(0,0,0,.16),0 0 20px var(--chronos-halo,rgba(201,168,76,.1));height:34px}
   .chronos-track.year::before{background:linear-gradient(90deg,var(--chronos-sheen-start,rgba(244,215,126,.1)),transparent 18%,transparent 82%,var(--chronos-sheen-end,rgba(104,78,24,.12)))}
-  .chronos-track.month{background:linear-gradient(180deg,var(--chronos-fill-top,rgba(97,151,241,.24)),var(--chronos-fill-bottom,rgba(48,84,135,.26)));border-color:var(--chronos-border,rgba(110,162,245,.34));box-shadow:inset 0 1px 0 rgba(202,224,255,.07),0 0 0 1px var(--chronos-outline,rgba(110,162,245,.14)),0 7px 18px rgba(0,0,0,.15),0 0 18px var(--chronos-halo,rgba(110,162,245,.1));height:18px;top:3px}
+  .chronos-track.month{background:linear-gradient(180deg,var(--chronos-fill-top,rgba(97,151,241,.24)),var(--chronos-fill-bottom,rgba(48,84,135,.26)));border-color:var(--chronos-border,rgba(110,162,245,.34));box-shadow:inset 0 1px 0 rgba(202,224,255,.07),0 0 0 1px var(--chronos-outline,rgba(110,162,245,.14)),0 7px 18px rgba(0,0,0,.15),0 0 18px var(--chronos-halo,rgba(110,162,245,.1));height:26px;top:4px}
   .chronos-track.month::before{background:linear-gradient(90deg,var(--chronos-sheen-start,rgba(164,200,255,.08)),transparent 24%,transparent 76%,var(--chronos-sheen-end,rgba(38,63,104,.16)))}
   .chronos-track.day{width:12px!important;height:12px;border-radius:4px;background:linear-gradient(180deg,var(--chronos-fill-top,#f2d68d),var(--chronos-fill-bottom,#c59b36));border-color:var(--chronos-border,rgba(13,13,20,.88));box-shadow:0 0 0 1px var(--chronos-outline,rgba(255,255,255,.08)),0 0 0 3px var(--chronos-halo,rgba(201,168,76,.22)),0 8px 18px rgba(0,0,0,.18)}
   .chronos-track.day::before{background:radial-gradient(circle at 35% 30%,var(--chronos-core-glow,rgba(255,251,233,.56)),rgba(255,251,233,0) 58%)}
@@ -2748,9 +2748,9 @@ function renderChronos(){
   const axisWidth=Math.max(960,Math.ceil(totalDays*pxPerDay)+120);
   const minTrackWidthByType={year:40,month:28,day:12};
   const dayItems=items.filter(it=>it.type==='day'&&!it.label.includes(' - '));
-  const topOffset=56;
-  const rowHeight=46;
-  const laneGap=14;
+  const topOffset=64;
+  const rowHeight=58;
+  const laneGap=18;
   const dayMarkerSize=12;
   const calloutGap=5;
   const labelHeight=16;
