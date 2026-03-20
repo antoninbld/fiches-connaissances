@@ -9,19 +9,22 @@
           "id": "mmh8duxkwxp9",
           "name": "Concepts énergie & industrie",
           "subcats": [],
-          "summary": "Fiches qui expliquent un objet, un système ou un fonctionnement industriel lié à l’énergie. Ex. : LNG, fonctionnement d’une raffinerie, logique technique d’un maillon industriel."
+          "summary": "Fiches qui expliquent un objet, un système ou un fonctionnement industriel lié à l’énergie. Ex. : LNG, fonctionnement d’une raffinerie, logique technique d’un maillon industriel.",
+          "borderColor": ""
         },
         {
           "id": "mmkn65x342pu",
           "name": "Procédés physiques / industriels",
           "subcats": [],
-          "summary": "Fiches qui expliquent un procédé scientifique, chimique ou industriel, étape par étape. \nEx. : électrolyse, osmose inverse, mécanismes de transformation de la matière ou de l’énergie."
+          "summary": "Fiches qui expliquent un procédé scientifique, chimique ou industriel, étape par étape. \nEx. : électrolyse, osmose inverse, mécanismes de transformation de la matière ou de l’énergie.",
+          "borderColor": ""
         },
         {
           "id": "mmh8eqycybc1",
           "name": "Concepts clés",
           "subcats": [],
-          "summary": "Fiches qui clarifient un terme, une unité, une distinction ou une notion de base indispensable pour bien raisonner. Ex. : kW vs kWh, définitions techniques, vocabulaire fondamental."
+          "summary": "Fiches qui clarifient un terme, une unité, une distinction ou une notion de base indispensable pour bien raisonner. Ex. : kW vs kWh, définitions techniques, vocabulaire fondamental.",
+          "borderColor": ""
         }
       ],
       "summary": "Regroupe les fiches qui expliquent une notion, un procédé, un mécanisme ou une logique de fonctionnement. À utiliser quand l’objectif principal est de comprendre comment quelque chose marche, avant d’en étudier les usages, le marché ou les implications géopolitiques"
@@ -35,19 +38,22 @@
           "id": "mmqh0m8hh7c7",
           "name": "Marchés de matières premières",
           "summary": "Fiches centrées sur un marché de commodity : offre, demande, prix, acteurs, réserves, coûts, commerce mondial. Ex. : marché du cuivre, pétrole, gaz, charbon, uranium, métaux critiques.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmqh0vtmr4vh",
           "name": "Systèmes énergétiques",
           "summary": "Fiches qui décrivent l’organisation d’un système énergétique, ses règles, ses flux, ses acteurs et sa régulation. Ex. : marché de l’électricité et du gaz en France, CRE, architecture tarifaire et fonctionnement sectoriel.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmqh16jr9nf7",
           "name": "Chaînes de valeur industrielles",
           "summary": "Fiches qui suivent un produit ou une ressource à travers ses différentes étapes de transformation, de transport et de valorisation. Ex. : logistique pétrolière, extraction, raffinage, trading, distribution, vulnérabilités.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         }
       ],
       "summary": "Regroupe les fiches qui expliquent le fonctionnement d’un marché, d’un système sectoriel ou d’une chaîne industrielle complète. À utiliser quand la fiche cherche à comprendre comment s’organise un secteur, de la production aux échanges, aux prix ou à la régulation."
@@ -61,25 +67,29 @@
           "id": "mmq7h9bbgsgm",
           "name": "Puissances et stratégies",
           "summary": "Fiches centrées sur la vision, les objectifs et les leviers d’un État ou d’une grande puissance : doctrine, influence, projection de puissance, sécurisation d’intérêts. Ex. : stratégie chinoise en Afrique, doctrine américaine au Moyen-Orient, ambitions turques.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmq7nnn15cc2",
           "name": "Rivalités régionales",
           "summary": "Fiches sur des compétitions de pouvoir entre plusieurs acteurs dans un même espace régional, avec enjeux militaires, diplomatiques, énergétiques ou maritimes. Ex. : Iran–Arabie saoudite, Méditerranée orientale, Indo-Pacifique, Arctique.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmq7ovubc5tv",
           "name": "Routes et infrastructures stratégiques",
           "summary": "Fiches sur les points de passage et actifs critiques qui structurent les flux et la puissance : détroits, ports, canaux, pipelines, câbles, hubs. Ex. : Ormuz, Suez, ports africains, gazoducs russes, terminaux GNL, câbles sous-marins.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmq7p4381hpf",
           "name": "Ressources et dépendances",
           "summary": "Fiches où l’accès à une ressource crée une dépendance, un levier d’influence ou un rapport de force entre acteurs. Ex. : gaz russe pour l’Europe, pétrole du Golfe pour l’Asie, eau dessalée, lithium, cuivre, terres rares, uranium.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         }
       ],
       "summary": "Regroupe les fiches qui analysent les rapports de force entre États, régions ou puissances autour d’intérêts stratégiques, de ressources, de routes ou d’infrastructures. À utiliser quand la fiche cherche à comprendre qui dépend de quoi, qui contrôle quoi, et pourquoi cela compte."
@@ -93,19 +103,22 @@
           "id": "mmqhk70vwk91",
           "name": "Pays",
           "summary": "Fiches de cadrage sur un pays : histoire, trajectoire politique, structure sociale, équilibres internes, insertion régionale. Ex. : histoire du Liban, portraits de pays utiles comme base de compréhension.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": "#9A1D36"
         },
         {
           "id": "mmqhkjkzc694",
           "name": "Régions stratégiques / énergétiques",
           "summary": "Fiches sur des espaces à forte valeur géopolitique, énergétique ou logistique. Ex. : Yamal, Sakhaline, Arctique, Golfe, zones de production ou de transit critiques.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmqhn82dzks0",
           "name": "Pays en tension / trajectoires politico-stratégiques",
           "summary": "Fiches sur des pays marqués par l’instabilité, la guerre civile, la fragmentation politique ou une trajectoire géopolitique singulière. Ex. : Suriname, États fragiles ou à trajectoire conflictuelle.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         }
       ],
       "summary": "Regroupe les fiches centrées sur un espace géographique comme objet principal d’analyse. À utiliser quand la fiche vise à comprendre un pays, une région ou un territoire stratégique, son histoire, sa structure ou son importance géopolitique et énergétique."
@@ -119,19 +132,22 @@
           "id": "mmqibkehbd48",
           "name": "Guerres, invasions et affrontements",
           "summary": "Fiches sur des conflits armés, offensives militaires, invasions ou affrontements interétatiques ou internes. Ex. : Afghanistan 1979, Timor oriental 1975, Malouines, guerre du foot.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmqibsmbu262",
           "name": "Coups d’État, renversements et ruptures de régime",
           "summary": "Fiches sur des prises de pouvoir, effondrements politiques, tentatives de putsch ou moments de bascule institutionnelle. Ex. : Chili 1973, putsch d’Alger, chute de l’URSS.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmqicfm13av4",
           "name": "Attentats, assassinats et violence politique",
           "summary": "Fiches sur un meurtre politique, un attentat ou un épisode de violence ciblée ayant un fort impact historique. Ex. : attentat contre Sadate, exécution d’une figure politique ou révolutionnaire.",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         }
       ],
       "summary": "Regroupe les fiches centrées sur un événement daté : guerre, invasion, putsch, assassinat, rupture politique ou épisode de violence. À utiliser quand la fiche cherche à expliquer ce qui s’est passé, pourquoi, avec quels acteurs, et quelles conséquences."
@@ -146,19 +162,22 @@
           "id": "mmwcyubvd10k",
           "name": "Figures politiques, militaires et révolutionnaires",
           "summary": "",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmwcz2h7rfyv",
           "name": "Explorateurs, industriels et découvreurs",
           "summary": "",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         },
         {
           "id": "mmwczcbgn2ku",
           "name": "Réseaux, organisations et acteurs non étatiques",
           "summary": "",
-          "subcats": []
+          "subcats": [],
+          "borderColor": ""
         }
       ]
     }
