@@ -355,7 +355,12 @@
         "mmwdypvhyn67"
       ],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": -51.691280239790224,
+        "longitude": -57.865178340389825,
+        "name": "Iles Malouines"
+      }
     },
     {
       "id": "mmwcllgv9ldh",
