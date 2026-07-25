@@ -489,7 +489,12 @@
       "dateEvenement": "071870",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 50.3380556,
+        "longitude": 7.710555555555556,
+        "name": "Bad Ems"
+      }
     },
     {
       "id": "mmwdkmyt5qxz",
