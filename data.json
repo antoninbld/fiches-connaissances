@@ -315,7 +315,12 @@
       "links": [],
       "externalSha": "57ca3b5a5acd3aee973bb94d260fee3ea37443c8",
       "dateEvenement": "1975-1976",
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": -8.783015415745087,
+        "longitude": 126.09523551262653,
+        "name": "Timor Oriental"
+      }
     },
     {
       "id": "mmqifm531idm",
