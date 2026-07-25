@@ -409,7 +409,12 @@
       "dateEvenement": "11091973",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": -33.4587,
+        "longitude": -70.67302,
+        "name": "Chili"
+      }
     },
     {
       "id": "mmwctivcznpq",
