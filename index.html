@@ -1268,6 +1268,7 @@ const ATLAS_SOURCE=ATLAS_SOURCE_ID;
 const ATLAS_CLUSTERS_LAYER_ID='atlas-clusters',ATLAS_CLUSTER_COUNT_LAYER_ID='atlas-cluster-count',ATLAS_POINTS_LAYER_ID='atlas-points';
 const ATLAS_LINKS_SOURCE_ID='atlas-links',ATLAS_LINKS_LAYER_ID='atlas-links-line';
 const ATLAS_SELECTION_SOURCE_ID='atlas-selection',ATLAS_SELECTION_LAYER_ID='atlas-selection-points';
+const ATLAS_LAYER_ORDER=[ATLAS_LINKS_LAYER_ID,ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID,ATLAS_SELECTION_LAYER_ID];
 const GLOBE_CENTER=[0,20],GLOBE_ZOOM=2.65,GLOBE_PITCH=25;
 const ATLAS_SETTINGS_STORAGE_KEY='atlas-settings-v2',ATLAS_VIEW_STORAGE_KEY='atlas-view-v2';
 const DEFAULT_ATLAS_SETTINGS=Object.freeze({
@@ -1302,7 +1303,7 @@ const ATLAS_STYLES={
   dark:MAPTILER_KEY?`https://api.maptiler.com/maps/dataviz-dark/style.json?key=${encodeURIComponent(MAPTILER_KEY)}`:'https://tiles.openfreemap.org/styles/dark'
 };
 let atlasSettings=loadAtlasSettings();
-let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0;
+let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0,atlasRaisingLayers=false;
 const ATLAS_INTERACTIVE_LAYERS=[ATLAS_SELECTION_LAYER_ID,ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID];
 window.addEventListener('resize',()=>{if(state.view==='atlas')requestAnimationFrame(()=>atlasMap?.resize());});
 
@@ -1491,6 +1492,9 @@ function initAtlasMap(){
     atlasSettingsControl=new AtlasSettingsControl();atlasMap.addControl(atlasSettingsControl,'top-left');renderAtlasSettingsPanel();
     atlasMap.on('load',()=>{atlasMapLoaded=true;atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}});
     atlasMap.on('style.load',()=>{setupAtlasGlobe();ensureNoTerrain();ensureAtlasSourceAndLayers({forceRecreate:true});ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();applyAtlasSettingsToMap();raiseAtlasLayers();refreshAtlasData();if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);});
+    /* Certains fonds ajoutent leurs couches de décor après style.load. Vérifier
+       aussi styledata empêche ces ajouts tardifs de recouvrir les marqueurs. */
+    atlasMap.on('styledata',raiseAtlasLayers);
     atlasMap.on('moveend',saveAtlasView);
     atlasMap.on('error',event=>{if(!atlasMapLoaded){status.textContent='Impossible d’initialiser le fond de carte. Le reste de l’application demeure disponible.';status.classList.add('error');}console.warn('[Atlas] Erreur MapLibre :',event.error||event);});
   }catch(error){status.textContent='Impossible d’initialiser la carte. Le reste de l’application demeure disponible.';status.classList.add('error');console.warn('[Atlas] Initialisation impossible :',error);}
@@ -1514,7 +1518,16 @@ function ensureAtlasSourceAndLayers({forceRecreate=false}={}){
   ensureAtlasClusterLayers();bindAtlasInteractionsOnce();
 }
 function recreateAtlasCardSource(){if(!atlasMap?.isStyleLoaded())return;const selected=atlasSelectedId;ensureAtlasSourceAndLayers({forceRecreate:true});applyAtlasSettingsToMap();raiseAtlasLayers();if(selected)drawAtlasLinksFrom(selected);}
-function raiseAtlasLayers(){[ATLAS_LINKS_LAYER_ID,ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID,ATLAS_SELECTION_LAYER_ID].forEach(layerId=>{if(atlasMap?.getLayer(layerId))atlasMap.moveLayer(layerId);});}
+function raiseAtlasLayers(){
+  if(!atlasMap?.isStyleLoaded()||atlasRaisingLayers)return;
+  const present=ATLAS_LAYER_ORDER.filter(layerId=>atlasMap.getLayer(layerId));
+  if(!present.length)return;
+  const styleOrder=(atlasMap.getStyle()?.layers||[]).map(layer=>layer.id);
+  const currentTop=styleOrder.slice(-present.length);
+  if(present.every((layerId,index)=>currentTop[index]===layerId))return;
+  atlasRaisingLayers=true;
+  try{present.forEach(layerId=>atlasMap.moveLayer(layerId));}finally{atlasRaisingLayers=false;}
+}
 function addAtlasLayer(layer,beforeId){
   if(beforeId&&atlasMap.getLayer(beforeId))atlasMap.addLayer(layer,beforeId);else atlasMap.addLayer(layer);
 }

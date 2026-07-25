@@ -56,11 +56,12 @@ assert.ok(removeSource.indexOf('removeLayer') < removeSource.indexOf('removeSour
 
 const raiseLayers = extractFunction('raiseAtlasLayers');
 const expectedOrder = ['ATLAS_LINKS_LAYER_ID', 'ATLAS_CLUSTERS_LAYER_ID', 'ATLAS_CLUSTER_COUNT_LAYER_ID', 'ATLAS_POINTS_LAYER_ID', 'ATLAS_SELECTION_LAYER_ID'];
-expectedOrder.reduce((previous, layer) => {
-  const position = raiseLayers.indexOf(layer);
-  assert.ok(position > previous, `${layer} doit être placé dans l’ordre Atlas`);
-  return position;
-}, -1);
+assert.match(html, new RegExp(`ATLAS_LAYER_ORDER=\\[${expectedOrder.join(',')}\\]`));
+assert.match(raiseLayers, /getStyle\(\)\?\.layers/);
+assert.match(raiseLayers, /styleOrder\.slice\(-present\.length\)/);
+assert.match(raiseLayers, /atlasRaisingLayers=true/);
+assert.match(raiseLayers, /present\.forEach\(layerId=>atlasMap\.moveLayer\(layerId\)\)/);
+assert.match(html, /atlasMap\.on\('styledata',raiseAtlasLayers\)/);
 
 const interactions = extractFunction('bindAtlasInteractionsOnce');
 assert.match(interactions, /atlasInteractionsBound\|\|!atlasMap/);
