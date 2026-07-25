@@ -1265,15 +1265,13 @@ function renderAtlas(){
 const ATLAS_SOURCE='knowledge-cards';
 const ATLAS_LINKS_SOURCE_ID='atlas-links',ATLAS_LINKS_LAYER_ID='atlas-links-line';
 const ATLAS_SELECTION_SOURCE_ID='atlas-selection',ATLAS_SELECTION_LAYER_ID='atlas-selection-points';
-const GLOBE_CENTER=[0,15],GLOBE_ZOOM=1.35,GLOBE_PITCH=0;
-// v2 deliberately discards the old, very close camera (zoom 2.65 / pitch 25)
-// which made the globe fill the viewport and look like a flat map.
-const ATLAS_SETTINGS_STORAGE_KEY='atlas-settings-v2',ATLAS_VIEW_STORAGE_KEY='atlas-view-v2';
+const GLOBE_CENTER=[0,20],GLOBE_ZOOM=2.65,GLOBE_PITCH=25;
+const ATLAS_SETTINGS_STORAGE_KEY='atlas-settings-v1',ATLAS_VIEW_STORAGE_KEY='atlas-view-v1';
 const DEFAULT_ATLAS_SETTINGS=Object.freeze({
   points:{color:'#c9a84c',radius:7,opacity:1,strokeColor:'#171722',strokeWidth:2,selectedColor:'#ffffff',selectedRadius:11,linkedColor:'#c9a84c',linkedRadius:8,linkedStrokeColor:'#f3ead5'},
   clusters:{color:'#c9a84c',radius:24,opacity:1,countColor:'#0d0d14',countSize:12,countHaloColor:'#ffffff',countHaloWidth:0,clusterRadius:50,clusterMaxZoom:14},
   links:{color:'#c9a84c',width:3,opacity:.9,dashed:false,dashLength:1.5,gapLength:1.5},
-  globe:{fogEnabled:true,fogColor:'#a0bedc',fogOpacity:.9,fogStart:.5,fogEnd:10,horizonBlend:.25,initialLongitude:GLOBE_CENTER[0],initialLatitude:GLOBE_CENTER[1],initialZoom:GLOBE_ZOOM,initialPitch:GLOBE_PITCH},
+  globe:{fogEnabled:true,fogColor:'#a0bedc',fogOpacity:.9,fogStart:.5,fogEnd:10,horizonBlend:.25,initialLongitude:0,initialLatitude:20,initialZoom:2.65,initialPitch:25},
   navigation:{rotationEnabled:false,rotationSpeed:7,preservePosition:true},basemap:{style:'streets'}
 });
 const ATLAS_LIMITS={
@@ -1303,12 +1301,16 @@ function getAtlasStyleURL(style='streets'){return ATLAS_STYLES[style]||ATLAS_STY
 function setupAtlasGlobe(settings=atlasSettings){
   if(!atlasMap)return false;
   try{
-    // A basemap style may reset the projection to Mercator. setProjection is
-    // synchronous in MapLibre: custom sources can (and must) be restored in the
-    // same style.load pass, otherwise no later event is guaranteed and the
-    // Atlas points remain absent.
+    // setProjection emits style.load in MapLibre. Reapplying the projection from
+    // our style.load handler therefore creates an endless restoration cycle in
+    // which the custom point source keeps being torn down before it can render.
+    // A new basemap can reset the projection, so restore it only when necessary.
     if(atlasMap.getProjection?.().type!=='globe'){
       atlasMap.setProjection({type:'globe'});
+      // Changing projection reloads the style. Do not add our sources to the
+      // obsolete Mercator style: style.load will resume initialization once
+      // the globe style is actually active.
+      return false;
     }
     atlasMap.setRenderWorldCopies(false);
     applyAtlasFog(settings);
