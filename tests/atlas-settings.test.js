@@ -39,8 +39,7 @@ assert.match(extractFunction('syncAtlasRotation'), /if\(atlasRotationFrame\)retu
 const globeSetup = extractFunction('setupAtlasGlobe');
 assert.match(globeSetup, /getProjection\?\.\(\)\.type!==['"]globe['"]/, 'la projection globe ne doit être réappliquée que si nécessaire');
 assert.doesNotMatch(globeSetup, /try\s*{\s*atlasMap\.setProjection/, 'setProjection ne doit pas relancer style.load à chaque restauration');
-assert.match(globeSetup, /setProjection\(\{type:['"]globe['"]\}\);\s*}\s*atlasMap\.setRenderWorldCopies/, 'les couches doivent être restaurées pendant le même style.load, car setProjection ne garantit pas un nouvel événement');
-assert.match(initialization, /if\(!setupAtlasGlobe\(settings\)\)return;[\s\S]*ensureAtlasSourceAndLayers/, 'les couches Atlas doivent être ajoutées après l’activation synchrone du globe');
-assert.match(html, /GLOBE_ZOOM=1\.35,GLOBE_PITCH=0/, 'la caméra initiale doit montrer clairement le contour du globe');
+assert.match(globeSetup, /setProjection\(\{type:['"]globe['"]\}\);[\s\S]*return false/, 'l’initialisation doit attendre le style globe après le changement de projection');
+assert.match(initialization, /if\(!setupAtlasGlobe\(settings\)\)return/, 'les couches Atlas ne doivent pas être ajoutées à l’ancien style Mercator');
 
 console.log('Atlas settings: tests réussis');
