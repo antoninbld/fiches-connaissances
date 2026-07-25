@@ -597,7 +597,12 @@
         "mmwd5dq5y00u"
       ],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 6.439681,
+        "longitude": 7.509553,
+        "name": "Nigéria, Biafra"
+      }
     },
     {
       "id": "mpwnmo7kp3y4",
