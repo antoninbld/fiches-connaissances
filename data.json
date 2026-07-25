@@ -527,7 +527,12 @@
         "mmwcfojq5d9h"
       ],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 12.052852523807262,
+        "longitude": -61.752303696670644,
+        "name": "Grenade"
+      }
     },
     {
       "id": "mnxncl9qxwsb",
