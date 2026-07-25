@@ -328,6 +328,7 @@
   .atlas-settings-control svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2}
   .atlas-settings{position:absolute;z-index:6;left:10px;top:50px;width:min(350px,calc(100% - 20px));max-height:calc(100% - 62px);overflow:auto;padding:16px;border:1px solid var(--border2);border-radius:12px;background:rgba(13,13,20,.96);color:var(--text);box-shadow:0 14px 38px rgba(0,0,0,.55);backdrop-filter:blur(10px)}
   .atlas-settings[hidden]{display:none}.atlas-settings-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.atlas-settings-head h3{font-family:'Playfair Display',serif;font-size:19px}
+  .atlas-marker-fallback{width:16px;height:16px;padding:0;border:3px solid var(--atlas-marker-stroke,#171722);border-radius:50%;background:var(--atlas-marker-color,#c9a84c);box-shadow:0 0 0 2px rgba(255,255,255,.72),0 2px 9px rgba(0,0,0,.75);cursor:pointer}
   .atlas-settings details{border-top:1px solid var(--border);padding:9px 0}.atlas-settings summary{cursor:pointer;color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
   .atlas-setting{display:grid;grid-template-columns:minmax(110px,1fr) minmax(105px,1.15fr) auto;align-items:center;gap:8px;margin:10px 0;font-size:12px}.atlas-setting input[type="range"]{min-width:0;width:100%;accent-color:var(--gold)}.atlas-setting input[type="color"]{justify-self:end;width:42px;height:28px;padding:2px;border:1px solid var(--border2);border-radius:6px;background:var(--bg)}.atlas-setting input[type="checkbox"]{justify-self:end;accent-color:var(--gold)}.atlas-setting output{min-width:44px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:10px;text-align:right}.atlas-setting select{grid-column:2/4;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:6px}.atlas-settings-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--border)}
   @media(max-width:520px){.atlas-settings{left:6px;top:46px;width:calc(100% - 12px);max-height:calc(100% - 52px);padding:12px}.atlas-setting{grid-template-columns:minmax(100px,1fr) minmax(90px,1fr) auto}}
@@ -1303,7 +1304,7 @@ const ATLAS_STYLES={
   dark:MAPTILER_KEY?`https://api.maptiler.com/maps/dataviz-dark/style.json?key=${encodeURIComponent(MAPTILER_KEY)}`:'https://tiles.openfreemap.org/styles/dark'
 };
 let atlasSettings=loadAtlasSettings();
-let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0,atlasRaisingLayers=false;
+let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0,atlasRaisingLayers=false,atlasFallbackMarkers=[],atlasFallbackSignature='';
 const ATLAS_INTERACTIVE_LAYERS=[ATLAS_SELECTION_LAYER_ID,ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID];
 window.addEventListener('resize',()=>{if(state.view==='atlas')requestAnimationFrame(()=>atlasMap?.resize());});
 
@@ -1495,6 +1496,7 @@ function initAtlasMap(){
     /* Certains fonds ajoutent leurs couches de décor après style.load. Vérifier
        aussi styledata empêche ces ajouts tardifs de recouvrir les marqueurs. */
     atlasMap.on('styledata',raiseAtlasLayers);
+    atlasMap.on('idle',syncAtlasMarkerFallback);
     atlasMap.on('moveend',saveAtlasView);
     atlasMap.on('error',event=>{if(!atlasMapLoaded){status.textContent='Impossible d’initialiser le fond de carte. Le reste de l’application demeure disponible.';status.classList.add('error');}console.warn('[Atlas] Erreur MapLibre :',event.error||event);});
   }catch(error){status.textContent='Impossible d’initialiser la carte. Le reste de l’application demeure disponible.';status.classList.add('error');console.warn('[Atlas] Initialisation impossible :',error);}
@@ -1518,6 +1520,24 @@ function ensureAtlasSourceAndLayers({forceRecreate=false}={}){
   ensureAtlasClusterLayers();bindAtlasInteractionsOnce();
 }
 function recreateAtlasCardSource(){if(!atlasMap?.isStyleLoaded())return;const selected=atlasSelectedId;ensureAtlasSourceAndLayers({forceRecreate:true});applyAtlasSettingsToMap();raiseAtlasLayers();if(selected)drawAtlasLinksFrom(selected);}
+function clearAtlasFallbackMarkers(){atlasFallbackMarkers.forEach(marker=>marker.remove());atlasFallbackMarkers=[];atlasFallbackSignature='';}
+function syncAtlasMarkerFallback(){
+  if(!atlasMap?.isStyleLoaded())return;
+  const geojson=buildAtlasGeoJSON(),layers=[ATLAS_CLUSTERS_LAYER_ID,ATLAS_POINTS_LAYER_ID].filter(layerId=>atlasMap.getLayer(layerId));
+  let rendered=[];
+  try{rendered=layers.length?atlasMap.queryRenderedFeatures({layers}):[];}catch(error){console.warn('[Atlas] Vérification du rendu des points impossible',error);}
+  if(!geojson.features.length||rendered.length){clearAtlasFallbackMarkers();return;}
+  const signature=JSON.stringify(geojson.features.map(feature=>[feature.properties.id,...feature.geometry.coordinates]));
+  if(signature===atlasFallbackSignature)return;
+  clearAtlasFallbackMarkers();atlasFallbackSignature=signature;
+  /* Secours DOM : certains styles raster/globe peuvent accepter la source et les
+     couches sans jamais les peindre. Les fiches restent alors visibles et
+     cliquables, au lieu de laisser une carte vide malgré le compteur. */
+  atlasFallbackMarkers=geojson.features.map(feature=>{
+    const element=document.createElement('button');element.type='button';element.className='atlas-marker-fallback';element.title=feature.properties.title;element.setAttribute('aria-label',`Ouvrir ${feature.properties.title}`);element.style.setProperty('--atlas-marker-color',atlasSettings.points.color);element.style.setProperty('--atlas-marker-stroke',atlasSettings.points.strokeColor);element.onclick=event=>{event.stopPropagation();selectAtlasFiche(feature.properties.id,feature.geometry.coordinates);};
+    return new maplibregl.Marker({element,anchor:'center'}).setLngLat(feature.geometry.coordinates).addTo(atlasMap);
+  });
+}
 function raiseAtlasLayers(){
   if(!atlasMap?.isStyleLoaded()||atlasRaisingLayers)return;
   const present=ATLAS_LAYER_ORDER.filter(layerId=>atlasMap.getLayer(layerId));
@@ -1611,6 +1631,7 @@ function refreshAtlasData(){
   const count=atlasRoot?.querySelector('#atlas-count');if(count)count.textContent=`${geojson.features.length} fiche${geojson.features.length!==1?'s':''} localisée${geojson.features.length!==1?'s':''}`;
   const status=atlasRoot?.querySelector('#atlas-status');if(status&&!status.classList.contains('error')){status.hidden=geojson.features.length>0;status.textContent=geojson.features.length?'':'Aucune fiche localisée pour le moment. Ajoutez des coordonnées depuis “Modifier la fiche” pour l’afficher dans l’Atlas.';}
   const source=atlasMap?.getSource(ATLAS_SOURCE);if(source)source.setData(geojson);
+  if(atlasMap?.isStyleLoaded())requestAnimationFrame(syncAtlasMarkerFallback);
   if(atlasSelectedId){const selected=db.fiches.find(f=>String(f.id)===String(atlasSelectedId));if(!selected||!hasValidCoordinatePair(selected.location?.latitude,selected.location?.longitude))clearAtlasSelection();else drawAtlasLinksFrom(atlasSelectedId);}
 }
 function ficheSummary(fiche){
