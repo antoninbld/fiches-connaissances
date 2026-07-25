@@ -373,7 +373,12 @@
       "dateEvenement": "071969",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 13.706350288406155,
+        "longitude": -89.21359459799136,
+        "name": "Salvador"
+      }
     },
     {
       "id": "mmwcoi4ys5bv",
