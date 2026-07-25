@@ -195,7 +195,8 @@
         "mmh95efr9v3w"
       ],
       "externalSha": null,
-      "dateEvenement": ""
+      "dateEvenement": "",
+      "source": ""
     },
     {
       "id": "mmh95efr9v3w",
@@ -207,7 +208,8 @@
       "date": 1772944115031,
       "dateEvenement": "",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmkqqj2si26u",
@@ -223,7 +225,8 @@
         "mmoqqmhk4cie"
       ],
       "externalSha": "62313c608cebd22c7b69dd192e98447d01b087e1",
-      "dateEvenement": ""
+      "dateEvenement": "",
+      "source": ""
     },
     {
       "id": "mmnutg8xm9wt",
@@ -238,7 +241,8 @@
         "mmnwgnsywk6h"
       ],
       "externalSha": null,
-      "dateEvenement": ""
+      "dateEvenement": "",
+      "source": ""
     },
     {
       "id": "mmnwgnsywk6h",
@@ -252,7 +256,8 @@
         "mmnutg8xm9wt"
       ],
       "externalSha": "f2d420ca92b7127eec5df17af652d8b864c61a58",
-      "dateEvenement": ""
+      "dateEvenement": "",
+      "source": ""
     },
     {
       "id": "mmnxa5lgqzct",
@@ -267,7 +272,8 @@
         "mmnutg8xm9wt"
       ],
       "externalSha": "a3802a47e619451927b8999c2fc34aa365c3eb65",
-      "dateEvenement": "09121975"
+      "dateEvenement": "09121975",
+      "source": ""
     },
     {
       "id": "mmoqqmhk4cie",
@@ -282,7 +288,8 @@
         "mmnxa5lgqzct"
       ],
       "externalSha": "5db76047133f44f3b58c5f572f5b2c6f724bb325",
-      "dateEvenement": ""
+      "dateEvenement": "",
+      "source": ""
     },
     {
       "id": "mmp64lzpoo5s",
@@ -294,7 +301,8 @@
       "date": 1773422768725,
       "links": [],
       "externalSha": "bb8be848d167e8dced1cf55d6eadaba19a2abb9c",
-      "dateEvenement": ""
+      "dateEvenement": "",
+      "source": ""
     },
     {
       "id": "mmqi5t3r0u03",
@@ -306,7 +314,8 @@
       "date": 1773503446167,
       "links": [],
       "externalSha": "57ca3b5a5acd3aee973bb94d260fee3ea37443c8",
-      "dateEvenement": "1975-1976"
+      "dateEvenement": "1975-1976",
+      "source": ""
     },
     {
       "id": "mmqifm531idm",
@@ -320,7 +329,8 @@
         "mmqi5t3r0u03"
       ],
       "externalSha": null,
-      "dateEvenement": "07121975"
+      "dateEvenement": "07121975",
+      "source": ""
     },
     {
       "id": "mmwcfojq5d9h",
@@ -334,7 +344,8 @@
       "links": [
         "mmwdypvhyn67"
       ],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwcllgv9ldh",
@@ -346,7 +357,8 @@
       "date": 1773856902127,
       "dateEvenement": "071969",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwcoi4ys5bv",
@@ -358,7 +370,8 @@
       "date": 1773857037778,
       "dateEvenement": "25121979",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwcqtt9ux1y",
@@ -370,7 +383,8 @@
       "date": 1773857146221,
       "dateEvenement": "11091973",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwctivcznpq",
@@ -382,7 +396,8 @@
       "date": 1773857272008,
       "dateEvenement": "041961",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwcv4ecersq",
@@ -394,7 +409,8 @@
       "date": 1773857346564,
       "dateEvenement": "06101981",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwd5dq5y00u",
@@ -406,7 +422,8 @@
       "date": 1773857825213,
       "dateEvenement": "1921-1950",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwddzbhpjsm",
@@ -418,7 +435,8 @@
       "date": 1773858226445,
       "dateEvenement": "031951-081953",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwdgn11pajy",
@@ -430,7 +448,8 @@
       "date": 1773858350485,
       "dateEvenement": "071870",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwdkmyt5qxz",
@@ -442,7 +461,8 @@
       "date": 1773858537029,
       "dateEvenement": "031971-121971",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwdonjc3jlw",
@@ -454,7 +474,8 @@
       "date": 1773858724392,
       "dateEvenement": "061954-041956",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwdsla468nz",
@@ -466,7 +487,8 @@
       "date": 1773858908092,
       "dateEvenement": "011991-121991",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwdtqdu4tvc",
@@ -478,7 +500,8 @@
       "date": 1773858961362,
       "dateEvenement": "09101967",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mmwdypvhyn67",
@@ -493,7 +516,8 @@
         "mmqifm531idm",
         "mmwcfojq5d9h"
       ],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mnxncl9qxwsb",
@@ -507,7 +531,8 @@
       "links": [
         "mmwd5dq5y00u"
       ],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mpwnmo7kp3y4",
@@ -519,7 +544,8 @@
       "date": 1780405775120,
       "dateEvenement": "",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mpy2wbz3ue3x",
@@ -531,7 +557,8 @@
       "date": 1780491886239,
       "dateEvenement": "",
       "links": [],
-      "externalSha": "9321ccaa11e3ca7296e5817e4a21f1d153777417"
+      "externalSha": "9321ccaa11e3ca7296e5817e4a21f1d153777417",
+      "source": ""
     },
     {
       "id": "mqw546bzd4zc",
@@ -543,7 +570,8 @@
       "date": 1782551461391,
       "dateEvenement": "",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mrq47s1kb9jw",
@@ -555,7 +583,8 @@
       "date": 1784363935160,
       "dateEvenement": "041941-051963",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": ""
     },
     {
       "id": "mryxa3ho753l",
@@ -567,7 +596,8 @@
       "date": 1784896481580,
       "dateEvenement": "081791-011804",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "source": "# 1er janvier 1804 — Indépendance d’Haïti\n\n## La proclamation de l’indépendance\n\nLe 1er janvier 1804, le général noir Jean-Jacques Dessalines proclame l’indépendance de la colonie française de Saint-Domingue. Il lui donne son nom moderne — ou plutôt lui redonne son nom indigène : Haïti.\n\nEn ce jour de Nouvel An 1804, sur la place d’armes de la ville des Gonaïves, à l’ouest de l’île, Jean-Jacques Dessalines s’exclame :\n\n> « J’ai sauvé mon pays, j’ai vengé l’Amérique. »\n\nLes rebelles noirs de Saint-Domingue se rêvent ainsi en vengeurs du Nouveau Monde. Ce qu’ils ont à venger, c’est un triple affront : celui de l’ordre colonial, celui de l’ordre esclavagiste et celui de l’ordre racial.\n\n> « Jurons à l’univers entier, à la postérité, à nous-mêmes, de renoncer à jamais à la France et de mourir plutôt que de vivre sous sa domination. »\n\nEn devenant, le 1er janvier 1804, le premier État noir indépendant du continent américain, Haïti sépare son histoire de celle de son ancienne puissance colonisatrice, la France. L’événement est contemporain de la Révolution française : il faut donc raconter les histoires de ces deux pays comme deux frises chronologiques parallèles et enchevêtrées.\n\nÀ Saint-Domingue — et c’est essentiel — l’abolition n’est pas concédée : elle est arrachée par une révolte d’esclaves. C’est le fait majeur. Il n’y a pas simplement une Révolution française qui se diffuserait dans les colonies, comme si celles-ci n’étaient que la chambre d’écho lointaine d’un événement se déroulant ailleurs. Il existe de véritables révolutions coloniales dans l’espace atlantique, sous le choc et l’influence de la Révolution française, mais aussi rendues possibles par elle.\n\nLe prix de la liberté à Haïti a été exorbitant, et l’on peut dire que le pays le paie encore aujourd’hui. Dès lors, la question centrale, face à la Révolution haïtienne et en regard de la Révolution française, est la suivante : **qui doit quoi à qui ?**\n\n## Saint-Domingue, « perle des Antilles »\n\nSaint-Domingue est le nom de la partie occidentale de l’île d’Hispaniola, sur laquelle les Français ont fait reconnaître leur souveraineté en 1697.\n\nDepuis lors, son histoire est indissociable de celle de la traite atlantique. Du XVIe au XIXe siècle, le commerce triangulaire entre l’Europe, l’Afrique et l’Amérique a jeté plus de douze millions d’Africains, transformés en marchandises, dans les cales des navires négriers. L’Empire colonial français y occupe une place de premier ordre.\n\nLa colonie de Saint-Domingue repose sur une économie de plantation fondée sur le café, l’indigo et le sucre. Elle compte à elle seule plus de 450 000 esclaves. Ceux-ci représentent environ 90 % de la population, voire 95 % si l’on inclut les personnes libres de couleur et les métis, alors désignés comme « mulâtres ».\n\nUne fois débarqué, l’espérance de vie d’un esclave ne dépasse souvent pas trois à cinq ans. L’économie de plantation de Saint-Domingue est ainsi l’une des plus meurtrières du continent américain.\n\nPourtant, en France, on surnomme la colonie « l’Éden du monde occidental » ou « la perle des Antilles ». Ces appellations prestigieuses s’expliquent par son poids économique : en métropole, près d’un Français sur huit vit directement ou indirectement de son commerce.\n\nCette importance économique est inséparable d’un régime de violence physique particulièrement cruel. Dès 1685, l’économie coloniale de plantation est régie par le Code noir, qui réglemente la condition des esclaves.\n\nCe régime de terreur explique sans doute que, pendant des décennies, les esclaves de Saint-Domingue ne se révoltent pas ouvertement : ils fuient. C’est ce que l’on appelle le **marronnage**. Les maîtres s’en inquiètent et publient dans les journaux la liste de leurs esclaves en fuite, appelés les « marrons ».\n\nDans les années 1780, les planteurs renforcent cependant la répression à un point tel que des grèves éclatent sur les plantations. L’année 1784 est même marquée par l’assassinat de plusieurs maîtres. Ce sont autant de signes avant-coureurs.\n\n## Août 1791 : le soulèvement des esclaves\n\nLa date traditionnellement retenue pour marquer le début du soulèvement des esclaves noirs de Saint-Domingue est la nuit du 14 août 1791, à Bois Caïman.\n\nDutty Boukman s’adresse alors à une foule d’environ deux cents esclaves dans un discours tenant à la fois du prêche religieux et de la harangue politique. Il s’agit d’organiser le soulèvement : une conjuration au cours de laquelle les participants jurent ensemble de briser les chaînes de l’esclavage.\n\nLa réunion de Bois Caïman aurait pris la forme d’une cérémonie vaudoue. Les sources sont cependant tardives et difficiles à interpréter.\n\nUne chose est certaine : dans la nuit du 21 au 22 août 1791, les esclaves de plusieurs habitations incendient les plantations, les champs et les bâtiments industriels. S’ensuivent une dizaine de jours pendant lesquels la plaine du Nord est en flammes.\n\nEn France, de nombreuses gravures racistes circulent. Elles prétendent montrer la « sauvagerie » des rebelles noirs et accréditent l’idée qu’un massacre des Blancs serait en cours à Saint-Domingue.\n\nÀ la fin du mois d’août 1791, l’armée rebelle compte déjà environ 10 000 combattants. Malgré la mort de Boukman, ce nombre atteint près de 80 000 hommes en novembre.\n\nTous les insurgés ne s’accordent ni sur les objectifs ni sur les moyens. Beaucoup se battent d’abord pour obtenir un adoucissement de leurs conditions de travail servile. D’autres sont plus radicaux et réclament l’abolition totale et définitive du système esclavagiste. À mesure que la révolte progresse, c’est cette position radicale qui finit par l’emporter.\n\n> « Vivre libre ou mourir. »\n\nCe slogan jacobin est retourné par les esclaves contre leurs maîtres.\n\n## La Révolution française face à l’esclavage\n\nLa Révolution française demeure profondément ambivalente à l’égard de l’esclavage, y compris parmi les Jacobins, le plus célèbre des clubs révolutionnaires.\n\nDès 1788, la Société des amis des Noirs, bientôt rejointe par l’abbé Grégoire, réclame l’abolition de la traite. Elle ne préconise toutefois qu’un abandon progressif de l’esclavage, considérant que les Noirs ne seraient pas encore prêts pour la liberté.\n\nLe puissant lobby colonial parvient, le 13 mai 1791, à faire voter par l’Assemblée un décret qui constitutionnalise le maintien de l’esclavage dans les colonies. À Saint-Domingue, cette décision constitue l’un des déclencheurs du soulèvement d’août 1791.\n\nAlors que l’insurrection se poursuit dans le nord de l’île, l’Assemblée nationale vote, le 4 avril 1792, une loi reconnaissant des droits politiques aux hommes libres de couleur. Il s’agit notamment de réunir toutes les forces disponibles contre les esclaves insurgés et de mettre un terme à la révolution en cours à Saint-Domingue.\n\nEn 1792, la guerre s’étend en Europe. L’Espagne et l’Angleterre entrent en guerre contre la France révolutionnaire. À Saint-Domingue, les insurgés tirent parti de cette nouvelle situation politique : beaucoup rejoignent le camp espagnol ou britannique.\n\nLes commissaires de la République française comprennent alors qu’ils doivent concéder davantage. Le 29 août 1793, un décret abolit l’esclavage à Saint-Domingue :\n\n> « Tous les nègres et sang-mêlés actuellement dans l’esclavage sont déclarés libres pour jouir de tous les droits attachés à la qualité de citoyen français. »\n\nLa nouvelle parvient en France au début de l’année 1794. En réponse à cette abolition locale, la Convention nationale adopte, le 4 février 1794, l’une des décisions les plus radicales de la Révolution française : l’abolition de l’esclavage dans l’ensemble de l’Empire colonial français.\n\nL’histoire parallèle des Révolutions française et haïtienne se poursuit, mais l’ordre des causalités s’inverse : cette fois, l’impulsion vient de Saint-Domingue.\n\n## Toussaint Louverture, le « Jacobin noir »\n\nL’histoire s’incarne désormais dans la figure de celui que la postérité surnommera le « Jacobin noir » : Toussaint Louverture.\n\nEntre 1791 et 1793, Toussaint s’impose comme l’un des meneurs de la révolte. À partir de 1794, après l’abolition de l’esclavage, il change d’alliance et rejoint le camp de la République française.\n\nEn 2012, le public français découvre son histoire dans un téléfilm réalisé par Philippe Niang. C’est la première fois qu’un film est consacré à la vie du personnage le plus emblématique de la Révolution haïtienne.\n\n> « Nous sommes maîtres de notre destinée. »\n\nLe film raconte les origines de Toussaint Bréda, né esclave puis affranchi à l’âge de trente-trois ans. Il montre comment, au cours de l’insurrection, il acquiert le surnom de « Louverture », en référence aux ouvertures qu’il parvient à créer dans les lignes ennemies.\n\nStratège autodidacte, Toussaint adapte ses alliances à son mot d’ordre : la liberté générale. Il combat d’abord aux côtés des Espagnols, puis rejoint les Français après l’abolition de l’esclavage.\n\n> « Le Directoire vous exprime sa reconnaissance et vous élève au grade de général de division. Vive la République ! »\n\nToussaint Louverture est un chef militaire qui lit les auteurs antiques et les traités d’art militaire gréco-romains. Il s’approprie ces références et les met en pratique sur le terrain, contribuant ainsi à renverser les préjugés raciaux de son époque.\n\nOn est loin des représentations coloniales sur la prétendue « férocité des Noirs ». Avec Toussaint Louverture, parfois surnommé le « Spartacus noir », la Révolution haïtienne trouve son incarnation la plus glorieuse, mais aussi l’une de ses figures les plus autoritaires.\n\nEn moins de dix ans, après avoir vaincu les puissances étrangères et les oppositions internes, Toussaint Louverture se hisse au sommet du pouvoir à Saint-Domingue. Il organise la transition de l’esclavage vers la liberté sans toutefois abolir le système des plantations, qu’il soumet à un régime de travail très sévère.\n\nIl relance la production de café, de coton et de sucre, qui retrouve en partie, en 1801, son niveau de 1790.\n\nEn juillet 1801, cet homme fort proclame une Constitution autonomiste, antiesclavagiste et antiraciste pour Saint-Domingue.\n\n## Napoléon contre Toussaint Louverture\n\nEn France, le Premier consul Napoléon Bonaparte réagit vivement à la promulgation de cette Constitution. Il organise une vaste expédition militaire : l’expédition de Saint-Domingue.\n\nAu début de l’année 1802, le rapport de force devient défavorable à Toussaint Louverture. Après plusieurs défaites, il est fait prisonnier le 7 juin 1802 et envoyé en exil.\n\nLe « Spartacus noir » est déporté dans le Jura, au fort de Joux, le 23 août 1802. Bien que Napoléon Bonaparte ait demandé qu’on lui réserve un traitement convenable, Toussaint est enfermé dans une cellule étroite, à peine éclairée par un rai de lumière. Il y passe les derniers mois de sa vie et meurt le 7 avril 1803.\n\nLa prison du fort de Joux constitue aujourd’hui l’un des principaux lieux de mémoire, en France hexagonale, liés à l’esclavage et à son abolition.\n\nAimé Césaire lui consacre un passage célèbre dans le *Cahier d’un retour au pays natal* :\n\n> « C’est un homme seul emprisonné de blanc.\n> C’est un homme seul qui défie les cris blancs de la mort blanche. »\n\nEn 1998, une plaque commémorative est apposée au Panthéon en reconnaissance du rôle de Toussaint Louverture dans l’abolition de l’esclavage.\n\nEn 2023, une cérémonie lui rendant hommage y est également organisée, animée par l’acteur haïtien Jimmy Jean-Louis, qui l’avait incarné dans le téléfilm de Philippe Niang.\n\n## La défaite de Napoléon et la victoire de Dessalines\n\nToussaint Louverture meurt le 7 avril 1803. Mais il n’est pas le perdant de l’histoire. Le véritable perdant, c’est Napoléon.\n\nL’histoire de l’indépendance haïtienne est aussi celle d’une défaite napoléonienne. Napoléon prend en effet une décision stupéfiante : le rétablissement de l’esclavage.\n\nAboli en 1794, l’esclavage est rétabli par la loi du 20 mai 1802. La campagne de Saint-Domingue connaît alors, en 1802 et 1803, une brutalisation d’une ampleur inouïe. Sous le choc de cette violence extrême, la rébellion se radicalise et s’unifie sous le commandement du général Jean-Jacques Dessalines, ancien bras droit de Toussaint Louverture.\n\nDessalines arrache la bande blanche du drapeau tricolore. Le drapeau de la nation haïtienne en devenir sera désormais bleu et rouge, débarrassé de la couleur symbolisant la domination française.\n\nSous ces couleurs, l’armée de Dessalines remporte la victoire décisive de Vertières, le 18 novembre 1803.\n\nContraintes à la capitulation, les troupes françaises doivent évacuer le fort de Vertières et quitter Saint-Domingue. Le 1er janvier 1804, Dessalines proclame l’indépendance de l’île, désormais appelée Haïti, et reçoit les pleins pouvoirs. Quelques mois plus tard, il est couronné empereur.\n\n## 1825 : la dette de l’indépendance\n\nHaïti est indépendante, mais elle vit sous embargo, sous le blocus de la marine française et sous la menace permanente d’une reconquête.\n\nCe n’est qu’en 1825 que la France de la Restauration, alors gouvernée par le roi Charles X, reconnaît officiellement l’indépendance d’Haïti — en échange d’une compensation financière.\n\nC’est la fameuse **dette haïtienne**.\n\nPar l’ordonnance royale du 17 avril 1825, Charles X impose à Haïti de verser à la France, au bénéfice de plusieurs milliers d’anciens propriétaires de plantations, une indemnité de 150 millions de francs-or, payable en cinq ans.\n\nCette somme correspond à environ 15 % du revenu national français de l’époque, mais à au moins dix fois celui d’Haïti. Par cet acte, la France considère donc l’indépendance haïtienne comme un manque à gagner devant être indemnisé.\n\nL’historienne Gusti-Klara Gaillard a étudié la manière dont le montant de cette indemnité a été calculé. L’ordonnance affirme que la dette doit dédommager les anciens colons. Une commission est immédiatement créée en France afin d’établir des tarifs pour toutes les composantes de leurs anciens biens : bâtiments, bétail, main-d’œuvre et esclaves, évalués selon leur secteur d’activité.\n\nOr, le personnel esclavisé représentait entre 30 et 60 % de la valeur totale des propriétés. L’esclave devient donc une unité de compte de l’indemnité imposée en 1825 à la République d’Haïti.\n\nCe prix de la liberté, que les anciens esclaves doivent payer à leurs anciens maîtres, est appelé la **dette de l’indépendance**.\n\nMais l’histoire ne s’arrête pas là. Pour honorer la première annuité alors qu’il n’en a pas les moyens, le jeune État haïtien est contraint par la France de contracter un emprunt auprès de banques françaises. Au fardeau initial s’ajoutent donc les intérêts et les commissions dus aux créanciers et aux banquiers.\n\nCet ensemble est appelé la **double dette**.\n\nLa dette de l’indépendance est finalement soldée en 1878. Les remboursements des différents emprunts, quant à eux, ne prennent fin qu’en 1922. Au total, cette double ponction sur les richesses produites par Haïti aura duré près d’un siècle.\n\nPendant des années, plus de 40 % du budget haïtien est absorbé par le service de la dette extérieure. Un endettement intérieur l’accompagne nécessairement afin de payer les fonctionnaires et les dépenses courantes.\n\nIl reste donc très peu de ressources pour investir dans le développement du pays. L’essentiel du système profite à l’ancienne métropole et non à la population haïtienne.\n\n## Les ingérences étrangères\n\nHaïti n’en a pas fini avec les ingérences étrangères. À la France succèdent les États-Unis, qui occupent le pays de 1915 à 1934 et le contraignent à souscrire de nouveaux emprunts.\n\nDepuis 1825, Haïti n’a cessé d’expédier une part considérable de ses richesses outre-mer et de subir des régimes autoritaires.\n\nEn 2003, Jean-Bertrand Aristide, président démocratiquement élu, réclame à la France plus de 21 milliards de dollars en guise de réparation. Un an plus tard, il est chassé du pouvoir.\n\nThierry Burkard, ambassadeur de France en Haïti à l’époque, reconnaît en 2022 auprès du *New York Times* que cette éviction a été orchestrée par la France et les États-Unis.\n\nL’événement intervient près de deux cents ans après le 1er janvier 1804, désavouant une nouvelle fois le serment prononcé par Dessalines de vivre libre et indépendant.\n\n## Le monde en 1804\n\nPendant ce temps, ailleurs dans le monde, le Japon entre dans l’ère Bunka, tandis que la Chine voit la défaite des rebelles de la secte du Lotus blanc.\n\nEn de nombreux endroits, la modernité prend forme. Le 21 février 1804, dans la région minière de Pen-y-Darren, au pays de Galles, circule la première locomotive à vapeur sur rails du monde.\n\nDans l’Empire russe, un oukase oblige les maîtres qui émancipent leurs serfs à leur accorder une terre que ceux-ci doivent ensuite racheter.\n\nLa transformation des sociétés traditionnelles peut aussi emprunter des chemins plus inattendus. En Afrique de l’Ouest, Ousmane dan Fodio, un lettré peul, lance le djihad contre les royaumes haoussas du nord de l’actuel Nigeria.\n\nDevenu sultan de Sokoto, à la tête d’un vaste État musulman, il cherche à rétablir un islam de stricte observance et à mettre fin aux injustices des anciens seigneurs de guerre qui favorisaient la traite atlantique.\n\n## Les « spectres » de la Révolution haïtienne\n\nCertains historiens ont parlé des « spectres de la Révolution haïtienne ». C’est d’abord dans le monde atlantique que ces spectres se manifestent avec le plus de force.\n\nEn 1938, le grand intellectuel trinidadien C. L. R. James publie *Les Jacobins noirs*. Dans ce livre, qui constitue aussi une biographie collective de Toussaint Louverture et des rebelles qui l’entouraient, il montre la formidable puissance d’encouragement que représente la Révolution haïtienne, non seulement pour les Afro-Américains, mais pour tous les opprimés du monde.\n\nTrès vite, l’exemple de Toussaint Louverture devient contagieux. Il inspire d’innombrables révoltes dans les sociétés maintenant l’esclavage : à Cuba, en Jamaïque, en Guadeloupe, au Venezuela, en Virginie ou encore au Brésil.\n\nPlus tard, la figure du héros haïtien est mobilisée dans la lutte pour les droits civiques. En 1915, l’association des Chevaliers de Toussaint Louverture combat à Washington les lois ségrégationnistes.\n\nAprès la Seconde Guerre mondiale, les mouvements anticoloniaux convoquent à leur tour sa mémoire. En 1954, Fidel Castro affirme depuis sa cellule de prison que l’âme de Spartacus s’est réincarnée en Toussaint Louverture.\n\nLa même année, après la défaite française de Diên Biên Phu face au Viet Minh d’Hô Chi Minh, ce dernier est décrit par le célèbre chanteur afro-américain Paul Robeson comme le « Toussaint du Vietnam ».\n\n## Une révolution à regarder sans mythe\n\nIl faut cependant conserver la lucidité nécessaire pour ne pas remplacer un mythe révolutionnaire par un autre.\n\nIl ne s’agit plus seulement de raconter l’histoire parallèle de la Révolution française et de la Révolution haïtienne, mais aussi l’histoire parallèle de la subversion de ces deux révolutions.\n\nIl faut admettre que s’enracine également dans cette histoire une tradition de violence et de fascination pour le pouvoir autoritaire, dont Haïti porte encore aujourd’hui les traces.\n\nPlus précisément, pour comprendre ce qu’est une situation postcoloniale, c’est vers Haïti qu’il faut tourner le regard.\n\nLa dette permet à une situation coloniale, esclavagiste et raciste de se maintenir bien après l’indépendance officielle.\n\nCe n’est pas seulement l’histoire d’Haïti.\n\nC’est notre histoire.\n\nC’est toute notre histoire."
     }
   ]
 }
