@@ -28,6 +28,8 @@ async function expectRenderedAtlas(page) {
 test('rend le globe et les fiches après chargement, changement de fond et rafraîchissement', async ({page}) => {
   await page.addInitScript(() => {
     localStorage.setItem('atlas-view-v2', JSON.stringify({center: [120, -55], zoom: 8, pitch: 55, bearing: 90}));
+    localStorage.setItem('atlas-settings-v2', JSON.stringify({points: {color: '#c9a84c'}, basemap: {style: 'streets'}}));
+    localStorage.setItem('atlas-view-v3', JSON.stringify({version: 3, center: [90, 0], zoom: 1.35, pitch: 0}));
   });
   await page.goto('/');
   await page.waitForFunction(() => typeof db !== 'undefined' && Array.isArray(db.fiches));
@@ -40,9 +42,12 @@ test('rend le globe et les fiches après chargement, changement de fond et rafra
   await waitForAtlasIdle(page);
   const initial = await expectRenderedAtlas(page);
   expect(initial.camera.center[0]).toBeCloseTo(0, 1);
-  expect(initial.camera.center[1]).toBeCloseTo(15, 1);
-  expect(initial.camera.zoom).toBeCloseTo(1.35, 1);
-  expect(initial.camera.pitch).toBe(0);
+  expect(initial.camera.center[1]).toBeCloseTo(20, 1);
+  expect(initial.camera.zoom).toBeGreaterThanOrEqual(0.48);
+  expect(initial.camera.zoom).toBeLessThanOrEqual(0.82);
+  expect(initial.camera.pitch).toBe(25);
+  expect(await page.evaluate(() => getAtlasSettings().points.color)).toBe('#ff2d2d');
+  expect(await page.evaluate(() => getAtlasStyleURL('streets'))).not.toContain('liberty');
 
   // Atmosphere and relation failures are isolated from the card source/layers.
   await page.evaluate(async () => {
@@ -66,7 +71,9 @@ test('rend le globe et les fiches après chargement, changement de fond et rafra
   await page.waitForFunction(() => typeof db !== 'undefined' && Array.isArray(db.fiches));
   await page.evaluate(() => goAtlas());
   await waitForAtlasIdle(page);
-  await expectRenderedAtlas(page);
+  const refreshed = await expectRenderedAtlas(page);
+  expect(refreshed.camera.pitch).toBe(25);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('atlas-view-v3')).projection)).toBe('globe');
 
   await page.locator('#atlas-map').screenshot({path: 'test-results/atlas-globe.png'});
 });
