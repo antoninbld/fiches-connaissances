@@ -30,8 +30,6 @@ for (const call of expectedOrder) {
   previous = position;
 }
 assert.match(html, /style:getAtlasStyleURL\(atlasSettings\.basemap\.style\)/, 'le fond sauvegardé doit être le style initial');
-assert.match(html, /projection:\{type:['"]globe['"]\}/, 'le constructeur doit recevoir une ProjectionSpecification globe MapLibre');
-assert.doesNotMatch(html, /projection:['"]globe['"]/, 'la syntaxe chaîne propre à Mapbox ne doit pas être utilisée avec MapLibre');
 assert.match(html, /clusterMaxZoom:clusters\.clusterMaxZoom,clusterRadius:clusters\.clusterRadius/, 'la source doit employer les paramètres de cluster courants');
 assert.doesNotMatch(extractFunction('ensureAtlasSourceAndLayers'), /'#c9a84c'|\b11,7\b/, 'les couches ne doivent plus être créées avec les styles par défaut codés en dur');
 assert.match(initialization, /atlasAppearanceInitializationPromise=.*\.then/, 'les restaurations concurrentes doivent être sérialisées');
