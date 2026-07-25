@@ -7,7 +7,14 @@ const data = JSON.parse(fs.readFileSync(new URL('../data.json', `file://${__file
 function extractFunction(name) {
   const start = html.indexOf(`function ${name}(`);
   assert.notEqual(start, -1, `fonction ${name} introuvable`);
-  const bodyStart = html.indexOf('{', start);
+  const parametersStart = html.indexOf('(', start);
+  let parentheses = 0;
+  let bodyStart = -1;
+  for (let index = parametersStart; index < html.length; index += 1) {
+    if (html[index] === '(') parentheses += 1;
+    if (html[index] === ')' && --parentheses === 0) { bodyStart = html.indexOf('{', index); break; }
+  }
+  assert.notEqual(bodyStart, -1, `corps de ${name} introuvable`);
   let depth = 0;
   let quote = '';
   let escaped = false;
@@ -28,15 +35,24 @@ function extractFunction(name) {
 
 const ensureSource = extractFunction('ensureAtlasSourceAndLayers');
 assert.match(ensureSource, /cluster:true/);
-assert.match(ensureSource, /filter:\['has','point_count'\]/);
-assert.match(ensureSource, /filter:\['!',\['has','point_count'\]\]/);
-assert.match(ensureSource, /'text-allow-overlap':true/);
-assert.match(ensureSource, /'text-ignore-placement':true/);
-assert.match(ensureSource, /'circle-opacity':atlasSettings\.clusters\.opacity/);
+assert.match(ensureSource, /clusterMaxZoom:Number\(atlasSettings\.clusters\.clusterMaxZoom\)/);
+assert.match(ensureSource, /clusterRadius:Number\(atlasSettings\.clusters\.clusterRadius\)/);
+assert.match(ensureSource, /else source\.setData\(geojson\)/);
+assert.match(ensureSource, /ensureAtlasClusterLayers\(\);bindAtlasInteractionsOnce\(\)/);
+
+const layers = extractFunction('ensureAtlasClusterLayers');
+assert.match(layers, /filter:\['has','point_count'\]/);
+assert.match(layers, /filter:\['!',\['has','point_count'\]\]/);
+assert.match(layers, /'text-field':'\{point_count_abbreviated\}'/);
+assert.match(layers, /'text-allow-overlap':true/);
+assert.match(layers, /'text-ignore-placement':true/);
+assert.match(layers, /'text-anchor':'center'/);
+assert.match(layers, /\['feature-state','selected'\]/);
 
 const recreateSource = extractFunction('recreateAtlasCardSource');
-assert.ok(recreateSource.indexOf('removeLayer') < recreateSource.indexOf('removeSource'));
-assert.ok(recreateSource.indexOf('removeSource') < recreateSource.indexOf('ensureAtlasSourceAndLayers'));
+assert.match(recreateSource, /ensureAtlasSourceAndLayers\(\{forceRecreate:true\}\)/);
+const removeSource = extractFunction('removeAtlasClusterLayersAndSource');
+assert.ok(removeSource.indexOf('removeLayer') < removeSource.indexOf('removeSource'));
 
 const raiseLayers = extractFunction('raiseAtlasLayers');
 const expectedOrder = ['ATLAS_LINKS_LAYER_ID', 'ATLAS_CLUSTERS_LAYER_ID', 'ATLAS_CLUSTER_COUNT_LAYER_ID', 'ATLAS_POINTS_LAYER_ID', 'ATLAS_SELECTION_LAYER_ID'];
@@ -48,8 +64,15 @@ expectedOrder.reduce((previous, layer) => {
 
 const interactions = extractFunction('bindAtlasInteractionsOnce');
 assert.match(interactions, /atlasInteractionsBound\|\|!atlasMap/);
-assert.match(interactions, /getClusterExpansionZoom\(clusterId\)/);
-assert.match(interactions, /duration:700,essential:true/);
+assert.match(interactions, /atlasMap\.on\('click',handleAtlasMapClick\)/);
+assert.match(interactions, /atlasMap\.on\('mousemove',handleAtlasMapHover\)/);
+assert.equal((interactions.match(/atlasMap\.on/g) || []).length, 2);
+const click = extractFunction('handleAtlasMapClick');
+assert.match(click, /point_count!=null/);
+assert.match(click, /zoomAtlasCluster\(cluster\)/);
+const expansion = extractFunction('getAtlasClusterExpansionZoom');
+assert.equal((expansion.match(/source\.getClusterExpansionZoom/g) || []).length, 1);
+assert.match(extractFunction('zoomAtlasCluster'), /Math\.min\(zoom\+1,18\)/);
 
 const coordinateHelpers = new Function(`${extractFunction('getCardCoordinates')}\n${extractFunction('getCardsAtCoordinates')}; return {getCardsAtCoordinates};`)();
 const cards = [
@@ -68,6 +91,11 @@ assert.match(html, /initialLongitude:105,initialLatitude:12,initialZoom:2\.65/);
 const timorCards = data.fiches.filter(card => card.location?.name === 'Timor Oriental');
 assert.equal(timorCards.length, 2, 'les données doivent contenir le cluster visible au premier affichage');
 assert.ok(timorCards.every(card => Math.abs(card.location.longitude - 105) < 30), 'le cluster du Timor doit se trouver sur la face initialement visible');
-assert.match(html, /atlasMap\.on\('style\.load'.*ensureAtlasSourceAndLayers\(\).*raiseAtlasLayers\(\)/s);
+assert.match(html, /atlasMap\.on\('style\.load'.*atlasMap\.once\('idle',restoreAtlasLayersAfterStyleLoad\)/s);
+const restoreAfterStyle = extractFunction('restoreAtlasLayersAfterStyleLoad');
+assert.match(restoreAfterStyle, /atlasMap\?\.isStyleLoaded\(\)/);
+assert.match(restoreAfterStyle, /ensureAtlasSourceAndLayers\(\{forceRecreate:true\}\)/);
+assert.match(restoreAfterStyle, /raiseAtlasLayers\(\)/);
+assert.doesNotMatch(html, /atlasSourceClusterConfig|sourceConfigChanged|diagnoseAtlasClusters/);
 
 console.log('Atlas clusters: tests réussis');
