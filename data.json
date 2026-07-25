@@ -690,7 +690,12 @@
       "date": 1784981114644,
       "dateEvenement": "07091812",
       "links": [],
-      "externalSha": null
+      "externalSha": null,
+      "location": {
+        "latitude": 55.5333333,
+        "longitude": 35.81666666666667,
+        "name": "Borodino"
+      }
     }
   ]
 }
