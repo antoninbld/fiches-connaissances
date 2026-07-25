@@ -34,5 +34,8 @@ assert.match(html, /clusterMaxZoom:clusters\.clusterMaxZoom,clusterRadius:cluste
 assert.doesNotMatch(extractFunction('ensureAtlasSourceAndLayers'), /'#c9a84c'|\b11,7\b/, 'les couches ne doivent plus être créées avec les styles par défaut codés en dur');
 assert.match(initialization, /atlasAppearanceInitializationPromise=.*\.then/, 'les restaurations concurrentes doivent être sérialisées');
 assert.match(extractFunction('syncAtlasRotation'), /if\(atlasRotationFrame\)return/, 'une seconde boucle de rotation ne doit pas être créée');
+const globeSetup = extractFunction('setupAtlasGlobe');
+assert.match(globeSetup, /getProjection\?\.\(\)\.type!==['"]globe['"]/, 'la projection globe ne doit être réappliquée que si nécessaire');
+assert.doesNotMatch(globeSetup, /try\s*{\s*atlasMap\.setProjection/, 'setProjection ne doit pas relancer style.load à chaque restauration');
 
 console.log('Atlas settings: tests réussis');

@@ -1301,7 +1301,11 @@ function getAtlasStyleURL(style='streets'){return ATLAS_STYLES[style]||ATLAS_STY
 function setupAtlasGlobe(settings=atlasSettings){
   if(!atlasMap)return;
   try{
-    atlasMap.setProjection({type:'globe'});
+    // setProjection emits style.load in MapLibre. Reapplying the projection from
+    // our style.load handler therefore creates an endless restoration cycle in
+    // which the custom point source keeps being torn down before it can render.
+    // A new basemap can reset the projection, so restore it only when necessary.
+    if(atlasMap.getProjection?.().type!=='globe')atlasMap.setProjection({type:'globe'});
     atlasMap.setRenderWorldCopies(false);
     applyAtlasFog(settings);
   }catch(error){console.error('Impossible d’activer la projection globe',error);}
