@@ -330,7 +330,12 @@
       ],
       "externalSha": null,
       "dateEvenement": "07121975",
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": -8.555619888132156,
+        "longitude": 125.5779221359081,
+        "name": "Timor Oriental"
+      }
     },
     {
       "id": "mmwcfojq5d9h",
