@@ -1299,16 +1299,23 @@ window.addEventListener('resize',()=>{if(state.view==='atlas')requestAnimationFr
 
 function getAtlasStyleURL(style='streets'){return ATLAS_STYLES[style]||ATLAS_STYLES.streets;}
 function setupAtlasGlobe(settings=atlasSettings){
-  if(!atlasMap)return;
+  if(!atlasMap)return false;
   try{
     // setProjection emits style.load in MapLibre. Reapplying the projection from
     // our style.load handler therefore creates an endless restoration cycle in
     // which the custom point source keeps being torn down before it can render.
     // A new basemap can reset the projection, so restore it only when necessary.
-    if(atlasMap.getProjection?.().type!=='globe')atlasMap.setProjection({type:'globe'});
+    if(atlasMap.getProjection?.().type!=='globe'){
+      atlasMap.setProjection({type:'globe'});
+      // Changing projection reloads the style. Do not add our sources to the
+      // obsolete Mercator style: style.load will resume initialization once
+      // the globe style is actually active.
+      return false;
+    }
     atlasMap.setRenderWorldCopies(false);
     applyAtlasFog(settings);
-  }catch(error){console.error('Impossible d’activer la projection globe',error);}
+    return true;
+  }catch(error){console.error('Impossible d’activer la projection globe',error);return false;}
 }
 function ensureNoTerrain(){
   if(!atlasMap)return;
@@ -1498,7 +1505,8 @@ function initializeAtlasAppearance(){
   atlasAppearanceInitializationPromise=atlasAppearanceInitializationPromise.catch(()=>{}).then(async()=>{
     if(!atlasMap?.isStyleLoaded())return;
     const settings=atlasSettings;
-    setupAtlasGlobe(settings);ensureNoTerrain();
+    if(!setupAtlasGlobe(settings))return;
+    ensureNoTerrain();
     await ensureAtlasSourceAndLayers(settings);ensureAtlasLinksSourceAndLayer(settings);ensureAtlasSelectionSourceAndLayer(settings);
     applyAtlasSettingsToMap(settings);refreshAtlasData();
     if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);
