@@ -556,7 +556,12 @@
       "dateEvenement": "09101967",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": -16.76359,
+        "longitude": -64.87273,
+        "name": "Bolivie"
+      }
     },
     {
       "id": "mmwdypvhyn67",
