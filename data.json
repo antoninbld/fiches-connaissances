@@ -391,7 +391,12 @@
       "dateEvenement": "25121979",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 34.55954,
+        "longitude": 69.17821,
+        "name": "Afghanistan"
+      }
     },
     {
       "id": "mmwcqtt9ux1y",
