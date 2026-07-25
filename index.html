@@ -1295,7 +1295,7 @@ const ATLAS_STYLES={
   dark:MAPTILER_KEY?`https://api.maptiler.com/maps/dataviz-dark/style.json?key=${encodeURIComponent(MAPTILER_KEY)}`:'https://tiles.openfreemap.org/styles/dark'
 };
 let atlasSettings=loadAtlasSettings();
-let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0,atlasAppearanceInitializationPromise=Promise.resolve();
+let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0;
 window.addEventListener('resize',()=>{if(state.view==='atlas')requestAnimationFrame(()=>atlasMap?.resize());});
 
 function getAtlasStyleURL(style='streets'){return ATLAS_STYLES[style]||ATLAS_STYLES.streets;}
@@ -1478,33 +1478,21 @@ function initAtlasMap(){
   if(typeof maplibregl==='undefined'){status.textContent='La carte ne peut pas être chargée. Vérifiez votre connexion puis réessayez.';status.classList.add('error');return;}
   try{
     const globe=atlasSettings.globe;atlasMap=new maplibregl.Map({container:'atlas-map',style:getAtlasStyleURL(atlasSettings.basemap.style),center:[globe.initialLongitude,globe.initialLatitude],zoom:globe.initialZoom,pitch:globe.initialPitch,bearing:0,projection:'globe',renderWorldCopies:false,antialias:true,attributionControl:true});
+    setupAtlasGlobe();
     atlasMap.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
     atlasSettingsControl=new AtlasSettingsControl();atlasMap.addControl(atlasSettingsControl,'top-left');renderAtlasSettingsPanel();
-    atlasMap.on('load',()=>{atlasMapLoaded=true;initializeAtlasAppearance().then(()=>{bindAtlasInteractionsOnce();atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}});});
-    atlasMap.on('style.load',initializeAtlasAppearance);
+    atlasMap.on('load',async()=>{atlasMapLoaded=true;setupAtlasGlobe();ensureNoTerrain();await ensureAtlasSourceAndLayers();ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();applyAtlasSettingsToMap();bindAtlasInteractionsOnce();refreshAtlasData();atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}});
+    atlasMap.on('style.load',async()=>{setupAtlasGlobe();ensureNoTerrain();await ensureAtlasSourceAndLayers();ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();applyAtlasSettingsToMap();refreshAtlasData();if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);});
     atlasMap.on('moveend',saveAtlasView);
     atlasMap.on('error',event=>{if(!atlasMapLoaded){status.textContent='Impossible d’initialiser le fond de carte. Le reste de l’application demeure disponible.';status.classList.add('error');}console.warn('[Atlas] Erreur MapLibre :',event.error||event);});
   }catch(error){status.textContent='Impossible d’initialiser la carte. Le reste de l’application demeure disponible.';status.classList.add('error');console.warn('[Atlas] Initialisation impossible :',error);}
 }
-function initializeAtlasAppearance(){
-  // MapLibre emits style.load before load and after each setStyle(). Serializing
-  // initialization prevents the two handlers from racing and restoring defaults.
-  atlasAppearanceInitializationPromise=atlasAppearanceInitializationPromise.catch(()=>{}).then(async()=>{
-    if(!atlasMap?.isStyleLoaded())return;
-    setupAtlasGlobe();ensureNoTerrain();
-    await ensureAtlasSourceAndLayers();ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();
-    applyAtlasSettingsToMap();refreshAtlasData();
-    if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);
-  }).catch(error=>console.warn('[Atlas settings] Restauration de l’apparence impossible :',error));
-  return atlasAppearanceInitializationPromise;
-}
 async function ensureAtlasSourceAndLayers(){
   if(!atlasMap||!atlasMap.isStyleLoaded())return;
-  const {points,clusters}=atlasSettings;
   if(!atlasMap.getSource(ATLAS_SOURCE))atlasMap.addSource(ATLAS_SOURCE,{type:'geojson',data:buildAtlasGeoJSON(),promoteId:'id',cluster:true,clusterMaxZoom:atlasSettings.clusters.clusterMaxZoom,clusterRadius:atlasSettings.clusters.clusterRadius});
-  if(!atlasMap.getLayer('atlas-clusters'))atlasMap.addLayer({id:'atlas-clusters',type:'circle',source:ATLAS_SOURCE,filter:['has','point_count'],paint:{'circle-color':clusters.color,'circle-radius':clusters.radius,'circle-opacity':clusters.opacity,'circle-stroke-width':2,'circle-stroke-color':'#f3ead5'}});
-  if(!atlasMap.getLayer('atlas-cluster-count'))atlasMap.addLayer({id:'atlas-cluster-count',type:'symbol',source:ATLAS_SOURCE,filter:['has','point_count'],layout:{'text-field':['get','point_count_abbreviated'],'text-size':clusters.countSize},paint:{'text-color':clusters.countColor,'text-halo-color':clusters.countHaloColor,'text-halo-width':clusters.countHaloWidth}});
-  if(!atlasMap.getLayer('atlas-points'))atlasMap.addLayer({id:'atlas-points',type:'circle',source:ATLAS_SOURCE,filter:['!',['has','point_count']],paint:{'circle-radius':['case',['boolean',['feature-state','selected'],false],points.selectedRadius,points.radius],'circle-color':['case',['boolean',['feature-state','selected'],false],points.selectedColor,points.color],'circle-opacity':points.opacity,'circle-stroke-width':['case',['boolean',['feature-state','selected'],false],4,points.strokeWidth],'circle-stroke-color':['case',['boolean',['feature-state','selected'],false],points.strokeColor,points.strokeColor]}});
+  if(!atlasMap.getLayer('atlas-clusters'))atlasMap.addLayer({id:'atlas-clusters',type:'circle',source:ATLAS_SOURCE,filter:['has','point_count'],paint:{'circle-color':['step',['get','point_count'],'#8a6f30',10,'#c9a84c',50,'#e09050'],'circle-radius':['step',['get','point_count'],18,10,24,50,30],'circle-stroke-width':2,'circle-stroke-color':'#f3ead5'}});
+  if(!atlasMap.getLayer('atlas-cluster-count'))atlasMap.addLayer({id:'atlas-cluster-count',type:'symbol',source:ATLAS_SOURCE,filter:['has','point_count'],layout:{'text-field':['get','point_count_abbreviated'],'text-size':12},paint:{'text-color':'#0d0d14'}});
+  if(!atlasMap.getLayer('atlas-points'))atlasMap.addLayer({id:'atlas-points',type:'circle',source:ATLAS_SOURCE,filter:['!',['has','point_count']],paint:{'circle-radius':['case',['boolean',['feature-state','selected'],false],11,7],'circle-color':['case',['boolean',['feature-state','selected'],false],'#ffffff','#c9a84c'],'circle-stroke-width':['case',['boolean',['feature-state','selected'],false],4,2],'circle-stroke-color':['case',['boolean',['feature-state','selected'],false],'#c9a84c','#171722']}});
 }
 async function recreateAtlasCardSource(){if(!atlasMap?.isStyleLoaded())return;const selected=atlasSelectedId;['atlas-cluster-count','atlas-clusters','atlas-points'].forEach(id=>{if(atlasMap.getLayer(id))atlasMap.removeLayer(id);});if(atlasMap.getSource(ATLAS_SOURCE))atlasMap.removeSource(ATLAS_SOURCE);await ensureAtlasSourceAndLayers();applyAtlasSettingsToMap();refreshAtlasData();if(selected)drawAtlasLinksFrom(selected);}
 function addAtlasLayer(layer,beforeId){
@@ -1514,15 +1502,13 @@ function ensureAtlasLinksSourceAndLayer(){
   if(!atlasMap){console.error('[Atlas links] Carte MapLibre absente.');return false;}
   if(!atlasMap.isStyleLoaded()){console.error('[Atlas links] Style MapLibre non chargé.');return false;}
   if(!atlasMap.getSource(ATLAS_LINKS_SOURCE_ID))atlasMap.addSource(ATLAS_LINKS_SOURCE_ID,{type:'geojson',data:emptyFeatureCollection()});
-  const links=atlasSettings.links;
-  if(!atlasMap.getLayer(ATLAS_LINKS_LAYER_ID))addAtlasLayer({id:ATLAS_LINKS_LAYER_ID,type:'line',source:ATLAS_LINKS_SOURCE_ID,layout:{visibility:'visible','line-cap':'round','line-join':'round'},paint:{'line-color':links.color,'line-width':links.width,'line-opacity':links.opacity,'line-dasharray':links.dashed?[links.dashLength,links.gapLength]:null}},'atlas-clusters');
+  if(!atlasMap.getLayer(ATLAS_LINKS_LAYER_ID))addAtlasLayer({id:ATLAS_LINKS_LAYER_ID,type:'line',source:ATLAS_LINKS_SOURCE_ID,layout:{visibility:'visible','line-cap':'round','line-join':'round'},paint:{'line-color':'#c9a84c','line-width':3,'line-opacity':0.9}},'atlas-clusters');
   return Boolean(atlasMap.getSource(ATLAS_LINKS_SOURCE_ID)&&atlasMap.getLayer(ATLAS_LINKS_LAYER_ID));
 }
 function ensureAtlasSelectionSourceAndLayer(){
   if(!atlasMap||!atlasMap.isStyleLoaded())return;
   if(!atlasMap.getSource(ATLAS_SELECTION_SOURCE_ID))atlasMap.addSource(ATLAS_SELECTION_SOURCE_ID,{type:'geojson',data:emptyFeatureCollection()});
-  const points=atlasSettings.points;
-  if(!atlasMap.getLayer(ATLAS_SELECTION_LAYER_ID))addAtlasLayer({id:ATLAS_SELECTION_LAYER_ID,type:'circle',source:ATLAS_SELECTION_SOURCE_ID,paint:{'circle-radius':['case',['==',['get','role'],'selected'],points.selectedRadius,points.linkedRadius],'circle-color':['case',['==',['get','role'],'selected'],points.selectedColor,points.linkedColor],'circle-stroke-width':['case',['==',['get','role'],'selected'],4,2.5],'circle-stroke-color':['case',['==',['get','role'],'selected'],points.strokeColor,points.linkedStrokeColor],'circle-opacity':0.98}},undefined);
+  if(!atlasMap.getLayer(ATLAS_SELECTION_LAYER_ID))addAtlasLayer({id:ATLAS_SELECTION_LAYER_ID,type:'circle',source:ATLAS_SELECTION_SOURCE_ID,paint:{'circle-radius':['case',['==',['get','role'],'selected'],11,8],'circle-color':['case',['==',['get','role'],'selected'],'#ffffff','#c9a84c'],'circle-stroke-width':['case',['==',['get','role'],'selected'],4,2.5],'circle-stroke-color':['case',['==',['get','role'],'selected'],'#c9a84c','#f3ead5'],'circle-opacity':0.98}},undefined);
 }
 function clearAtlasLinks(reason='raison non précisée'){console.log('[Atlas links] Effacement des liens :',reason);atlasMap?.getSource(ATLAS_LINKS_SOURCE_ID)?.setData(emptyFeatureCollection());}
 function clearAtlasSelectionOverlay(){atlasMap?.getSource(ATLAS_SELECTION_SOURCE_ID)?.setData(emptyFeatureCollection());}
