@@ -25,7 +25,7 @@ function extractFunction(name) {
   throw new Error(`fin de ${name} introuvable`);
 }
 
-const names = ['hasValidCoordinatePair', 'getKnowledgeGraphRelations', 'getCardRelations', 'getLocalizedRelations', 'greatCircleCoordinates'];
+const names = ['hasValidCoordinatePair', 'normalizeCardId', 'getCardCoordinates', 'getKnowledgeGraphRelations', 'getCardRelations', 'getLocalizedRelations', 'greatCircleCoordinates', 'splitGreatCircleCoordinates'];
 const source = names.map(extractFunction).join('\n');
 const loadHelpers = new Function('db', `${source}; return {${names.join(',')}};`);
 
@@ -35,6 +35,7 @@ const db = {fiches: [
   {id: 'tokyo', links: ['paris'], location: {latitude: 35.6762, longitude: 139.6503}},
   {id: 'unknown-place', links: ['paris']},
   {id: 'invalid-place', links: ['paris'], location: {latitude: 95, longitude: 4}},
+  {id: 12, links: [' paris '], lat: '0', lng: '0'},
 ]};
 const helpers = loadHelpers(db);
 
@@ -43,13 +44,17 @@ assert.deepEqual(helpers.getKnowledgeGraphRelations().map(({sourceId, targetId})
   ['tokyo', 'paris'],
   ['unknown-place', 'paris'],
   ['invalid-place', 'paris'],
+  ['12', 'paris'],
 ]);
-assert.deepEqual(helpers.getCardRelations('paris').map(({linkedId}) => linkedId), ['nyc', 'tokyo', 'unknown-place', 'invalid-place']);
-assert.deepEqual(helpers.getLocalizedRelations('paris').map(({card}) => card.id), ['nyc', 'tokyo']);
+assert.deepEqual(helpers.getCardRelations('paris').map(({linkedId}) => linkedId), ['nyc', 'tokyo', 'unknown-place', 'invalid-place', '12']);
+assert.deepEqual(helpers.getLocalizedRelations('paris').map(({card}) => card.id), ['nyc', 'tokyo', 12]);
 
 assert.equal(helpers.hasValidCoordinatePair(-90, 180), true);
 assert.equal(helpers.hasValidCoordinatePair(91, 0), false);
 assert.equal(helpers.hasValidCoordinatePair('', 0), false);
+assert.equal(helpers.normalizeCardId(' 12 '), '12');
+assert.deepEqual(helpers.getCardCoordinates(db.fiches.at(-1)), {lat: 0, lon: 0});
+assert.deepEqual(helpers.getCardRelations(12).map(({linkedId}) => linkedId), ['paris']);
 
 const arc = helpers.greatCircleCoordinates([2.3522, 48.8566], [-74.006, 40.7128]);
 assert.ok(arc.length > 2, 'un arc doit contenir des points intermédiaires');
@@ -62,5 +67,9 @@ assert.ok(Math.abs(antimeridian.at(-1)[0] - antimeridian[0][0]) < 40, 'le trajet
 
 const antipodal = helpers.greatCircleCoordinates([0, 0], [180, 0]);
 assert.ok(antipodal.flat().every(Number.isFinite), 'le cas antipodal doit rester numérique');
+
+const mapLibreSegments = helpers.splitGreatCircleCoordinates([-61.7523, 12.0529], [125.5779, -8.5556]);
+assert.equal(mapLibreSegments.length, 2, 'le trajet Grenade–Timor doit être découpé à l’antiméridien');
+assert.ok(mapLibreSegments.flat().every(([longitude, latitude]) => longitude >= -180 && longitude <= 180 && latitude >= -90 && latitude <= 90), 'toutes les coordonnées envoyées à MapLibre doivent être valides');
 
 console.log('Atlas relations: tests réussis');
