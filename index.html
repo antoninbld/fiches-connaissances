@@ -320,6 +320,7 @@
   .atlas-location{color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
   .atlas-category{color:var(--text-muted);font-size:12px;margin-bottom:14px}
   .atlas-summary{color:var(--text);font-size:13px;line-height:1.6;margin-bottom:20px}
+  .atlas-relations-note{color:var(--text-muted);font-size:12px;line-height:1.5;margin:-8px 0 18px;padding:9px 11px;border-left:2px solid var(--gold-dim);background:rgba(201,168,76,.06)}
   .maplibregl-ctrl-group{background:var(--surface2)}
   @media(max-width:850px){.atlas-shell{height:calc(100vh - 150px);min-height:480px}.atlas-panel{position:absolute;z-index:4;right:0;top:0;bottom:0;width:min(330px,88%);box-shadow:-12px 0 30px rgba(0,0,0,.45)}#main{padding-left:14px;padding-right:14px}}
 
@@ -1254,6 +1255,8 @@ function renderAtlas(){
 
 /* ── §7a · Atlas MapLibre ──────────────────────────────────────── */
 const ATLAS_SOURCE='knowledge-cards';
+const ATLAS_LINKS_SOURCE_ID='atlas-links',ATLAS_LINKS_LAYER_ID='atlas-links-line';
+const ATLAS_SELECTION_SOURCE_ID='atlas-selection',ATLAS_SELECTION_LAYER_ID='atlas-selection-points';
 const GLOBE_CENTER=[0,20],GLOBE_ZOOM=2.65,GLOBE_PITCH=25;
 // A deployment can expose its existing MapTiler key once as window.MAPTILER_KEY.
 // Without one, OpenFreeMap provides a keyless streets-style geographic base map.
@@ -1288,9 +1291,59 @@ function recenterAtlasGlobe({animate=true}={}){
 }
 
 function hasValidCoordinatePair(latitude,longitude){
+  if(latitude===null||latitude===undefined||longitude===null||longitude===undefined||String(latitude).trim()===''||String(longitude).trim()==='')return false;
   const lat=typeof latitude==='number'?latitude:Number(String(latitude??'').trim().replace(',','.'));
   const lon=typeof longitude==='number'?longitude:Number(String(longitude??'').trim().replace(',','.'));
   return Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180;
+}
+function emptyFeatureCollection(){return{type:'FeatureCollection',features:[]};}
+
+/* Source métier commune à Cortex et Atlas : une relation est une arête non
+   orientée unique dès qu'au moins une fiche référence l'autre. */
+function getKnowledgeGraphRelations(fiches=db.fiches){
+  const cards=fiches||[],ids=new Set(cards.map(card=>String(card.id))),relations=new Map();
+  cards.forEach(card=>{
+    const sourceId=String(card.id);
+    (Array.isArray(card.links)?card.links:[]).forEach(rawTargetId=>{
+      const targetId=String(rawTargetId);
+      if(sourceId===targetId||!ids.has(targetId))return;
+      const key=[sourceId,targetId].sort().join('|');
+      if(!relations.has(key))relations.set(key,{sourceId,targetId,type:''});
+    });
+  });
+  return[...relations.values()];
+}
+function getCardRelations(cardId,fiches=db.fiches){
+  const id=String(cardId);
+  return getKnowledgeGraphRelations(fiches).filter(relation=>relation.sourceId===id||relation.targetId===id).map(relation=>({...relation,linkedId:relation.sourceId===id?relation.targetId:relation.sourceId}));
+}
+function getLocalizedRelations(cardId,fiches=db.fiches){
+  const id=String(cardId),cardsById=new Map((fiches||[]).map(card=>[String(card.id),card])),seen=new Set();
+  return getCardRelations(id,fiches).map(relation=>({relation,card:cardsById.get(relation.linkedId)})).filter(({relation,card})=>relation.linkedId!==id&&card&&hasValidCoordinatePair(card.location?.latitude,card.location?.longitude)&&!seen.has(relation.linkedId)&&seen.add(relation.linkedId));
+}
+
+function greatCircleCoordinates(start,end){
+  const toRadians=value=>value*Math.PI/180,toDegrees=value=>value*180/Math.PI;
+  const vector=([lon,lat])=>{const phi=toRadians(lat),lambda=toRadians(lon),cosPhi=Math.cos(phi);return[cosPhi*Math.cos(lambda),cosPhi*Math.sin(lambda),Math.sin(phi)];};
+  const a=vector(start),b=vector(end),dot=Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2])),angle=Math.acos(dot);
+  if(angle<1e-10)return[start.slice(),end.slice()];
+  const segments=Math.max(8,Math.min(96,Math.ceil(toDegrees(angle)/4))),sinAngle=Math.sin(angle),coordinates=[];
+  let fallback=[-a[1],a[0],0],fallbackLength=Math.hypot(...fallback);
+  if(fallbackLength<1e-8){fallback=[0,-a[2],a[1]];fallbackLength=Math.hypot(...fallback);}
+  fallback=fallback.map(value=>value/fallbackLength);
+  for(let index=0;index<=segments;index++){
+    const fraction=index/segments;let point;
+    if(Math.abs(sinAngle)<1e-8){const theta=Math.PI*fraction;point=a.map((value,i)=>value*Math.cos(theta)+fallback[i]*Math.sin(theta));}
+    else{const left=Math.sin((1-fraction)*angle)/sinAngle,right=Math.sin(fraction*angle)/sinAngle;point=a.map((value,i)=>value*left+b[i]*right);}
+    const length=Math.hypot(...point);point=point.map(value=>value/length);
+    let longitude=toDegrees(Math.atan2(point[1],point[0])),latitude=toDegrees(Math.asin(Math.max(-1,Math.min(1,point[2]))));
+    if(coordinates.length){const previous=coordinates[coordinates.length-1][0];while(longitude-previous>180)longitude-=360;while(longitude-previous<-180)longitude+=360;}
+    coordinates.push([longitude,latitude]);
+  }
+  coordinates[0]=start.slice();
+  const previous=coordinates[coordinates.length-2][0];let endLongitude=end[0];while(endLongitude-previous>180)endLongitude-=360;while(endLongitude-previous<-180)endLongitude+=360;
+  coordinates[coordinates.length-1]=[endLongitude,end[1]];
+  return coordinates;
 }
 function parseCoordinate(raw,min,max,label){
   const value=String(raw??'').trim();
@@ -1343,8 +1396,8 @@ function initAtlasMap(){
     atlasMap=new maplibregl.Map({container:'atlas-map',style:getAtlasStyleURL(),center:GLOBE_CENTER,zoom:GLOBE_ZOOM,pitch:GLOBE_PITCH,bearing:0,projection:'globe',renderWorldCopies:false,antialias:true,attributionControl:true});
     setupAtlasGlobe();
     atlasMap.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
-    atlasMap.on('load',async()=>{atlasMapLoaded=true;setupAtlasGlobe();ensureNoTerrain();await ensureAtlasSourceAndLayers();bindAtlasInteractionsOnce();refreshAtlasData();atlasMap.resize();if(!atlasHasBeenDisplayed){recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}});
-    atlasMap.on('style.load',async()=>{setupAtlasGlobe();ensureNoTerrain();await ensureAtlasSourceAndLayers();bindAtlasInteractionsOnce();refreshAtlasData();});
+    atlasMap.on('load',async()=>{atlasMapLoaded=true;setupAtlasGlobe();ensureNoTerrain();await ensureAtlasSourceAndLayers();ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();bindAtlasInteractionsOnce();refreshAtlasData();atlasMap.resize();if(!atlasHasBeenDisplayed){recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}});
+    atlasMap.on('style.load',async()=>{setupAtlasGlobe();ensureNoTerrain();await ensureAtlasSourceAndLayers();ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();refreshAtlasData();if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);});
     atlasMap.on('error',event=>{if(!atlasMapLoaded){status.textContent='Impossible d’initialiser le fond de carte. Le reste de l’application demeure disponible.';status.classList.add('error');}console.warn('[Atlas] Erreur MapLibre :',event.error||event);});
   }catch(error){status.textContent='Impossible d’initialiser la carte. Le reste de l’application demeure disponible.';status.classList.add('error');console.warn('[Atlas] Initialisation impossible :',error);}
 }
@@ -1355,18 +1408,48 @@ async function ensureAtlasSourceAndLayers(){
   if(!atlasMap.getLayer('atlas-cluster-count'))atlasMap.addLayer({id:'atlas-cluster-count',type:'symbol',source:ATLAS_SOURCE,filter:['has','point_count'],layout:{'text-field':['get','point_count_abbreviated'],'text-size':12},paint:{'text-color':'#0d0d14'}});
   if(!atlasMap.getLayer('atlas-points'))atlasMap.addLayer({id:'atlas-points',type:'circle',source:ATLAS_SOURCE,filter:['!',['has','point_count']],paint:{'circle-radius':['case',['boolean',['feature-state','selected'],false],11,7],'circle-color':['case',['boolean',['feature-state','selected'],false],'#ffffff','#c9a84c'],'circle-stroke-width':['case',['boolean',['feature-state','selected'],false],4,2],'circle-stroke-color':['case',['boolean',['feature-state','selected'],false],'#c9a84c','#171722']}});
 }
+function addAtlasLayer(layer,beforeId){
+  if(beforeId&&atlasMap.getLayer(beforeId))atlasMap.addLayer(layer,beforeId);else atlasMap.addLayer(layer);
+}
+function ensureAtlasLinksSourceAndLayer(){
+  if(!atlasMap||!atlasMap.isStyleLoaded())return;
+  if(!atlasMap.getSource(ATLAS_LINKS_SOURCE_ID))atlasMap.addSource(ATLAS_LINKS_SOURCE_ID,{type:'geojson',data:emptyFeatureCollection()});
+  if(!atlasMap.getLayer(ATLAS_LINKS_LAYER_ID))addAtlasLayer({id:ATLAS_LINKS_LAYER_ID,type:'line',source:ATLAS_LINKS_SOURCE_ID,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#c9a84c','line-width':2,'line-opacity':0.78}},'atlas-clusters');
+}
+function ensureAtlasSelectionSourceAndLayer(){
+  if(!atlasMap||!atlasMap.isStyleLoaded())return;
+  if(!atlasMap.getSource(ATLAS_SELECTION_SOURCE_ID))atlasMap.addSource(ATLAS_SELECTION_SOURCE_ID,{type:'geojson',data:emptyFeatureCollection()});
+  if(!atlasMap.getLayer(ATLAS_SELECTION_LAYER_ID))addAtlasLayer({id:ATLAS_SELECTION_LAYER_ID,type:'circle',source:ATLAS_SELECTION_SOURCE_ID,paint:{'circle-radius':['case',['==',['get','role'],'selected'],11,8],'circle-color':['case',['==',['get','role'],'selected'],'#ffffff','#c9a84c'],'circle-stroke-width':['case',['==',['get','role'],'selected'],4,2.5],'circle-stroke-color':['case',['==',['get','role'],'selected'],'#c9a84c','#f3ead5'],'circle-opacity':0.98}},undefined);
+}
+function clearAtlasLinks(){atlasMap?.getSource(ATLAS_LINKS_SOURCE_ID)?.setData(emptyFeatureCollection());}
+function clearAtlasSelectionOverlay(){atlasMap?.getSource(ATLAS_SELECTION_SOURCE_ID)?.setData(emptyFeatureCollection());}
+function drawAtlasLinksFrom(cardId){
+  const id=String(cardId),selectedCard=db.fiches.find(card=>String(card.id)===id);
+  if(!selectedCard||!hasValidCoordinatePair(selectedCard.location?.latitude,selectedCard.location?.longitude)){clearAtlasSelection();return;}
+  const localized=getLocalizedRelations(id),start=[Number(selectedCard.location.longitude),Number(selectedCard.location.latitude)];
+  const lines=localized.flatMap(({relation,card})=>{
+    const end=[Number(card.location.longitude),Number(card.location.latitude)];
+    if(start[0]===end[0]&&start[1]===end[1])return[];
+    return[{type:'Feature',geometry:{type:'LineString',coordinates:greatCircleCoordinates(start,end)},properties:{sourceId:id,targetId:String(card.id),relationType:relation.type||''}}];
+  });
+  const overlay=[selectedCard,...localized.map(item=>item.card)].map(card=>({type:'Feature',geometry:{type:'Point',coordinates:[Number(card.location.longitude),Number(card.location.latitude)]},properties:{id:String(card.id),title:String(card.title||''),role:String(card.id)===id?'selected':'linked'}}));
+  atlasMap?.getSource(ATLAS_LINKS_SOURCE_ID)?.setData({type:'FeatureCollection',features:lines});
+  atlasMap?.getSource(ATLAS_SELECTION_SOURCE_ID)?.setData({type:'FeatureCollection',features:overlay});
+  return{allRelations:getCardRelations(id),localizedRelations:localized};
+}
 function bindAtlasInteractionsOnce(){
   if(atlasInteractionsBound||!atlasMap)return;atlasInteractionsBound=true;
   atlasMap.on('click','atlas-clusters',event=>{const feature=event.features?.[0];if(!feature)return;const source=atlasMap.getSource(ATLAS_SOURCE);source.getClusterExpansionZoom(feature.properties.cluster_id).then(zoom=>atlasMap.easeTo({center:feature.geometry.coordinates,zoom})).catch(error=>console.warn('[Atlas] Cluster :',error));});
   atlasMap.on('click','atlas-points',event=>{const feature=event.features?.[0];if(!feature)return;selectAtlasFiche(String(feature.properties.id),feature.geometry.coordinates);});
-  ['atlas-clusters','atlas-points'].forEach(layer=>{atlasMap.on('mouseenter',layer,()=>atlasMap.getCanvas().style.cursor='pointer');atlasMap.on('mouseleave',layer,()=>atlasMap.getCanvas().style.cursor='');});
+  atlasMap.on('click',ATLAS_SELECTION_LAYER_ID,event=>{const feature=event.features?.[0];if(!feature)return;selectAtlasFiche(String(feature.properties.id),feature.geometry.coordinates);});
+  ['atlas-clusters','atlas-points',ATLAS_SELECTION_LAYER_ID].forEach(layer=>{atlasMap.on('mouseenter',layer,()=>atlasMap.getCanvas().style.cursor='pointer');atlasMap.on('mouseleave',layer,()=>atlasMap.getCanvas().style.cursor='');});
 }
 function refreshAtlasData(){
   const geojson=buildAtlasGeoJSON();
   const count=atlasRoot?.querySelector('#atlas-count');if(count)count.textContent=`${geojson.features.length} fiche${geojson.features.length!==1?'s':''} localisée${geojson.features.length!==1?'s':''}`;
   const status=atlasRoot?.querySelector('#atlas-status');if(status&&!status.classList.contains('error')){status.hidden=geojson.features.length>0;status.textContent=geojson.features.length?'':'Aucune fiche localisée pour le moment. Ajoutez des coordonnées depuis “Modifier la fiche” pour l’afficher dans l’Atlas.';}
   const source=atlasMap?.getSource(ATLAS_SOURCE);if(source)source.setData(geojson);
-  if(atlasSelectedId&&!db.fiches.some(f=>f.id===atlasSelectedId&&f.location)){closeAtlasPanel();}
+  if(atlasSelectedId){const selected=db.fiches.find(f=>String(f.id)===String(atlasSelectedId));if(!selected||!hasValidCoordinatePair(selected.location?.latitude,selected.location?.longitude))clearAtlasSelection();else drawAtlasLinksFrom(atlasSelectedId);}
 }
 function ficheSummary(fiche){
   if(!fiche||fiche.html==='__EXTERNAL__')return 'Résumé non disponible dans les métadonnées de cette fiche.';
@@ -1376,19 +1459,22 @@ function selectAtlasFiche(id,coordinates){
   const fiche=db.fiches.find(f=>String(f.id)===id);if(!fiche)return;
   if(atlasSelectedId&&atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id:atlasSelectedId},{selected:false});
   atlasSelectedId=id;if(atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id},{selected:true});
+  const relationState=drawAtlasLinksFrom(id);
   atlasMap?.easeTo({center:coordinates,zoom:Math.max(atlasMap.getZoom(),5),duration:650});
   const panel=document.getElementById('atlas-panel');if(!panel)return;
-  panel.hidden=false;panel.innerHTML=`<div class="atlas-panel-head"><h3>${escH(fiche.title)}</h3><button class="atlas-panel-close" type="button" onclick="closeAtlasPanel()" aria-label="Fermer le panneau">✕</button></div><div class="atlas-location">${escH(fiche.location?.name||'Lieu non nommé')}</div><div class="atlas-category">${buildPath(fiche)||'Sans catégorie'}</div><p class="atlas-summary">${escH(ficheSummary(fiche))}</p><button class="btn btn-gold btn-sm" type="button" onclick="viewFiche('${fiche.id}')">Ouvrir la fiche complète</button>`;
+  const relationNote=!relationState?.allRelations.length?'Aucun lien associé à cette fiche.':!relationState.localizedRelations.length?'Cette fiche possède des liens, mais aucune des fiches liées n’est encore localisée dans l’Atlas.':'';
+  panel.hidden=false;panel.innerHTML=`<div class="atlas-panel-head"><h3>${escH(fiche.title)}</h3><button class="atlas-panel-close" type="button" onclick="closeAtlasPanel()" aria-label="Fermer le panneau">✕</button></div><div class="atlas-location">${escH(fiche.location?.name||'Lieu non nommé')}</div><div class="atlas-category">${buildPath(fiche)||'Sans catégorie'}</div><p class="atlas-summary">${escH(ficheSummary(fiche))}</p>${relationNote?`<p class="atlas-relations-note">${relationNote}</p>`:''}<button class="btn btn-gold btn-sm" type="button" onclick="viewFiche('${fiche.id}')">Ouvrir la fiche complète</button>`;
   requestAnimationFrame(()=>atlasMap?.resize());
 }
-function closeAtlasPanel(){
+function clearAtlasSelection(){
   if(atlasSelectedId&&atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id:atlasSelectedId},{selected:false});
-  atlasSelectedId=null;const panel=atlasRoot?.querySelector('#atlas-panel');if(panel)panel.hidden=true;requestAnimationFrame(()=>atlasMap?.resize());
+  atlasSelectedId=null;clearAtlasLinks();clearAtlasSelectionOverlay();const panel=atlasRoot?.querySelector('#atlas-panel');if(panel)panel.hidden=true;
 }
+function closeAtlasPanel(){clearAtlasSelection();requestAnimationFrame(()=>atlasMap?.resize());}
 
 function renderCortex(){
   cortexSelectedId=null;
-  const nbLinks=db.fiches.reduce((n,f)=>n+(f.links||[]).length,0);
+  const nbLinks=getKnowledgeGraphRelations().length;
   document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="section-count">${db.fiches.length} fiche${db.fiches.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div></div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)">
     <label for="cortex-size-strength" class="voir-aussi-label" style="margin:0">Taille selon liens</label>
@@ -1544,7 +1630,8 @@ function clearCortexSelection(){
 function showCortexSelection(fiche){
   const info=document.getElementById('cortex-info');
   if(!info||!fiche)return;
-  const related=(fiche.links||[]).map(l=>db.fiches.find(x=>x.id===l)).filter(Boolean);
+  const cardsById=new Map(db.fiches.map(card=>[String(card.id),card]));
+  const related=getCardRelations(fiche.id).map(relation=>cardsById.get(relation.linkedId)).filter(Boolean);
   info.innerHTML=`<div class="cortex-info-head"><div class="voir-aussi-label">Fiche sélectionnée</div><button class="cortex-clear-btn" onclick="clearCortexSelection()" title="Désélectionner" aria-label="Désélectionner">×</button></div><h3>${escH(fiche.title)}</h3><div class="view-subtitle">${buildPath(fiche)||'Sans catégorie'}</div><div class="view-subtitle">${related.length} lien${related.length!==1?'s':''}</div><div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-outline btn-sm" onclick="viewFiche('${fiche.id}')">👁 Voir</button><button class="btn btn-gold btn-sm" onclick="editFiche('${fiche.id}')">✏ Modifier</button></div>`;
   if(related.length){
     const label=document.createElement('div');label.className='voir-aussi-label';label.style.marginTop='6px';label.textContent='Reliée à';
@@ -1570,10 +1657,7 @@ function drawCortexGraph(){
     const subBorderColor=sub?getSubBorderColor(cat,sub,subIndex):adjustHexColor(cat?.color||'#888',42);
     return{id:f.id,label:f.title,color:cat?.color||'#888',subBorderColor,ref:f};
   });
-  const nodeIds=new Set(nodes.map(n=>n.id));
-  const edgeMap=new Map();
-  db.fiches.forEach(f=>{(f.links||[]).forEach(to=>{if(!nodeIds.has(to)||to===f.id)return;const k=[f.id,to].sort().join('|');if(!edgeMap.has(k))edgeMap.set(k,{source:f.id,target:to});});});
-  const edges=[...edgeMap.values()];
+  const edges=getKnowledgeGraphRelations().map(relation=>({source:relation.sourceId,target:relation.targetId}));
   const nodeDeg={};
   nodes.forEach(n=>nodeDeg[n.id]=0);
   edges.forEach(e=>{nodeDeg[e.source]=(nodeDeg[e.source]||0)+1;nodeDeg[e.target]=(nodeDeg[e.target]||0)+1;});
