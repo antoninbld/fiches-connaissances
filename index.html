@@ -289,6 +289,7 @@
   .form-select{appearance:none;cursor:pointer}
   .form-select option{background:var(--surface)}
   .form-textarea{font-family:'JetBrains Mono',monospace;font-size:12px;min-height:180px;resize:vertical;line-height:1.5}
+  .source-textarea{min-height:240px;white-space:pre-wrap}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .form-hint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:5px;letter-spacing:.04em}
   .modal-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border)}
@@ -385,6 +386,10 @@
 
   /* ── VOIR AUSSI ── */
   #viewer-links{padding:14px 22px 18px;border-top:1px solid var(--border);background:var(--surface);display:none;flex-shrink:0;max-height:160px;overflow-y:auto}
+  .viewer-source-actions{display:flex;justify-content:flex-end;margin-top:12px}
+  .viewer-source-actions:first-child{margin-top:0}
+  #source-modal .modal{max-width:780px;display:flex;flex-direction:column;overflow:hidden}
+  #source-content{margin:16px 0 0;padding:18px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Source Serif 4',serif;font-size:14px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;overflow-y:auto;max-height:min(68vh,720px)}
   .voir-aussi-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px}
   .voir-aussi-chips{display:flex;flex-wrap:wrap;gap:8px}
   .voir-aussi-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .18s;max-width:280px}
@@ -645,6 +650,11 @@
       <div class="link-picker-wrap"><input class="link-picker-search" id="f-lp-search" placeholder="Rechercher une fiche…"><div class="link-picker-list" id="f-lp-list"></div></div>
       <div class="link-tags" id="f-lp-tags"></div>
     </div>
+    <div class="form-group">
+      <label class="form-label" for="f-source">Sources <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel)</span></label>
+      <textarea class="form-textarea source-textarea" id="f-source" placeholder="Colle ici le transcript, l’article, les notes ou tout autre document source…"></textarea>
+      <div class="form-hint">Le texte source reste séparé du contenu visible de la fiche.</div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('add-modal')">Annuler</button>
       <button class="btn btn-gold btn-sm" onclick="saveFiche()">Enregistrer</button>
@@ -717,6 +727,11 @@
       <div class="link-picker-wrap"><input class="link-picker-search" id="ef-lp-search" placeholder="Rechercher une fiche…"><div class="link-picker-list" id="ef-lp-list"></div></div>
       <div class="link-tags" id="ef-lp-tags"></div>
     </div>
+    <div class="form-group">
+      <label class="form-label" for="ef-source">Sources <span style="color:var(--text-dim);font-size:11px;font-weight:300">(optionnel)</span></label>
+      <textarea class="form-textarea source-textarea" id="ef-source" placeholder="Colle ici le transcript, l’article, les notes ou tout autre document source…"></textarea>
+      <div class="form-hint">Le texte source reste séparé du contenu visible de la fiche.</div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('edit-modal')">Annuler</button>
       <button class="btn btn-gold btn-sm" onclick="updateFiche()">Mettre à jour</button>
@@ -743,6 +758,15 @@
       <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
     </div>
     <div id="viewer-links"></div>
+  </div>
+</div>
+
+<!-- MODAL Source -->
+<div class="modal-overlay" id="source-modal" role="dialog" aria-modal="true" aria-labelledby="source-modal-title">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('source-modal')" aria-label="Fermer la source">✕</button>
+    <div class="modal-title" id="source-modal-title">Source de la fiche</div>
+    <div id="source-content" tabindex="0"></div>
   </div>
 </div>
 
@@ -776,7 +800,7 @@ const PALETTE=['#c9a84c','#5a8ae0','#5aad7a','#9a6edf','#e06060','#e07a40','#4ab
 /*
   DATA MODEL v2
   categories: [{id,name,color, subcats:[{id,name, subcats:[{id,name}]}]}]
-  fiches:     [{id,title,catId,subcatId,themeId,html,date,dateEvenement}]
+  fiches:     [{id,title,catId,subcatId,themeId,html,source,date,dateEvenement}]
 */
 let db={categories:[],fiches:[]};
 const HEAVY_THRESHOLD=150_000; // chars (~150KB) — au-delà, stockage GitHub séparé
@@ -932,6 +956,7 @@ function migrate(raw){
     if(!f.subcatId)f.subcatId='';
     if(!f.themeId)f.themeId='';
     if(typeof f.dateEvenement!=='string')f.dateEvenement='';
+    if(typeof f.source!=='string')f.source='';
   });
   return raw;
 }
@@ -1895,7 +1920,7 @@ function renderSearch(){
 ════════════════════════════════════════════════════════════════════ */
 function openAddFiche(preCatId='',preSubId='',preThId=''){
   fillCatSel('f-cat');
-  ['f-title','f-html','f-new-subcat','f-new-theme','f-date-evenement'].forEach(i=>document.getElementById(i).value='');
+  ['f-title','f-html','f-source','f-new-subcat','f-new-theme','f-date-evenement'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('f-date-kind').value='';
   document.getElementById('f-date-error').style.display='none';
   document.getElementById('f-date-error').textContent='';
@@ -1977,6 +2002,7 @@ function resolveLoc(p){
 function saveFiche(){
   const title=document.getElementById('f-title').value.trim();
   const html=document.getElementById('f-html').value.trim();
+  const source=document.getElementById('f-source').value.trim();
   if(!title){toast('Titre requis.','error');return;}
   const loc=resolveLoc('f');if(!loc){toast('Catégorie requise.','error');return;}
   if(!html){toast('Contenu HTML requis.','error');return;}
@@ -1984,7 +2010,7 @@ function saveFiche(){
   if(!dateEventResult.ok)return;
   const id=uid();
   const isHeavy=html.length>HEAVY_THRESHOLD;
-  const fiche={id,title,...loc,html:isHeavy?'__EXTERNAL__':html,date:Date.now(),dateEvenement:dateEventResult.value,links:lpGet('f'),externalSha:null};
+  const fiche={id,title,...loc,html:isHeavy?'__EXTERNAL__':html,source,date:Date.now(),dateEvenement:dateEventResult.value,links:lpGet('f'),externalSha:null};
   db.fiches.push(fiche);
   if(isHeavy){
     _htmlCache[id]=html;
@@ -2051,6 +2077,15 @@ function editCurrentViewedFiche(){
   editFiche(viewerCurrentFicheId);
 }
 
+function openFicheSource(id){
+  const fiche=db.fiches.find(f=>f.id===id);
+  if(!fiche||(fiche.source||'').trim()==='')return;
+  // textContent garantit que la source reste du texte, même si elle contient du HTML.
+  document.getElementById('source-content').textContent=fiche.source;
+  openModal('source-modal');
+  requestAnimationFrame(()=>document.getElementById('source-content').focus());
+}
+
 function _openViewer(f,html){
   document.getElementById('viewer-title').textContent=f.title;
   vZoom=1;document.getElementById('zoom-val').textContent='100%';
@@ -2091,8 +2126,15 @@ function _openViewer(f,html){
       chips.appendChild(chip);
     });
     linksEl.appendChild(label);linksEl.appendChild(chips);
-    linksEl.style.display='block';
   }
+  if((f.source||'').trim()){
+    const actions=document.createElement('div');actions.className='viewer-source-actions';
+    const sourceButton=document.createElement('button');sourceButton.className='btn btn-outline btn-sm';
+    sourceButton.type='button';sourceButton.textContent='Consulter la source';
+    sourceButton.addEventListener('click',()=>openFicheSource(f.id));
+    actions.appendChild(sourceButton);linksEl.appendChild(actions);
+  }
+  if(linksEl.childElementCount)linksEl.style.display='block';
   if(!document.getElementById('viewer-modal').classList.contains('open'))openModal('viewer-modal');
   requestAnimationFrame(()=>vZoomSet(1));
 }
@@ -2103,6 +2145,7 @@ function editFiche(id){
     document.getElementById('ef-id').value=f.id;
     document.getElementById('ef-title').value=f.title;
     document.getElementById('ef-html').value=htmlVal;
+    document.getElementById('ef-source').value=f.source||'';
     document.getElementById('ef-date-evenement').value=f.dateEvenement||'';
     document.getElementById('ef-date-kind').value=guessDateKind(f.dateEvenement||'');
     document.getElementById('ef-date-error').style.display='none';
@@ -2140,6 +2183,7 @@ function editFiche(id){
 function updateFiche(){
   const id=document.getElementById('ef-id').value,f=db.fiches.find(x=>x.id===id);if(!f)return;
   const title=document.getElementById('ef-title').value.trim(),html=document.getElementById('ef-html').value.trim();
+  const source=document.getElementById('ef-source').value.trim();
   if(!title||!html){toast('Champs requis manquants.','error');return;}
   const loc=resolveLoc('ef');if(!loc){toast('Catégorie requise.','error');return;}
   const dateEventResult=validateDateField('ef',true);
@@ -2148,7 +2192,7 @@ function updateFiche(){
   const wasHeavy=f.html==='__EXTERNAL__';
   if(isHeavy){
     _htmlCache[id]=html;
-    Object.assign(f,{title,...loc,html:'__EXTERNAL__',dateEvenement:dateEventResult.value,links:lpGet('ef')});
+    Object.assign(f,{title,...loc,html:'__EXTERNAL__',source,dateEvenement:dateEventResult.value,links:lpGet('ef')});
     closeModal('edit-modal');toast('Fiche mise à jour — sync en cours, patiente quelques secondes…','success');render();
     if(viewerCurrentFicheId===id&&document.getElementById('viewer-modal').classList.contains('open'))viewFiche(id);
     if(getToken())ghSaveFile(`fiches/${id}.html`,html,f.externalSha||null)
@@ -2158,7 +2202,7 @@ function updateFiche(){
   }else{
     if(wasHeavy&&getToken()&&f.externalSha)ghDeleteFile(`fiches/${id}.html`,f.externalSha).catch(()=>{});
     delete _htmlCache[id];
-    Object.assign(f,{title,...loc,html,dateEvenement:dateEventResult.value,links:lpGet('ef'),externalSha:null});
+    Object.assign(f,{title,...loc,html,source,dateEvenement:dateEventResult.value,links:lpGet('ef'),externalSha:null});
     scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
     if(viewerCurrentFicheId===id&&document.getElementById('viewer-modal').classList.contains('open'))viewFiche(id);
   }
@@ -3146,8 +3190,16 @@ function closeModal(id){
       document.getElementById('viewer-frame').removeAttribute('src');
     }
   }
+  if(id==='source-modal')document.getElementById('source-content').textContent='';
 }
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeModal(o.id);}));
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  const openModals=[...document.querySelectorAll('.modal-overlay.open')];
+  if(!openModals.length)return;
+  const topModal=openModals.reduce((top,modal)=>(parseInt(getComputedStyle(modal).zIndex,10)||2000)>=(parseInt(getComputedStyle(top).zIndex,10)||2000)?modal:top);
+  closeModal(topModal.id);
+});
 document.getElementById('edit-cat-summary')?.addEventListener('input',updateCatSummaryHint);
 document.getElementById('edit-subcat-summary')?.addEventListener('input',updateSubcatSummaryHint);
 
