@@ -654,7 +654,12 @@
       "dateEvenement": "041941-051963",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 40.652446,
+        "longitude": 22.918443,
+        "name": "Thessalonique"
+      }
     },
     {
       "id": "mryxa3ho753l",
