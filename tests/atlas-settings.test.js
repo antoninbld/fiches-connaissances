@@ -36,7 +36,21 @@ assert.deepEqual(notifications.at(-1), {message: 'Paramètres de l’Atlas enreg
 
 const updateSource = extractFunction('updateAtlasSettings');
 assert.equal(updateSource.includes('localStorage.setItem'), false, 'une modification ne doit être enregistrée qu’après application');
+const applySource = extractFunction('applyAndSaveAtlasSettings');
+const appliedActions = [];
+const applyAndSaveAtlasSettings = new Function(
+  'applyAtlasSettingsToMap',
+  'recenterAtlasGlobe',
+  'saveAtlasSettings',
+  `${applySource}; return applyAndSaveAtlasSettings;`,
+)(
+  () => appliedActions.push('map'),
+  () => appliedActions.push('view'),
+  () => { appliedActions.push('save'); return true; },
+);
+assert.equal(applyAndSaveAtlasSettings(), true);
+assert.deepEqual(appliedActions, ['map', 'view', 'save']);
 assert.match(html, /data-atlas-apply>Appliquer les paramètres<\/button>/);
-assert.match(html, /querySelector\('\[data-atlas-apply\]'\)\.onclick=saveAtlasSettings/);
+assert.match(html, /querySelector\('\[data-atlas-apply\]'\)\.onclick=applyAndSaveAtlasSettings/);
 
 console.log('Atlas settings: tests réussis');
