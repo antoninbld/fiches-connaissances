@@ -1297,15 +1297,24 @@ function hasValidCoordinatePair(latitude,longitude){
   return Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180;
 }
 function emptyFeatureCollection(){return{type:'FeatureCollection',features:[]};}
+function normalizeCardId(id){return String(id??'').trim();}
+function getCardCoordinates(card){
+  const latitude=card?.location?.latitude??card?.latitude??card?.lat;
+  const longitude=card?.location?.longitude??card?.longitude??card?.lon??card?.lng;
+  if(latitude===null||latitude===undefined||longitude===null||longitude===undefined||String(latitude).trim()===''||String(longitude).trim()==='')return null;
+  const lat=Number(typeof latitude==='string'?latitude.trim().replace(',','.'):latitude);
+  const lon=Number(typeof longitude==='string'?longitude.trim().replace(',','.'):longitude);
+  return Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180?{lat,lon}:null;
+}
 
 /* Source métier commune à Cortex et Atlas : une relation est une arête non
    orientée unique dès qu'au moins une fiche référence l'autre. */
 function getKnowledgeGraphRelations(fiches=db.fiches){
-  const cards=fiches||[],ids=new Set(cards.map(card=>String(card.id))),relations=new Map();
+  const cards=fiches||[],ids=new Set(cards.map(card=>normalizeCardId(card.id)).filter(Boolean)),relations=new Map();
   cards.forEach(card=>{
-    const sourceId=String(card.id);
+    const sourceId=normalizeCardId(card.id);
     (Array.isArray(card.links)?card.links:[]).forEach(rawTargetId=>{
-      const targetId=String(rawTargetId);
+      const targetId=normalizeCardId(rawTargetId);
       if(sourceId===targetId||!ids.has(targetId))return;
       const key=[sourceId,targetId].sort().join('|');
       if(!relations.has(key))relations.set(key,{sourceId,targetId,type:''});
@@ -1314,12 +1323,12 @@ function getKnowledgeGraphRelations(fiches=db.fiches){
   return[...relations.values()];
 }
 function getCardRelations(cardId,fiches=db.fiches){
-  const id=String(cardId);
+  const id=normalizeCardId(cardId);
   return getKnowledgeGraphRelations(fiches).filter(relation=>relation.sourceId===id||relation.targetId===id).map(relation=>({...relation,linkedId:relation.sourceId===id?relation.targetId:relation.sourceId}));
 }
 function getLocalizedRelations(cardId,fiches=db.fiches){
-  const id=String(cardId),cardsById=new Map((fiches||[]).map(card=>[String(card.id),card])),seen=new Set();
-  return getCardRelations(id,fiches).map(relation=>({relation,card:cardsById.get(relation.linkedId)})).filter(({relation,card})=>relation.linkedId!==id&&card&&hasValidCoordinatePair(card.location?.latitude,card.location?.longitude)&&!seen.has(relation.linkedId)&&seen.add(relation.linkedId));
+  const id=normalizeCardId(cardId),cardsById=new Map((fiches||[]).map(card=>[normalizeCardId(card.id),card])),seen=new Set();
+  return getCardRelations(id,fiches).map(relation=>({relation,card:cardsById.get(normalizeCardId(relation.linkedId))})).filter(({relation,card})=>relation.linkedId!==id&&card&&getCardCoordinates(card)&&!seen.has(relation.linkedId)&&seen.add(relation.linkedId));
 }
 
 function greatCircleCoordinates(start,end){
@@ -1344,6 +1353,22 @@ function greatCircleCoordinates(start,end){
   const previous=coordinates[coordinates.length-2][0];let endLongitude=end[0];while(endLongitude-previous>180)endLongitude-=360;while(endLongitude-previous<-180)endLongitude+=360;
   coordinates[coordinates.length-1]=[endLongitude,end[1]];
   return coordinates;
+}
+/* MapLibre exige des longitudes GeoJSON dans [-180, 180]. L'arc est d'abord
+   déroulé pour choisir le chemin court, puis découpé proprement à l'antiméridien. */
+function splitGreatCircleCoordinates(start,end){
+  const unwrapped=greatCircleCoordinates(start,end),segments=[[]],wrap=longitude=>((longitude+180)%360+360)%360-180;
+  segments[0].push([wrap(unwrapped[0][0]),unwrapped[0][1]]);
+  for(let index=1;index<unwrapped.length;index++){
+    const previous=unwrapped[index-1],current=unwrapped[index],previousWorld=Math.floor((previous[0]+180)/360),currentWorld=Math.floor((current[0]+180)/360);
+    if(previousWorld!==currentWorld){
+      const boundary=current[0]>previous[0]?180+360*previousWorld:-180+360*previousWorld;
+      const ratio=(boundary-previous[0])/(current[0]-previous[0]),latitude=previous[1]+ratio*(current[1]-previous[1]),side=boundary>previous[0]?180:-180;
+      segments.at(-1).push([side,latitude]);segments.push([[-side,latitude]]);
+    }
+    segments.at(-1).push([wrap(current[0]),current[1]]);
+  }
+  return segments.filter(segment=>segment.length>=2);
 }
 function parseCoordinate(raw,min,max,label){
   const value=String(raw??'').trim();
@@ -1381,10 +1406,10 @@ function fillLocationFields(prefix,location){
 function buildAtlasGeoJSON(fiches=db.fiches){
   const features=[];
   (fiches||[]).forEach(f=>{
-    const location=f.location;
-    if(!location)return;
-    if(!hasValidCoordinatePair(location.latitude,location.longitude)){console.warn(`[Atlas] Coordonnées corrompues ignorées pour la fiche ${f.id||'(sans identifiant)'}.`);return;}
-    features.push({type:'Feature',geometry:{type:'Point',coordinates:[Number(location.longitude),Number(location.latitude)]},properties:{id:String(f.id),title:String(f.title||''),locationName:String(location.name||''),category:String(getCat(f.catId)?.name||'')}});
+    const location=f.location,coordinates=getCardCoordinates(f);
+    if(!location&&!coordinates)return;
+    if(!coordinates){console.warn(`[Atlas] Coordonnées corrompues ignorées pour la fiche ${f.id||'(sans identifiant)'}.`);return;}
+    features.push({type:'Feature',geometry:{type:'Point',coordinates:[coordinates.lon,coordinates.lat]},properties:{id:normalizeCardId(f.id),title:String(f.title||''),locationName:String(location?.name||''),category:String(getCat(f.catId)?.name||'')}});
   });
   return{type:'FeatureCollection',features};
 }
@@ -1412,30 +1437,51 @@ function addAtlasLayer(layer,beforeId){
   if(beforeId&&atlasMap.getLayer(beforeId))atlasMap.addLayer(layer,beforeId);else atlasMap.addLayer(layer);
 }
 function ensureAtlasLinksSourceAndLayer(){
-  if(!atlasMap||!atlasMap.isStyleLoaded())return;
+  if(!atlasMap){console.error('[Atlas links] Carte MapLibre absente.');return false;}
+  if(!atlasMap.isStyleLoaded()){console.error('[Atlas links] Style MapLibre non chargé.');return false;}
   if(!atlasMap.getSource(ATLAS_LINKS_SOURCE_ID))atlasMap.addSource(ATLAS_LINKS_SOURCE_ID,{type:'geojson',data:emptyFeatureCollection()});
-  if(!atlasMap.getLayer(ATLAS_LINKS_LAYER_ID))addAtlasLayer({id:ATLAS_LINKS_LAYER_ID,type:'line',source:ATLAS_LINKS_SOURCE_ID,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#c9a84c','line-width':2,'line-opacity':0.78}},'atlas-clusters');
+  if(!atlasMap.getLayer(ATLAS_LINKS_LAYER_ID))addAtlasLayer({id:ATLAS_LINKS_LAYER_ID,type:'line',source:ATLAS_LINKS_SOURCE_ID,layout:{visibility:'visible','line-cap':'round','line-join':'round'},paint:{'line-color':'#c9a84c','line-width':3,'line-opacity':0.9}},'atlas-clusters');
+  return Boolean(atlasMap.getSource(ATLAS_LINKS_SOURCE_ID)&&atlasMap.getLayer(ATLAS_LINKS_LAYER_ID));
 }
 function ensureAtlasSelectionSourceAndLayer(){
   if(!atlasMap||!atlasMap.isStyleLoaded())return;
   if(!atlasMap.getSource(ATLAS_SELECTION_SOURCE_ID))atlasMap.addSource(ATLAS_SELECTION_SOURCE_ID,{type:'geojson',data:emptyFeatureCollection()});
   if(!atlasMap.getLayer(ATLAS_SELECTION_LAYER_ID))addAtlasLayer({id:ATLAS_SELECTION_LAYER_ID,type:'circle',source:ATLAS_SELECTION_SOURCE_ID,paint:{'circle-radius':['case',['==',['get','role'],'selected'],11,8],'circle-color':['case',['==',['get','role'],'selected'],'#ffffff','#c9a84c'],'circle-stroke-width':['case',['==',['get','role'],'selected'],4,2.5],'circle-stroke-color':['case',['==',['get','role'],'selected'],'#c9a84c','#f3ead5'],'circle-opacity':0.98}},undefined);
 }
-function clearAtlasLinks(){atlasMap?.getSource(ATLAS_LINKS_SOURCE_ID)?.setData(emptyFeatureCollection());}
+function clearAtlasLinks(reason='raison non précisée'){console.log('[Atlas links] Effacement des liens :',reason);atlasMap?.getSource(ATLAS_LINKS_SOURCE_ID)?.setData(emptyFeatureCollection());}
 function clearAtlasSelectionOverlay(){atlasMap?.getSource(ATLAS_SELECTION_SOURCE_ID)?.setData(emptyFeatureCollection());}
 function drawAtlasLinksFrom(cardId){
-  const id=String(cardId),selectedCard=db.fiches.find(card=>String(card.id)===id);
-  if(!selectedCard||!hasValidCoordinatePair(selectedCard.location?.latitude,selectedCard.location?.longitude)){clearAtlasSelection();return;}
-  const localized=getLocalizedRelations(id),start=[Number(selectedCard.location.longitude),Number(selectedCard.location.latitude)];
+  const id=normalizeCardId(cardId),cardsById=new Map(db.fiches.map(card=>[normalizeCardId(card.id),card])),selectedCard=cardsById.get(id);
+  console.log('[Atlas links] Fiche sélectionnée :',id);
+  console.log('[Atlas links] Fiche trouvée :',selectedCard);
+  if(!selectedCard){console.error('[Atlas links] Fiche sélectionnée introuvable :',id);clearAtlasLinks('fiche sélectionnée introuvable');clearAtlasSelectionOverlay();return;}
+  const selectedCoordinates=getCardCoordinates(selectedCard);
+  if(!selectedCoordinates){console.error('[Atlas links] Coordonnées source invalides :',selectedCard);clearAtlasLinks('coordonnées source invalides');clearAtlasSelectionOverlay();return;}
+  const rawRelations=getCardRelations(id),linkedCardIds=[...new Set(rawRelations.map(relation=>normalizeCardId(relation.linkedId)).filter(linkedId=>linkedId&&linkedId!==id))];
+  const linkedCards=linkedCardIds.map(linkedId=>cardsById.get(linkedId)).filter(Boolean);
+  linkedCardIds.forEach(linkedId=>console.log('[Atlas links] Analyse relation',{linkedId,normalizedId:normalizeCardId(linkedId),cardFound:cardsById.has(linkedId),coordinates:getCardCoordinates(cardsById.get(linkedId))}));
+  const localized=rawRelations.map(relation=>({relation,card:cardsById.get(normalizeCardId(relation.linkedId))})).filter(({card})=>card&&getCardCoordinates(card));
+  const localizedLinkedCards=localized.map(item=>item.card),start=[selectedCoordinates.lon,selectedCoordinates.lat];
+  console.log('[Atlas links] Relations Cortex brutes :',rawRelations);
+  console.log('[Atlas links] Identifiants liés normalisés :',linkedCardIds);
+  console.log('[Atlas links] Fiches liées retrouvées :',linkedCards);
+  console.log('[Atlas links] Fiches liées localisées :',localizedLinkedCards);
   const lines=localized.flatMap(({relation,card})=>{
-    const end=[Number(card.location.longitude),Number(card.location.latitude)];
+    const coordinates=getCardCoordinates(card),end=[coordinates.lon,coordinates.lat];
     if(start[0]===end[0]&&start[1]===end[1])return[];
-    return[{type:'Feature',geometry:{type:'LineString',coordinates:greatCircleCoordinates(start,end)},properties:{sourceId:id,targetId:String(card.id),relationType:relation.type||''}}];
+    return splitGreatCircleCoordinates(start,end).map(segment=>({type:'Feature',geometry:{type:'LineString',coordinates:segment},properties:{sourceId:id,targetId:normalizeCardId(card.id),relationType:relation.type||''}}));
   });
-  const overlay=[selectedCard,...localized.map(item=>item.card)].map(card=>({type:'Feature',geometry:{type:'Point',coordinates:[Number(card.location.longitude),Number(card.location.latitude)]},properties:{id:String(card.id),title:String(card.title||''),role:String(card.id)===id?'selected':'linked'}}));
-  atlasMap?.getSource(ATLAS_LINKS_SOURCE_ID)?.setData({type:'FeatureCollection',features:lines});
-  atlasMap?.getSource(ATLAS_SELECTION_SOURCE_ID)?.setData({type:'FeatureCollection',features:overlay});
-  return{allRelations:getCardRelations(id),localizedRelations:localized};
+  const overlay=[selectedCard,...localizedLinkedCards].map(card=>{const coordinates=getCardCoordinates(card);return{type:'Feature',geometry:{type:'Point',coordinates:[coordinates.lon,coordinates.lat]},properties:{id:normalizeCardId(card.id),title:String(card.title||''),role:normalizeCardId(card.id)===id?'selected':'linked'}};});
+  console.log('[Atlas links] Features GeoJSON générées :',lines);
+  ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();
+  const source=atlasMap?.getSource(ATLAS_LINKS_SOURCE_ID);
+  console.log('[Atlas links] Source MapLibre :',source);
+  console.log('[Atlas links] Couche MapLibre :',atlasMap?.getLayer(ATLAS_LINKS_LAYER_ID));
+  if(!source){console.error('[Atlas links] Source introuvable après initialisation.');return{allRelations:rawRelations,localizedRelations:localized};}
+  source.setData({type:'FeatureCollection',features:lines});
+  const selectionSource=atlasMap.getSource(ATLAS_SELECTION_SOURCE_ID);
+  if(!selectionSource)console.error('[Atlas links] Source de sélection introuvable après initialisation.');else selectionSource.setData({type:'FeatureCollection',features:overlay});
+  return{allRelations:rawRelations,localizedRelations:localized};
 }
 function bindAtlasInteractionsOnce(){
   if(atlasInteractionsBound||!atlasMap)return;atlasInteractionsBound=true;
@@ -1456,7 +1502,7 @@ function ficheSummary(fiche){
   try{const doc=new DOMParser().parseFromString(fiche.html||'','text/html');doc.querySelectorAll('script,style,noscript').forEach(el=>el.remove());const text=(doc.body?.textContent||'').replace(/\s+/g,' ').trim();return text?text.slice(0,260)+(text.length>260?'…':''):'Aucun résumé disponible.';}catch(e){return'Aucun résumé disponible.';}
 }
 function selectAtlasFiche(id,coordinates){
-  const fiche=db.fiches.find(f=>String(f.id)===id);if(!fiche)return;
+  id=normalizeCardId(id);const fiche=db.fiches.find(f=>normalizeCardId(f.id)===id);if(!fiche){console.error('[Atlas links] Clic sur une fiche introuvable :',id);return;}
   if(atlasSelectedId&&atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id:atlasSelectedId},{selected:false});
   atlasSelectedId=id;if(atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id},{selected:true});
   const relationState=drawAtlasLinksFrom(id);
@@ -1468,7 +1514,7 @@ function selectAtlasFiche(id,coordinates){
 }
 function clearAtlasSelection(){
   if(atlasSelectedId&&atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id:atlasSelectedId},{selected:false});
-  atlasSelectedId=null;clearAtlasLinks();clearAtlasSelectionOverlay();const panel=atlasRoot?.querySelector('#atlas-panel');if(panel)panel.hidden=true;
+  atlasSelectedId=null;clearAtlasLinks('désélection de la fiche');clearAtlasSelectionOverlay();const panel=atlasRoot?.querySelector('#atlas-panel');if(panel)panel.hidden=true;
 }
 function closeAtlasPanel(){clearAtlasSelection();requestAnimationFrame(()=>atlasMap?.resize());}
 
