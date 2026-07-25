@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Base de Connaissances</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <style>
   :root {
     --bg:#0d0d14; --surface:#13131e; --surface2:#1a1a2a;
@@ -292,12 +293,35 @@
   .source-textarea{min-height:240px;white-space:pre-wrap}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .form-hint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:5px;letter-spacing:.04em}
+  .location-section{margin-top:20px;padding:16px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+  .location-section .form-label:first-child{color:var(--gold)}
+  .location-error{color:var(--red);min-height:15px}
+  .location-input.invalid{border-color:var(--red)}
+  .location-actions{display:flex;justify-content:flex-end;margin-top:10px}
   .external-editor-section{margin-top:20px;padding:16px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
   .external-editor-section .form-label{color:var(--gold)}
   .external-editor-section .form-hint{margin:0 0 12px;line-height:1.55}
   .external-editor-link{display:inline-block;text-decoration:none}
   .external-editor-link[aria-disabled="true"]{opacity:.45;cursor:not-allowed;pointer-events:none}
   .modal-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border)}
+
+  /* ATLAS */
+  .atlas-shell{height:calc(100vh - 170px);min-height:520px;display:grid;grid-template-columns:minmax(0,1fr) auto;border:1px solid var(--border2);border-radius:16px;overflow:hidden;background:var(--surface);position:relative}
+  .atlas-map-wrap{position:relative;min-width:0;height:100%}
+  #atlas-map{position:absolute;inset:0}
+  .atlas-status{position:absolute;z-index:3;left:50%;top:16px;transform:translateX(-50%);max-width:min(520px,calc(100% - 32px));padding:9px 14px;border-radius:8px;background:rgba(13,13,20,.88);border:1px solid var(--border2);color:var(--text-muted);font-size:12px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  .atlas-status.error{color:var(--red);border-color:rgba(224,96,96,.45)}
+  .atlas-panel{width:330px;padding:22px;border-left:1px solid var(--border);overflow-y:auto;background:linear-gradient(180deg,var(--surface2),var(--surface));transition:width .2s,padding .2s}
+  .atlas-panel[hidden]{display:none}
+  .atlas-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}
+  .atlas-panel h3{font-family:'Playfair Display',serif;font-size:21px;line-height:1.25;color:var(--text)}
+  .atlas-panel-close{width:30px;height:30px;flex:0 0 auto;border:1px solid var(--border2);border-radius:7px;background:transparent;color:var(--text-muted);cursor:pointer}
+  .atlas-panel-close:hover,.atlas-panel-close:focus{color:var(--gold);border-color:var(--gold-dim)}
+  .atlas-location{color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+  .atlas-category{color:var(--text-muted);font-size:12px;margin-bottom:14px}
+  .atlas-summary{color:var(--text);font-size:13px;line-height:1.6;margin-bottom:20px}
+  .maplibregl-ctrl-group{background:var(--surface2)}
+  @media(max-width:850px){.atlas-shell{height:calc(100vh - 150px);min-height:480px}.atlas-panel{position:absolute;z-index:4;right:0;top:0;bottom:0;width:min(330px,88%);box-shadow:-12px 0 30px rgba(0,0,0,.45)}#main{padding-left:14px;padding-right:14px}}
 
   /* VIEWER — plein écran */
   #viewer-modal{padding:6px}
@@ -664,6 +688,13 @@
       <textarea class="form-textarea source-textarea" id="f-source" placeholder="Colle ici le transcript, l’article, les notes ou tout autre document source…"></textarea>
       <div class="form-hint">Le texte source reste séparé du contenu visible de la fiche.</div>
     </div>
+    <section class="location-section" aria-labelledby="f-location-title">
+      <label class="form-label" id="f-location-title">Localisation (optionnel)</label>
+      <div class="form-group"><label class="form-label" for="f-location-name">Nom du lieu</label><input class="form-input" id="f-location-name" type="text" placeholder="ex : Paris, France"></div>
+      <div class="form-row"><div><label class="form-label" for="f-latitude">Latitude</label><input class="form-input location-input" id="f-latitude" inputmode="decimal" placeholder="48.8566" oninput="validateLocationFields('f')"></div><div><label class="form-label" for="f-longitude">Longitude</label><input class="form-input location-input" id="f-longitude" inputmode="decimal" placeholder="2.3522" oninput="validateLocationFields('f')"></div></div>
+      <div class="form-hint location-error" id="f-location-error" role="alert"></div>
+      <div class="location-actions"><button class="btn btn-outline btn-sm" type="button" onclick="clearLocationFields('f')">Supprimer la localisation</button></div>
+    </section>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('add-modal')">Annuler</button>
       <button class="btn btn-gold btn-sm" onclick="saveFiche()">Enregistrer</button>
@@ -741,6 +772,13 @@
       <textarea class="form-textarea source-textarea" id="ef-source" placeholder="Colle ici le transcript, l’article, les notes ou tout autre document source…"></textarea>
       <div class="form-hint">Le texte source reste séparé du contenu visible de la fiche.</div>
     </div>
+    <section class="location-section" aria-labelledby="ef-location-title">
+      <label class="form-label" id="ef-location-title">Localisation (optionnel)</label>
+      <div class="form-group"><label class="form-label" for="ef-location-name">Nom du lieu</label><input class="form-input" id="ef-location-name" type="text" placeholder="ex : Paris, France"></div>
+      <div class="form-row"><div><label class="form-label" for="ef-latitude">Latitude</label><input class="form-input location-input" id="ef-latitude" inputmode="decimal" placeholder="48.8566" oninput="validateLocationFields('ef')"></div><div><label class="form-label" for="ef-longitude">Longitude</label><input class="form-input location-input" id="ef-longitude" inputmode="decimal" placeholder="2.3522" oninput="validateLocationFields('ef')"></div></div>
+      <div class="form-hint location-error" id="ef-location-error" role="alert"></div>
+      <div class="location-actions"><button class="btn btn-outline btn-sm" type="button" onclick="clearLocationFields('ef')">Supprimer la localisation</button></div>
+    </section>
     <section class="external-editor-section" aria-labelledby="external-editor-title">
       <h2 class="form-label" id="external-editor-title">Éditeur local</h2>
       <p class="form-hint">Modifie ou retravaille cette fiche dans une interface séparée. La fiche actuelle restera ouverte et inchangée.</p>
@@ -787,6 +825,7 @@
 
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════════════
    BASE DE CONNAISSANCES — index.html
@@ -816,7 +855,7 @@ const PALETTE=['#c9a84c','#5a8ae0','#5aad7a','#9a6edf','#e06060','#e07a40','#4ab
 /*
   DATA MODEL v2
   categories: [{id,name,color, subcats:[{id,name, subcats:[{id,name}]}]}]
-  fiches:     [{id,title,catId,subcatId,themeId,html,source,date,dateEvenement}]
+  fiches:     [{id,title,catId,subcatId,themeId,html,source,date,dateEvenement,location:{latitude,longitude,name}}]
 */
 let db={categories:[],fiches:[]};
 const HEAVY_THRESHOLD=150_000; // chars (~150KB) — au-delà, stockage GitHub séparé
@@ -941,7 +980,7 @@ async function ghDeleteFile(path,sha){
 }
 
 /* ── §2b · Sync planifiée ──────────────────────────────────────── */
-function scheduleSave(){localSave();if(!getToken())return;clearTimeout(syncTimer);syncTimer=setTimeout(doSync,1500);}
+function scheduleSave(){localSave();refreshAtlasData();if(!getToken())return;clearTimeout(syncTimer);syncTimer=setTimeout(doSync,1500);}
 async function doSync(){
   if(isSyncing){syncQueue=true;return;}
   isSyncing=true;setSyncStatus('syncing','Sauvegarde…');
@@ -973,6 +1012,11 @@ function migrate(raw){
     if(!f.themeId)f.themeId='';
     if(typeof f.dateEvenement!=='string')f.dateEvenement='';
     if(typeof f.source!=='string')f.source='';
+    if(f.location!==undefined){
+      const valid=f.location&&hasValidCoordinatePair(f.location.latitude,f.location.longitude);
+      if(valid)f.location={latitude:Number(f.location.latitude),longitude:Number(f.location.longitude),name:String(f.location.name||'').trim()};
+      else{console.warn(`[Atlas] Localisation invalide ignorée pour la fiche ${f.id||'(sans identifiant)'}.`);delete f.location;}
+    }
   });
   return raw;
 }
@@ -1192,7 +1236,116 @@ function renderHome(){
 }
 
 function renderAtlas(){
-  document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Atlas</div></div>`;
+  const content=document.getElementById('content');
+  if(!atlasRoot){
+    atlasRoot=document.createElement('div');
+    atlasRoot.innerHTML=`<div class="section-header"><div class="section-title">Atlas</div><div class="section-count" id="atlas-count"></div></div><div class="atlas-shell"><div class="atlas-map-wrap"><div id="atlas-map" role="application" aria-label="Carte interactive des fiches localisées"></div><div class="atlas-status" id="atlas-status" role="status"></div></div><aside class="atlas-panel" id="atlas-panel" aria-label="Fiche sélectionnée" hidden></aside></div>`;
+  }
+  content.replaceChildren(atlasRoot);
+  refreshAtlasData();
+  requestAnimationFrame(()=>{if(atlasMap){atlasMap.resize();}else initAtlasMap();});
+}
+
+/* ── §7a · Atlas MapLibre ──────────────────────────────────────── */
+const ATLAS_SOURCE='knowledge-cards';
+let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasInteractionsBound=false,atlasSelectedId=null;
+
+function hasValidCoordinatePair(latitude,longitude){
+  const lat=typeof latitude==='number'?latitude:Number(String(latitude??'').trim().replace(',','.'));
+  const lon=typeof longitude==='number'?longitude:Number(String(longitude??'').trim().replace(',','.'));
+  return Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180;
+}
+function parseCoordinate(raw,min,max,label){
+  const value=String(raw??'').trim();
+  if(!value)return{empty:true};
+  if(!/^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(value))return{error:`${label} doit être un nombre décimal.`};
+  const number=Number(value.replace(',','.'));
+  if(!Number.isFinite(number)||number<min||number>max)return{error:`${label} doit être comprise entre ${min} et ${max}.`};
+  return{value:number};
+}
+function readLocationFields(prefix,showErrors=true){
+  const latEl=document.getElementById(`${prefix}-latitude`),lonEl=document.getElementById(`${prefix}-longitude`),nameEl=document.getElementById(`${prefix}-location-name`);
+  const lat=parseCoordinate(latEl?.value,-90,90,'La latitude'),lon=parseCoordinate(lonEl?.value,-180,180,'La longitude');
+  let error='';
+  if(lat.error)error=lat.error;else if(lon.error)error=lon.error;else if(lat.empty!==lon.empty)error='La latitude et la longitude doivent être renseignées ensemble.';
+  if(showErrors){
+    const errorEl=document.getElementById(`${prefix}-location-error`);if(errorEl)errorEl.textContent=error;
+    latEl?.classList.toggle('invalid',Boolean(lat.error||(lat.empty&&!lon.empty)));
+    lonEl?.classList.toggle('invalid',Boolean(lon.error||(lon.empty&&!lat.empty)));
+  }
+  if(error)return{ok:false,error};
+  if(lat.empty&&lon.empty)return{ok:true,location:null};
+  return{ok:true,location:{latitude:lat.value,longitude:lon.value,name:(nameEl?.value||'').trim()}};
+}
+function validateLocationFields(prefix){return readLocationFields(prefix,true).ok;}
+function clearLocationFields(prefix){
+  ['location-name','latitude','longitude'].forEach(field=>{const el=document.getElementById(`${prefix}-${field}`);if(el)el.value='';});
+  readLocationFields(prefix,true);
+}
+function fillLocationFields(prefix,location){
+  document.getElementById(`${prefix}-location-name`).value=location?.name||'';
+  document.getElementById(`${prefix}-latitude`).value=Number.isFinite(location?.latitude)?location.latitude:'';
+  document.getElementById(`${prefix}-longitude`).value=Number.isFinite(location?.longitude)?location.longitude:'';
+  readLocationFields(prefix,true);
+}
+function buildAtlasGeoJSON(fiches=db.fiches){
+  const features=[];
+  (fiches||[]).forEach(f=>{
+    const location=f.location;
+    if(!location)return;
+    if(!hasValidCoordinatePair(location.latitude,location.longitude)){console.warn(`[Atlas] Coordonnées corrompues ignorées pour la fiche ${f.id||'(sans identifiant)'}.`);return;}
+    features.push({type:'Feature',geometry:{type:'Point',coordinates:[Number(location.longitude),Number(location.latitude)]},properties:{id:String(f.id),title:String(f.title||''),locationName:String(location.name||''),category:String(getCat(f.catId)?.name||'')}});
+  });
+  return{type:'FeatureCollection',features};
+}
+function initAtlasMap(){
+  if(atlasMap||state.view!=='atlas')return;
+  const status=document.getElementById('atlas-status');
+  if(typeof maplibregl==='undefined'){status.textContent='La carte ne peut pas être chargée. Vérifiez votre connexion puis réessayez.';status.classList.add('error');return;}
+  try{
+    atlasMap=new maplibregl.Map({container:'atlas-map',style:'https://demotiles.maplibre.org/style.json',center:[0,20],zoom:2.65,pitch:25,projection:'globe',attributionControl:true});
+    atlasMap.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
+    atlasMap.on('load',()=>{atlasMapLoaded=true;ensureAtlasSourceAndLayers();bindAtlasInteractions();refreshAtlasData();});
+    atlasMap.on('style.load',()=>{if(atlasMapLoaded)ensureAtlasSourceAndLayers();});
+    atlasMap.on('error',event=>{if(!atlasMapLoaded){status.textContent='Impossible d’initialiser le fond de carte. Le reste de l’application demeure disponible.';status.classList.add('error');}console.warn('[Atlas] Erreur MapLibre :',event.error||event);});
+  }catch(error){status.textContent='Impossible d’initialiser la carte. Le reste de l’application demeure disponible.';status.classList.add('error');console.warn('[Atlas] Initialisation impossible :',error);}
+}
+function ensureAtlasSourceAndLayers(){
+  if(!atlasMap||!atlasMap.isStyleLoaded())return;
+  if(!atlasMap.getSource(ATLAS_SOURCE))atlasMap.addSource(ATLAS_SOURCE,{type:'geojson',data:buildAtlasGeoJSON(),promoteId:'id',cluster:true,clusterMaxZoom:14,clusterRadius:50});
+  if(!atlasMap.getLayer('atlas-clusters'))atlasMap.addLayer({id:'atlas-clusters',type:'circle',source:ATLAS_SOURCE,filter:['has','point_count'],paint:{'circle-color':['step',['get','point_count'],'#8a6f30',10,'#c9a84c',50,'#e09050'],'circle-radius':['step',['get','point_count'],18,10,24,50,30],'circle-stroke-width':2,'circle-stroke-color':'#f3ead5'}});
+  if(!atlasMap.getLayer('atlas-cluster-count'))atlasMap.addLayer({id:'atlas-cluster-count',type:'symbol',source:ATLAS_SOURCE,filter:['has','point_count'],layout:{'text-field':['get','point_count_abbreviated'],'text-size':12},paint:{'text-color':'#0d0d14'}});
+  if(!atlasMap.getLayer('atlas-points'))atlasMap.addLayer({id:'atlas-points',type:'circle',source:ATLAS_SOURCE,filter:['!',['has','point_count']],paint:{'circle-radius':['case',['boolean',['feature-state','selected'],false],11,7],'circle-color':['case',['boolean',['feature-state','selected'],false],'#ffffff','#c9a84c'],'circle-stroke-width':['case',['boolean',['feature-state','selected'],false],4,2],'circle-stroke-color':['case',['boolean',['feature-state','selected'],false],'#c9a84c','#171722']}});
+}
+function bindAtlasInteractions(){
+  if(atlasInteractionsBound||!atlasMap)return;atlasInteractionsBound=true;
+  atlasMap.on('click','atlas-clusters',event=>{const feature=event.features?.[0];if(!feature)return;const source=atlasMap.getSource(ATLAS_SOURCE);source.getClusterExpansionZoom(feature.properties.cluster_id).then(zoom=>atlasMap.easeTo({center:feature.geometry.coordinates,zoom})).catch(error=>console.warn('[Atlas] Cluster :',error));});
+  atlasMap.on('click','atlas-points',event=>{const feature=event.features?.[0];if(!feature)return;selectAtlasFiche(String(feature.properties.id),feature.geometry.coordinates);});
+  ['atlas-clusters','atlas-points'].forEach(layer=>{atlasMap.on('mouseenter',layer,()=>atlasMap.getCanvas().style.cursor='pointer');atlasMap.on('mouseleave',layer,()=>atlasMap.getCanvas().style.cursor='');});
+}
+function refreshAtlasData(){
+  const geojson=buildAtlasGeoJSON();
+  const count=atlasRoot?.querySelector('#atlas-count');if(count)count.textContent=`${geojson.features.length} fiche${geojson.features.length!==1?'s':''} localisée${geojson.features.length!==1?'s':''}`;
+  const status=atlasRoot?.querySelector('#atlas-status');if(status&&!status.classList.contains('error')){status.hidden=geojson.features.length>0;status.textContent=geojson.features.length?'':'Aucune fiche localisée pour le moment. Ajoutez des coordonnées depuis “Modifier la fiche” pour l’afficher dans l’Atlas.';}
+  const source=atlasMap?.getSource(ATLAS_SOURCE);if(source)source.setData(geojson);
+  if(atlasSelectedId&&!db.fiches.some(f=>f.id===atlasSelectedId&&f.location)){closeAtlasPanel();}
+}
+function ficheSummary(fiche){
+  if(!fiche||fiche.html==='__EXTERNAL__')return 'Résumé non disponible dans les métadonnées de cette fiche.';
+  try{const doc=new DOMParser().parseFromString(fiche.html||'','text/html');doc.querySelectorAll('script,style,noscript').forEach(el=>el.remove());const text=(doc.body?.textContent||'').replace(/\s+/g,' ').trim();return text?text.slice(0,260)+(text.length>260?'…':''):'Aucun résumé disponible.';}catch(e){return'Aucun résumé disponible.';}
+}
+function selectAtlasFiche(id,coordinates){
+  const fiche=db.fiches.find(f=>String(f.id)===id);if(!fiche)return;
+  if(atlasSelectedId&&atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id:atlasSelectedId},{selected:false});
+  atlasSelectedId=id;if(atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id},{selected:true});
+  atlasMap?.easeTo({center:coordinates,zoom:Math.max(atlasMap.getZoom(),5),duration:650});
+  const panel=document.getElementById('atlas-panel');if(!panel)return;
+  panel.hidden=false;panel.innerHTML=`<div class="atlas-panel-head"><h3>${escH(fiche.title)}</h3><button class="atlas-panel-close" type="button" onclick="closeAtlasPanel()" aria-label="Fermer le panneau">✕</button></div><div class="atlas-location">${escH(fiche.location?.name||'Lieu non nommé')}</div><div class="atlas-category">${buildPath(fiche)||'Sans catégorie'}</div><p class="atlas-summary">${escH(ficheSummary(fiche))}</p><button class="btn btn-gold btn-sm" type="button" onclick="viewFiche('${fiche.id}')">Ouvrir la fiche complète</button>`;
+  requestAnimationFrame(()=>atlasMap?.resize());
+}
+function closeAtlasPanel(){
+  if(atlasSelectedId&&atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id:atlasSelectedId},{selected:false});
+  atlasSelectedId=null;const panel=atlasRoot?.querySelector('#atlas-panel');if(panel)panel.hidden=true;requestAnimationFrame(()=>atlasMap?.resize());
 }
 
 function renderCortex(){
@@ -1948,6 +2101,7 @@ function openAddFiche(preCatId='',preSubId='',preThId=''){
   document.getElementById('f-date-error').style.display='none';
   document.getElementById('f-date-error').textContent='';
   onDateKindChange('f');
+  fillLocationFields('f',null);
   document.getElementById('f-l2-wrap').style.display='none';
   document.getElementById('f-l3-wrap').style.display='none';
   if(preCatId){
@@ -2031,9 +2185,12 @@ function saveFiche(){
   if(!html){toast('Contenu HTML requis.','error');return;}
   const dateEventResult=validateDateField('f',true);
   if(!dateEventResult.ok)return;
+  const locationResult=readLocationFields('f',true);
+  if(!locationResult.ok){toast(`LOCALISATION : ${locationResult.error}`,'error');return;}
   const id=uid();
   const isHeavy=html.length>HEAVY_THRESHOLD;
   const fiche={id,title,...loc,html:isHeavy?'__EXTERNAL__':html,source,date:Date.now(),dateEvenement:dateEventResult.value,links:lpGet('f'),externalSha:null};
+  if(locationResult.location)fiche.location=locationResult.location;
   db.fiches.push(fiche);
   if(isHeavy){
     _htmlCache[id]=html;
@@ -2174,6 +2331,7 @@ function editFiche(id){
     document.getElementById('ef-date-error').style.display='none';
     document.getElementById('ef-date-error').textContent='';
     onDateKindChange('ef');
+    fillLocationFields('ef',f.location||null);
     ['ef-new-subcat','ef-new-theme'].forEach(i=>document.getElementById(i).value='');
     fillCatSel('ef-cat');document.getElementById('ef-cat').value=f.catId;
     document.getElementById('ef-l2-wrap').style.display='';
@@ -2229,11 +2387,15 @@ function updateFiche(){
   const loc=resolveLoc('ef');if(!loc){toast('Catégorie requise.','error');return;}
   const dateEventResult=validateDateField('ef',true);
   if(!dateEventResult.ok)return;
+  const locationResult=readLocationFields('ef',true);
+  if(!locationResult.ok){toast(`LOCALISATION : ${locationResult.error}`,'error');return;}
+  const locationUpdate=locationResult.location?{location:locationResult.location}:{};
   const isHeavy=html.length>HEAVY_THRESHOLD;
   const wasHeavy=f.html==='__EXTERNAL__';
   if(isHeavy){
     _htmlCache[id]=html;
-    Object.assign(f,{title,...loc,html:'__EXTERNAL__',source,dateEvenement:dateEventResult.value,links:lpGet('ef')});
+    Object.assign(f,{title,...loc,...locationUpdate,html:'__EXTERNAL__',source,dateEvenement:dateEventResult.value,links:lpGet('ef')});
+    if(!locationResult.location)delete f.location;
     closeModal('edit-modal');toast('Fiche mise à jour — sync en cours, patiente quelques secondes…','success');render();
     if(viewerCurrentFicheId===id&&document.getElementById('viewer-modal').classList.contains('open'))viewFiche(id);
     if(getToken())ghSaveFile(`fiches/${id}.html`,html,f.externalSha||null)
@@ -2243,7 +2405,8 @@ function updateFiche(){
   }else{
     if(wasHeavy&&getToken()&&f.externalSha)ghDeleteFile(`fiches/${id}.html`,f.externalSha).catch(()=>{});
     delete _htmlCache[id];
-    Object.assign(f,{title,...loc,html,source,dateEvenement:dateEventResult.value,links:lpGet('ef'),externalSha:null});
+    Object.assign(f,{title,...loc,...locationUpdate,html,source,dateEvenement:dateEventResult.value,links:lpGet('ef'),externalSha:null});
+    if(!locationResult.location)delete f.location;
     scheduleSave();closeModal('edit-modal');toast('Fiche mise à jour.','success');render();
     if(viewerCurrentFicheId===id&&document.getElementById('viewer-modal').classList.contains('open'))viewFiche(id);
   }
