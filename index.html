@@ -467,6 +467,10 @@
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="5" cy="17" r="2"/><circle cx="19" cy="17" r="2"/><path d="M7 8.2 10 10M17 8.2 14 10M7 15.8 10 14M17 15.8 14 14"/></svg>
       Cortex
     </div>
+    <div class="nav-home" id="nav-atlas" onclick="goAtlas()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15 9-2 4-4 2 2-4 4-2z"/></svg>
+      Atlas
+    </div>
     <div class="nav-home" id="nav-chronos" onclick="goChronos()">
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>
       Cronos
@@ -1022,6 +1026,7 @@ function expandSidebarByDefault(){
 
 function goHome(){state={view:'home',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
 function goCortex(){state={view:'cortex',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
+function goAtlas(){state={view:'atlas',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
 function goChronos(){state={view:'chronos',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
 function goCat(catId){state={view:'cat',catId,subcatId:null,themeId:null,search:''};openCats.add(catId);render();}
 function goSub(catId,subcatId){state={view:'sub',catId,subcatId,themeId:null,search:''};openCats.add(catId);openSubs.add(subcatId);render();}
@@ -1042,7 +1047,7 @@ function collapseAllSidebar(){
 /* ════════════════════════════════════════════════════════════════════
    §6 · RENDU — sidebar, breadcrumb, orchestration
 ════════════════════════════════════════════════════════════════════ */
-function render(){renderSidebar();renderBreadcrumb();if(state.search)renderSearch();else if(state.view==='home')renderHome();else if(state.view==='cortex')renderCortex();else if(state.view==='chronos')renderChronos();else renderView();}
+function render(){renderSidebar();renderBreadcrumb();if(state.search)renderSearch();else if(state.view==='home')renderHome();else if(state.view==='cortex')renderCortex();else if(state.view==='atlas')renderAtlas();else if(state.view==='chronos')renderChronos();else renderView();}
   
 function cntFiches(f){return db.fiches.filter(x=>{
   if(f.catId&&x.catId!==f.catId)return false;
@@ -1055,6 +1060,7 @@ function cntFiches(f){return db.fiches.filter(x=>{
 function renderSidebar(){
   document.getElementById('nav-home').className='nav-home'+(state.view==='home'&&!state.search?' active':'');
   document.getElementById('nav-cortex').className='nav-home'+(state.view==='cortex'&&!state.search?' active':'');
+  document.getElementById('nav-atlas').className='nav-home'+(state.view==='atlas'&&!state.search?' active':'');
   document.getElementById('nav-chronos').className='nav-home'+(state.view==='chronos'&&!state.search?' active':'');
   const el=document.getElementById('sidebar-cats');
   el.innerHTML=db.categories.map(cat=>{
@@ -1098,6 +1104,7 @@ function renderBreadcrumb(){
   let h=`<span class="crumb" onclick="goHome()">Accueil</span>`;
   if(state.search){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Recherche</span>`;}
   else if(state.view==='cortex'){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Cortex</span>`;}
+  else if(state.view==='atlas'){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Atlas</span>`;}
   else if(state.view==='chronos'){h+=`<span class="crumb-sep">›</span><span class="crumb-current">Cronos</span>`;}
   else if(state.catId){
     const cat=getCat(state.catId);
@@ -1182,6 +1189,10 @@ function renderHome(){
   document.querySelectorAll('.recent-card[data-rid]').forEach(function(el){
     el.addEventListener('click',function(){viewFiche(el.dataset.rid);});
   });
+}
+
+function renderAtlas(){
+  document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Atlas</div></div>`;
 }
 
 function renderCortex(){
