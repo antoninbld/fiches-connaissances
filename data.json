@@ -445,7 +445,12 @@
       "dateEvenement": "06101981",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 30.03857,
+        "longitude": 31.23538,
+        "name": "Le Caire"
+      }
     },
     {
       "id": "mmwd5dq5y00u",
