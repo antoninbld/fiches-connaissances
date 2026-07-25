@@ -1480,7 +1480,10 @@ function initAtlasMap(){
   const status=document.getElementById('atlas-status');
   if(typeof maplibregl==='undefined'){status.textContent='La carte ne peut pas être chargée. Vérifiez votre connexion puis réessayez.';status.classList.add('error');return;}
   try{
-    const globe=atlasSettings.globe;atlasMap=new maplibregl.Map({container:'atlas-map',style:getAtlasStyleURL(atlasSettings.basemap.style),center:[globe.initialLongitude,globe.initialLatitude],zoom:globe.initialZoom,pitch:globe.initialPitch,bearing:0,projection:'globe',renderWorldCopies:false,antialias:true,attributionControl:true});
+    // MapLibre attend une ProjectionSpecification. La chaîne acceptée par
+    // Mapbox GL est silencieusement ignorée par certaines versions de
+    // MapLibre, ce qui laisse les points sur une carte Mercator plane.
+    const globe=atlasSettings.globe;atlasMap=new maplibregl.Map({container:'atlas-map',style:getAtlasStyleURL(atlasSettings.basemap.style),center:[globe.initialLongitude,globe.initialLatitude],zoom:globe.initialZoom,pitch:globe.initialPitch,bearing:0,projection:{type:'globe'},renderWorldCopies:false,antialias:true,attributionControl:true});
     atlasMap.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
     atlasSettingsControl=new AtlasSettingsControl();atlasMap.addControl(atlasSettingsControl,'top-left');renderAtlasSettingsPanel();
     atlasMap.on('load',()=>{atlasMapLoaded=true;initializeAtlasAppearance().then(()=>{bindAtlasInteractionsOnce();atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}});});
