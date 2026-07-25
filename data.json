@@ -476,7 +476,12 @@
       "dateEvenement": "031951-081953",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 35.696076194884675,
+        "longitude": 51.392608579840754,
+        "name": "Iran"
+      }
     },
     {
       "id": "mmwdgn11pajy",
