@@ -1303,7 +1303,7 @@ const ATLAS_STYLES={
 };
 let atlasSettings=loadAtlasSettings();
 let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0;
-const ATLAS_INTERACTIVE_LAYERS=[ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID];
+const ATLAS_INTERACTIVE_LAYERS=[ATLAS_SELECTION_LAYER_ID,ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID];
 window.addEventListener('resize',()=>{if(state.view==='atlas')requestAnimationFrame(()=>atlasMap?.resize());});
 
 function getAtlasStyleURL(style='streets'){return ATLAS_STYLES[style]||ATLAS_STYLES.streets;}
@@ -1573,6 +1573,8 @@ function getAtlasInteractiveLayers(){return ATLAS_INTERACTIVE_LAYERS.filter(laye
 function handleAtlasMapClick(event){
   const layers=getAtlasInteractiveLayers(),features=layers.length?atlasMap.queryRenderedFeatures(event.point,{layers}):[];
   if(!features.length)return;
+  const selection=features.find(feature=>feature.layer?.id===ATLAS_SELECTION_LAYER_ID);
+  if(selection){selectAtlasFiche(normalizeCardId(selection.properties?.id),selection.geometry.coordinates);return;}
   const cluster=features.find(feature=>feature.properties?.cluster||feature.properties?.point_count!=null);
   if(cluster){zoomAtlasCluster(cluster);return;}
   const point=features.find(feature=>feature.layer?.id===ATLAS_POINTS_LAYER_ID);if(point)selectAtlasPoint(point);
