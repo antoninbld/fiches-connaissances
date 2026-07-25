@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Base de Connaissances</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.2/dist/maplibre-gl.css" rel="stylesheet">
 <style>
   :root {
     --bg:#0d0d14; --surface:#13131e; --surface2:#1a1a2a;
@@ -308,7 +308,7 @@
   /* ATLAS */
   .atlas-shell{height:calc(100vh - 170px);min-height:520px;display:grid;grid-template-columns:minmax(0,1fr) auto;border:1px solid var(--border2);border-radius:16px;overflow:hidden;background:var(--surface);position:relative}
   .atlas-map-wrap{position:relative;min-width:0;height:100%}
-  #atlas-map{position:absolute;inset:0}
+  #atlas-map{position:absolute;inset:0;background:#080d18}
   .atlas-status{position:absolute;z-index:3;left:50%;top:16px;transform:translateX(-50%);max-width:min(520px,calc(100% - 32px));padding:9px 14px;border-radius:8px;background:rgba(13,13,20,.88);border:1px solid var(--border2);color:var(--text-muted);font-size:12px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.3)}
   .atlas-status.error{color:var(--red);border-color:rgba(224,96,96,.45)}
   .atlas-panel{width:330px;padding:22px;border-left:1px solid var(--border);overflow-y:auto;background:linear-gradient(180deg,var(--surface2),var(--surface));transition:width .2s,padding .2s}
@@ -825,7 +825,7 @@
 
 <div id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
 <script>
 /* ════════════════════════════════════════════════════════════════════
    BASE DE CONNAISSANCES — index.html
@@ -1243,12 +1243,49 @@ function renderAtlas(){
   }
   content.replaceChildren(atlasRoot);
   refreshAtlasData();
-  requestAnimationFrame(()=>{if(atlasMap){atlasMap.resize();}else initAtlasMap();});
+  requestAnimationFrame(()=>{
+    if(!atlasMap)initAtlasMap();
+    else{
+      atlasMap.resize();
+      if(!atlasHasBeenDisplayed){recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}
+    }
+  });
 }
 
 /* ── §7a · Atlas MapLibre ──────────────────────────────────────── */
 const ATLAS_SOURCE='knowledge-cards';
-let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasInteractionsBound=false,atlasSelectedId=null;
+const GLOBE_CENTER=[0,20],GLOBE_ZOOM=2.65,GLOBE_PITCH=25;
+// A deployment can expose its existing MapTiler key once as window.MAPTILER_KEY.
+// Without one, OpenFreeMap provides a keyless streets-style geographic base map.
+const MAPTILER_KEY=String(globalThis.MAPTILER_KEY||'').trim();
+const ATLAS_STYLES={
+  streets:MAPTILER_KEY?`https://api.maptiler.com/maps/streets/style.json?key=${encodeURIComponent(MAPTILER_KEY)}`:'https://tiles.openfreemap.org/styles/liberty',
+  light:MAPTILER_KEY?`https://api.maptiler.com/maps/basic/style.json?key=${encodeURIComponent(MAPTILER_KEY)}`:'https://tiles.openfreemap.org/styles/positron',
+  dark:MAPTILER_KEY?`https://api.maptiler.com/maps/dataviz-dark/style.json?key=${encodeURIComponent(MAPTILER_KEY)}`:'https://tiles.openfreemap.org/styles/dark'
+};
+let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null;
+window.addEventListener('resize',()=>{if(state.view==='atlas')requestAnimationFrame(()=>atlasMap?.resize());});
+
+function getAtlasStyleURL(style='streets'){return ATLAS_STYLES[style]||ATLAS_STYLES.streets;}
+function setupAtlasGlobe(){
+  if(!atlasMap)return;
+  try{
+    atlasMap.setProjection({type:'globe'});
+    atlasMap.setRenderWorldCopies(false);
+    if(typeof atlasMap.setFog==='function')atlasMap.setFog({range:[0.5,10],color:'rgba(160, 190, 220, 0.9)','horizon-blend':0.25});
+  }catch(error){console.error('Impossible d’activer la projection globe',error);}
+}
+function ensureNoTerrain(){
+  if(!atlasMap)return;
+  try{atlasMap.setTerrain(null);}catch(error){console.debug('[Atlas] Aucun terrain à désactiver.',error);}
+  try{if(atlasMap.getLayer('terrain-hillshade'))atlasMap.removeLayer('terrain-hillshade');}catch(error){console.warn('[Atlas] Suppression du relief impossible :',error);}
+  ['terrain-dem','terrain-dem-hs'].forEach(sourceId=>{try{if(atlasMap.getSource(sourceId))atlasMap.removeSource(sourceId);}catch(error){console.warn(`[Atlas] Suppression de ${sourceId} impossible :`,error);}});
+}
+function recenterAtlasGlobe({animate=true}={}){
+  if(!atlasMap)return;
+  const target={center:GLOBE_CENTER,zoom:GLOBE_ZOOM,pitch:GLOBE_PITCH,bearing:0};
+  if(animate)atlasMap.easeTo({...target,duration:800,essential:true});else atlasMap.jumpTo(target);
+}
 
 function hasValidCoordinatePair(latitude,longitude){
   const lat=typeof latitude==='number'?latitude:Number(String(latitude??'').trim().replace(',','.'));
@@ -1303,21 +1340,22 @@ function initAtlasMap(){
   const status=document.getElementById('atlas-status');
   if(typeof maplibregl==='undefined'){status.textContent='La carte ne peut pas être chargée. Vérifiez votre connexion puis réessayez.';status.classList.add('error');return;}
   try{
-    atlasMap=new maplibregl.Map({container:'atlas-map',style:'https://demotiles.maplibre.org/style.json',center:[0,20],zoom:2.65,pitch:25,projection:'globe',attributionControl:true});
+    atlasMap=new maplibregl.Map({container:'atlas-map',style:getAtlasStyleURL(),center:GLOBE_CENTER,zoom:GLOBE_ZOOM,pitch:GLOBE_PITCH,bearing:0,projection:'globe',renderWorldCopies:false,antialias:true,attributionControl:true});
+    setupAtlasGlobe();
     atlasMap.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
-    atlasMap.on('load',()=>{atlasMapLoaded=true;ensureAtlasSourceAndLayers();bindAtlasInteractions();refreshAtlasData();});
-    atlasMap.on('style.load',()=>{if(atlasMapLoaded)ensureAtlasSourceAndLayers();});
+    atlasMap.on('load',async()=>{atlasMapLoaded=true;setupAtlasGlobe();ensureNoTerrain();await ensureAtlasSourceAndLayers();bindAtlasInteractionsOnce();refreshAtlasData();atlasMap.resize();if(!atlasHasBeenDisplayed){recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}});
+    atlasMap.on('style.load',async()=>{setupAtlasGlobe();ensureNoTerrain();await ensureAtlasSourceAndLayers();bindAtlasInteractionsOnce();refreshAtlasData();});
     atlasMap.on('error',event=>{if(!atlasMapLoaded){status.textContent='Impossible d’initialiser le fond de carte. Le reste de l’application demeure disponible.';status.classList.add('error');}console.warn('[Atlas] Erreur MapLibre :',event.error||event);});
   }catch(error){status.textContent='Impossible d’initialiser la carte. Le reste de l’application demeure disponible.';status.classList.add('error');console.warn('[Atlas] Initialisation impossible :',error);}
 }
-function ensureAtlasSourceAndLayers(){
+async function ensureAtlasSourceAndLayers(){
   if(!atlasMap||!atlasMap.isStyleLoaded())return;
   if(!atlasMap.getSource(ATLAS_SOURCE))atlasMap.addSource(ATLAS_SOURCE,{type:'geojson',data:buildAtlasGeoJSON(),promoteId:'id',cluster:true,clusterMaxZoom:14,clusterRadius:50});
   if(!atlasMap.getLayer('atlas-clusters'))atlasMap.addLayer({id:'atlas-clusters',type:'circle',source:ATLAS_SOURCE,filter:['has','point_count'],paint:{'circle-color':['step',['get','point_count'],'#8a6f30',10,'#c9a84c',50,'#e09050'],'circle-radius':['step',['get','point_count'],18,10,24,50,30],'circle-stroke-width':2,'circle-stroke-color':'#f3ead5'}});
   if(!atlasMap.getLayer('atlas-cluster-count'))atlasMap.addLayer({id:'atlas-cluster-count',type:'symbol',source:ATLAS_SOURCE,filter:['has','point_count'],layout:{'text-field':['get','point_count_abbreviated'],'text-size':12},paint:{'text-color':'#0d0d14'}});
   if(!atlasMap.getLayer('atlas-points'))atlasMap.addLayer({id:'atlas-points',type:'circle',source:ATLAS_SOURCE,filter:['!',['has','point_count']],paint:{'circle-radius':['case',['boolean',['feature-state','selected'],false],11,7],'circle-color':['case',['boolean',['feature-state','selected'],false],'#ffffff','#c9a84c'],'circle-stroke-width':['case',['boolean',['feature-state','selected'],false],4,2],'circle-stroke-color':['case',['boolean',['feature-state','selected'],false],'#c9a84c','#171722']}});
 }
-function bindAtlasInteractions(){
+function bindAtlasInteractionsOnce(){
   if(atlasInteractionsBound||!atlasMap)return;atlasInteractionsBound=true;
   atlasMap.on('click','atlas-clusters',event=>{const feature=event.features?.[0];if(!feature)return;const source=atlasMap.getSource(ATLAS_SOURCE);source.getClusterExpansionZoom(feature.properties.cluster_id).then(zoom=>atlasMap.easeTo({center:feature.geometry.coordinates,zoom})).catch(error=>console.warn('[Atlas] Cluster :',error));});
   atlasMap.on('click','atlas-points',event=>{const feature=event.features?.[0];if(!feature)return;selectAtlasFiche(String(feature.properties.id),feature.geometry.coordinates);});
