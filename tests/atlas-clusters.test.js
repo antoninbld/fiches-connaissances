@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 const html = fs.readFileSync(new URL('../index.html', `file://${__filename}`), 'utf8');
+const data = JSON.parse(fs.readFileSync(new URL('../data.json', `file://${__filename}`), 'utf8'));
 
 function extractFunction(name) {
   const start = html.indexOf(`function ${name}(`);
@@ -61,6 +62,12 @@ assert.match(extractFunction('selectAtlasPoint'), /cards\.length>1/);
 assert.match(extractFunction('showAtlasColocatedCards'), /Consulter/);
 
 assert.match(html, /clusterRadius:50,clusterMaxZoom:14/);
+assert.match(html, /ATLAS_SETTINGS_STORAGE_KEY='atlas-settings-v2',ATLAS_VIEW_STORAGE_KEY='atlas-view-v2'/);
+assert.match(html, /initialLongitude:105,initialLatitude:12,initialZoom:2\.65/);
+
+const timorCards = data.fiches.filter(card => card.location?.name === 'Timor Oriental');
+assert.equal(timorCards.length, 2, 'les données doivent contenir le cluster visible au premier affichage');
+assert.ok(timorCards.every(card => Math.abs(card.location.longitude - 105) < 30), 'le cluster du Timor doit se trouver sur la face initialement visible');
 assert.match(html, /atlasMap\.on\('style\.load'.*ensureAtlasSourceAndLayers\(\).*raiseAtlasLayers\(\)/s);
 
 console.log('Atlas clusters: tests réussis');
