@@ -427,7 +427,12 @@
       "dateEvenement": "041961",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 36.73765,
+        "longitude": 3.08234,
+        "name": "Alger"
+      }
     },
     {
       "id": "mmwcv4ecersq",
