@@ -39,4 +39,19 @@ assert.equal(updateSource.includes('localStorage.setItem'), false, 'une modifica
 assert.match(html, /data-atlas-apply>Appliquer les paramètres<\/button>/);
 assert.match(html, /querySelector\('\[data-atlas-apply\]'\)\.onclick=saveAtlasSettings/);
 
+// Au rechargement, MapLibre émet `style.load` puis `load`. Les deux événements
+// doivent passer par une initialisation sérialisée et créer les couches à partir
+// des paramètres restaurés, sans réinjecter les valeurs visuelles par défaut.
+assert.match(html, /atlasMap\.on\('style\.load',initializeAtlasAppearance\)/);
+assert.match(html, /atlasMap\.on\('load',\(\)=>\{atlasMapLoaded=true;initializeAtlasAppearance\(\)/);
+const initializationSource = extractFunction('initializeAtlasAppearance');
+assert.match(initializationSource, /atlasAppearanceInitializationPromise=atlasAppearanceInitializationPromise/);
+assert.match(initializationSource, /applyAtlasSettingsToMap\(\)/);
+
+const layersSource = extractFunction('ensureAtlasSourceAndLayers');
+assert.match(layersSource, /const \{points,clusters\}=atlasSettings/);
+assert.match(layersSource, /'circle-color':clusters\.color/);
+assert.match(layersSource, /points\.selectedRadius,points\.radius/);
+assert.doesNotMatch(layersSource, /'circle-radius':\['case'.*11,7/);
+
 console.log('Atlas settings: tests réussis');
