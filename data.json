@@ -502,7 +502,12 @@
       "dateEvenement": "031971-121971",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 23.82151,
+        "longitude": 90.41256,
+        "name": "Bangladesh"
+      }
     },
     {
       "id": "mmwdonjc3jlw",
@@ -515,7 +520,12 @@
       "dateEvenement": "061954-041956",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 10.82475,
+        "longitude": 106.62341,
+        "name": "Indochine"
+      }
     },
     {
       "id": "mmwdsla468nz",
@@ -528,7 +538,12 @@
       "dateEvenement": "011991-121991",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 54.70932,
+        "longitude": 25.24349,
+        "name": "Vilnius"
+      }
     },
     {
       "id": "mmwdtqdu4tvc",
