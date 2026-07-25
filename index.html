@@ -292,6 +292,11 @@
   .source-textarea{min-height:240px;white-space:pre-wrap}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .form-hint{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:5px;letter-spacing:.04em}
+  .external-editor-section{margin-top:20px;padding:16px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+  .external-editor-section .form-label{color:var(--gold)}
+  .external-editor-section .form-hint{margin:0 0 12px;line-height:1.55}
+  .external-editor-link{display:inline-block;text-decoration:none}
+  .external-editor-link[aria-disabled="true"]{opacity:.45;cursor:not-allowed;pointer-events:none}
   .modal-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border)}
 
   /* VIEWER — plein écran */
@@ -732,6 +737,12 @@
       <textarea class="form-textarea source-textarea" id="ef-source" placeholder="Colle ici le transcript, l’article, les notes ou tout autre document source…"></textarea>
       <div class="form-hint">Le texte source reste séparé du contenu visible de la fiche.</div>
     </div>
+    <section class="external-editor-section" aria-labelledby="external-editor-title">
+      <h2 class="form-label" id="external-editor-title">Éditeur local</h2>
+      <p class="form-hint">Modifie ou retravaille cette fiche dans une interface séparée. La fiche actuelle restera ouverte et inchangée.</p>
+      <a class="btn btn-outline btn-sm external-editor-link" id="external-editor-link" target="_blank" rel="noopener noreferrer">Ouvrir dans l’éditeur local</a>
+      <p class="form-hint" id="external-editor-error" role="status" hidden>L’URL de l’éditeur local n’est pas configurée ou est invalide.</p>
+    </section>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('edit-modal')">Annuler</button>
       <button class="btn btn-gold btn-sm" onclick="updateFiche()">Mettre à jour</button>
@@ -795,6 +806,7 @@
    ════════════════════════════════════════════════════════════════════ */
 /* ── §1 CONFIG & MODÈLE DE DONNÉES ─────────────────────────────── */
 const GH_OWNER='antoninbld',GH_REPO='fiches-connaissances',GH_FILE='data.json',GH_BRANCH='main';
+const LOCAL_EDITOR_URL='https://antoninbld.github.io/Edit-knowledge/';
 const PALETTE=['#c9a84c','#5a8ae0','#5aad7a','#9a6edf','#e06060','#e07a40','#4ab8c0','#d07aae'];
 
 /*
@@ -2158,6 +2170,7 @@ function editFiche(id){
     if(f.subcatId){fillThSel('ef',f.catId,f.subcatId);document.getElementById('ef-l3-wrap').style.display='';document.getElementById('ef-theme').value=f.themeId||'';}
     else document.getElementById('ef-l3-wrap').style.display='none';
     lpInit('ef',f.links||[],f.id);
+    configureLocalEditorLink();
     openModal('edit-modal');
   }
   if(f.html==='__EXTERNAL__'){
@@ -2178,6 +2191,23 @@ function editFiche(id){
     return;
   }
   _fillForm(f.html);
+}
+
+function configureLocalEditorLink(){
+  const link=document.getElementById('external-editor-link');
+  const error=document.getElementById('external-editor-error');
+  if(!link||!error)return;
+  try{
+    const url=new URL(LOCAL_EDITOR_URL);
+    if(!['http:','https:'].includes(url.protocol))throw new Error('Unsupported protocol');
+    link.href=url.href;
+    link.removeAttribute('aria-disabled');
+    error.hidden=true;
+  }catch(e){
+    link.removeAttribute('href');
+    link.setAttribute('aria-disabled','true');
+    error.hidden=false;
+  }
 }
 
 function updateFiche(){
