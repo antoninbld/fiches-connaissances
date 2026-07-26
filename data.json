@@ -273,7 +273,12 @@
       ],
       "externalSha": "a3802a47e619451927b8999c2fc34aa365c3eb65",
       "dateEvenement": "09121975",
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 9.72964,
+        "longitude": -71.575806,
+        "name": "Venezuela"
+      }
     },
     {
       "id": "mmoqqmhk4cie",
