@@ -473,7 +473,12 @@
       "dateEvenement": "1921-1950",
       "links": [],
       "externalSha": null,
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 27.998141,
+        "longitude": 13.38378,
+        "name": "Fezzan"
+      }
     },
     {
       "id": "mmwddzbhpjsm",
