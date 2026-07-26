@@ -294,7 +294,12 @@
       ],
       "externalSha": "5db76047133f44f3b58c5f572f5b2c6f724bb325",
       "dateEvenement": "",
-      "source": ""
+      "source": "",
+      "location": {
+        "latitude": 9.72964,
+        "longitude": -71.575806,
+        "name": "Canada"
+      }
     },
     {
       "id": "mmp64lzpoo5s",
