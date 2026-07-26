@@ -62,14 +62,9 @@ assert.match(raiseLayers, /styleOrder\.slice\(-present\.length\)/);
 assert.match(raiseLayers, /atlasRaisingLayers=true/);
 assert.match(raiseLayers, /present\.forEach\(layerId=>atlasMap\.moveLayer\(layerId\)\)/);
 assert.match(html, /atlasMap\.on\('styledata',raiseAtlasLayers\)/);
-assert.match(html, /atlasMap\.on\('idle',syncAtlasMarkerFallback\)/);
-
-const markerFallback = extractFunction('syncAtlasMarkerFallback');
-assert.match(markerFallback, /queryRenderedFeatures\(\{layers\}\)/);
-assert.match(markerFallback, /new maplibregl\.Marker/);
-assert.match(markerFallback, /selectAtlasFiche\(feature\.properties\.id,feature\.geometry\.coordinates\)/);
-assert.match(markerFallback, /if\(!geojson\.features\.length\|\|rendered\.length\)\{clearAtlasFallbackMarkers\(\);return;\}/);
-assert.match(markerFallback, /if\(signature===atlasFallbackSignature\)return/);
+assert.doesNotMatch(html, /maplibregl\.Marker|syncAtlasMarkerFallback|atlas-marker-fallback/);
+assert.match(html, /atlasMap\.on\('move',scheduleAtlasVisibilityRefresh\)/);
+assert.match(html, /atlasMap\.on\('moveend',\(\)=>\{refreshVisibleAtlasFeatures\(\);saveAtlasView\(\);\}\)/);
 
 const interactions = extractFunction('bindAtlasInteractionsOnce');
 assert.match(interactions, /atlasInteractionsBound\|\|!atlasMap/);

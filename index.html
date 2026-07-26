@@ -309,6 +309,7 @@
   .atlas-shell{height:calc(100vh - 170px);min-height:520px;display:grid;grid-template-columns:minmax(0,1fr) auto;border:1px solid var(--border2);border-radius:16px;overflow:hidden;background:var(--surface);position:relative}
   .atlas-map-wrap{position:relative;min-width:0;height:100%}
   #atlas-map{position:absolute;inset:0;background:#080d18}
+  #atlas-map .maplibregl-canvas,#atlas-map .maplibregl-canvas-container{opacity:1;mix-blend-mode:normal;filter:none}
   .atlas-status{position:absolute;z-index:3;left:50%;top:16px;transform:translateX(-50%);max-width:min(520px,calc(100% - 32px));padding:9px 14px;border-radius:8px;background:rgba(13,13,20,.88);border:1px solid var(--border2);color:var(--text-muted);font-size:12px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.3)}
   .atlas-status.error{color:var(--red);border-color:rgba(224,96,96,.45)}
   .atlas-panel{width:330px;padding:22px;border-left:1px solid var(--border);overflow-y:auto;background:linear-gradient(180deg,var(--surface2),var(--surface));transition:width .2s,padding .2s}
@@ -328,7 +329,6 @@
   .atlas-settings-control svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2}
   .atlas-settings{position:absolute;z-index:6;left:10px;top:50px;width:min(350px,calc(100% - 20px));max-height:calc(100% - 62px);overflow:auto;padding:16px;border:1px solid var(--border2);border-radius:12px;background:rgba(13,13,20,.96);color:var(--text);box-shadow:0 14px 38px rgba(0,0,0,.55);backdrop-filter:blur(10px)}
   .atlas-settings[hidden]{display:none}.atlas-settings-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.atlas-settings-head h3{font-family:'Playfair Display',serif;font-size:19px}
-  .atlas-marker-fallback{width:16px;height:16px;padding:0;border:3px solid var(--atlas-marker-stroke,#171722);border-radius:50%;background:var(--atlas-marker-color,#c9a84c);box-shadow:0 0 0 2px rgba(255,255,255,.72),0 2px 9px rgba(0,0,0,.75);cursor:pointer}
   .atlas-settings details{border-top:1px solid var(--border);padding:9px 0}.atlas-settings summary{cursor:pointer;color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
   .atlas-setting{display:grid;grid-template-columns:minmax(110px,1fr) minmax(105px,1.15fr) auto;align-items:center;gap:8px;margin:10px 0;font-size:12px}.atlas-setting input[type="range"]{min-width:0;width:100%;accent-color:var(--gold)}.atlas-setting input[type="color"]{justify-self:end;width:42px;height:28px;padding:2px;border:1px solid var(--border2);border-radius:6px;background:var(--bg)}.atlas-setting input[type="checkbox"]{justify-self:end;accent-color:var(--gold)}.atlas-setting output{min-width:44px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:10px;text-align:right}.atlas-setting select{grid-column:2/4;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:6px}.atlas-settings-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--border)}
   @media(max-width:520px){.atlas-settings{left:6px;top:46px;width:calc(100% - 12px);max-height:calc(100% - 52px);padding:12px}.atlas-setting{grid-template-columns:minmax(100px,1fr) minmax(90px,1fr) auto}}
@@ -1304,7 +1304,8 @@ const ATLAS_STYLES={
   dark:MAPTILER_KEY?`https://api.maptiler.com/maps/dataviz-dark/style.json?key=${encodeURIComponent(MAPTILER_KEY)}`:'https://tiles.openfreemap.org/styles/dark'
 };
 let atlasSettings=loadAtlasSettings();
-let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0,atlasRaisingLayers=false,atlasFallbackMarkers=[],atlasFallbackSignature='';
+let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0,atlasRaisingLayers=false,atlasVisibilityRefreshFrame=null;
+let atlasFullGeoJSON=emptyFeatureCollection(),atlasFullLinksGeoJSON=emptyFeatureCollection(),atlasFullSelectionGeoJSON=emptyFeatureCollection();
 const ATLAS_INTERACTIVE_LAYERS=[ATLAS_SELECTION_LAYER_ID,ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID];
 window.addEventListener('resize',()=>{if(state.view==='atlas')requestAnimationFrame(()=>atlasMap?.resize());});
 
@@ -1351,6 +1352,35 @@ function hasValidCoordinatePair(latitude,longitude){
   return Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180;
 }
 function emptyFeatureCollection(){return{type:'FeatureCollection',features:[]};}
+const ATLAS_HORIZON_MARGIN=.01;
+function isCoordinateOnVisibleHemisphere(longitude,latitude,centerLongitude,centerLatitude,margin=ATLAS_HORIZON_MARGIN){
+  const toRadians=value=>value*Math.PI/180,lon=toRadians(longitude),lat=toRadians(latitude),centerLon=toRadians(centerLongitude),centerLat=toRadians(centerLatitude);
+  const dot=Math.sin(lat)*Math.sin(centerLat)+Math.cos(lat)*Math.cos(centerLat)*Math.cos(lon-centerLon);
+  return dot>margin;
+}
+function buildVisibleAtlasGeoJSON(geojson=atlasFullGeoJSON){
+  if(!atlasMap)return emptyFeatureCollection();
+  const center=atlasMap.getCenter(),visible=coordinates=>isCoordinateOnVisibleHemisphere(coordinates[0],coordinates[1],center.lng,center.lat);
+  const features=(geojson?.features||[]).flatMap(feature=>{
+    if(feature.geometry?.type==='Point')return visible(feature.geometry.coordinates)?[feature]:[];
+    if(feature.geometry?.type!=='LineString')return[];
+    const runs=[];let run=[];
+    feature.geometry.coordinates.forEach(coordinates=>{if(visible(coordinates))run.push(coordinates);else if(run.length){if(run.length>1)runs.push(run);run=[];}});
+    if(run.length>1)runs.push(run);
+    return runs.map(coordinates=>({...feature,geometry:{...feature.geometry,coordinates}}));
+  });
+  return{type:'FeatureCollection',features};
+}
+function refreshVisibleAtlasFeatures(){
+  if(!atlasMap?.isStyleLoaded())return;
+  atlasMap.getSource(ATLAS_SOURCE_ID)?.setData(buildVisibleAtlasGeoJSON(atlasFullGeoJSON));
+  atlasMap.getSource(ATLAS_LINKS_SOURCE_ID)?.setData(buildVisibleAtlasGeoJSON(atlasFullLinksGeoJSON));
+  atlasMap.getSource(ATLAS_SELECTION_SOURCE_ID)?.setData(buildVisibleAtlasGeoJSON(atlasFullSelectionGeoJSON));
+}
+function scheduleAtlasVisibilityRefresh(){
+  if(atlasVisibilityRefreshFrame)return;
+  atlasVisibilityRefreshFrame=requestAnimationFrame(()=>{atlasVisibilityRefreshFrame=null;refreshVisibleAtlasFeatures();});
+}
 function normalizeCardId(id){return String(id??'').trim();}
 function getCardCoordinates(card){
   const latitude=card?.location?.latitude??card?.latitude??card?.lat;
@@ -1492,12 +1522,12 @@ function initAtlasMap(){
     atlasMap.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
     atlasSettingsControl=new AtlasSettingsControl();atlasMap.addControl(atlasSettingsControl,'top-left');renderAtlasSettingsPanel();
     atlasMap.on('load',()=>{atlasMapLoaded=true;atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}});
-    atlasMap.on('style.load',()=>{setupAtlasGlobe();ensureNoTerrain();ensureAtlasSourceAndLayers({forceRecreate:true});ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();applyAtlasSettingsToMap();raiseAtlasLayers();refreshAtlasData();if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);});
+    atlasMap.on('style.load',()=>{setupAtlasGlobe();ensureNoTerrain();ensureAtlasSourceAndLayers({forceRecreate:true});ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();applyAtlasSettingsToMap();raiseAtlasLayers();refreshAtlasData();if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);refreshVisibleAtlasFeatures();});
     /* Certains fonds ajoutent leurs couches de décor après style.load. Vérifier
        aussi styledata empêche ces ajouts tardifs de recouvrir les marqueurs. */
     atlasMap.on('styledata',raiseAtlasLayers);
-    atlasMap.on('idle',syncAtlasMarkerFallback);
-    atlasMap.on('moveend',saveAtlasView);
+    atlasMap.on('move',scheduleAtlasVisibilityRefresh);
+    atlasMap.on('moveend',()=>{refreshVisibleAtlasFeatures();saveAtlasView();});
     atlasMap.on('error',event=>{if(!atlasMapLoaded){status.textContent='Impossible d’initialiser le fond de carte. Le reste de l’application demeure disponible.';status.classList.add('error');}console.warn('[Atlas] Erreur MapLibre :',event.error||event);});
   }catch(error){status.textContent='Impossible d’initialiser la carte. Le reste de l’application demeure disponible.';status.classList.add('error');console.warn('[Atlas] Initialisation impossible :',error);}
 }
@@ -1513,31 +1543,13 @@ function ensureAtlasClusterLayers(){
 }
 function ensureAtlasSourceAndLayers({forceRecreate=false}={}){
   if(!atlasMap||!atlasMap.isStyleLoaded())return;
-  const geojson=buildAtlasGeoJSON();
+  atlasFullGeoJSON=buildAtlasGeoJSON();const geojson=buildVisibleAtlasGeoJSON(atlasFullGeoJSON);
   if(forceRecreate)removeAtlasClusterLayersAndSource();
   let source=atlasMap.getSource(ATLAS_SOURCE_ID);
   if(!source){atlasMap.addSource(ATLAS_SOURCE_ID,{type:'geojson',data:geojson,promoteId:'id',cluster:true,clusterMaxZoom:Number(atlasSettings.clusters.clusterMaxZoom),clusterRadius:Number(atlasSettings.clusters.clusterRadius)});source=atlasMap.getSource(ATLAS_SOURCE_ID);}else source.setData(geojson);
   ensureAtlasClusterLayers();bindAtlasInteractionsOnce();
 }
 function recreateAtlasCardSource(){if(!atlasMap?.isStyleLoaded())return;const selected=atlasSelectedId;ensureAtlasSourceAndLayers({forceRecreate:true});applyAtlasSettingsToMap();raiseAtlasLayers();if(selected)drawAtlasLinksFrom(selected);}
-function clearAtlasFallbackMarkers(){atlasFallbackMarkers.forEach(marker=>marker.remove());atlasFallbackMarkers=[];atlasFallbackSignature='';}
-function syncAtlasMarkerFallback(){
-  if(!atlasMap?.isStyleLoaded())return;
-  const geojson=buildAtlasGeoJSON(),layers=[ATLAS_CLUSTERS_LAYER_ID,ATLAS_POINTS_LAYER_ID].filter(layerId=>atlasMap.getLayer(layerId));
-  let rendered=[];
-  try{rendered=layers.length?atlasMap.queryRenderedFeatures({layers}):[];}catch(error){console.warn('[Atlas] Vérification du rendu des points impossible',error);}
-  if(!geojson.features.length||rendered.length){clearAtlasFallbackMarkers();return;}
-  const signature=JSON.stringify(geojson.features.map(feature=>[feature.properties.id,...feature.geometry.coordinates]));
-  if(signature===atlasFallbackSignature)return;
-  clearAtlasFallbackMarkers();atlasFallbackSignature=signature;
-  /* Secours DOM : certains styles raster/globe peuvent accepter la source et les
-     couches sans jamais les peindre. Les fiches restent alors visibles et
-     cliquables, au lieu de laisser une carte vide malgré le compteur. */
-  atlasFallbackMarkers=geojson.features.map(feature=>{
-    const element=document.createElement('button');element.type='button';element.className='atlas-marker-fallback';element.title=feature.properties.title;element.setAttribute('aria-label',`Ouvrir ${feature.properties.title}`);element.style.setProperty('--atlas-marker-color',atlasSettings.points.color);element.style.setProperty('--atlas-marker-stroke',atlasSettings.points.strokeColor);element.onclick=event=>{event.stopPropagation();selectAtlasFiche(feature.properties.id,feature.geometry.coordinates);};
-    return new maplibregl.Marker({element,anchor:'center'}).setLngLat(feature.geometry.coordinates).addTo(atlasMap);
-  });
-}
 function raiseAtlasLayers(){
   if(!atlasMap?.isStyleLoaded()||atlasRaisingLayers)return;
   const present=ATLAS_LAYER_ORDER.filter(layerId=>atlasMap.getLayer(layerId));
@@ -1563,8 +1575,8 @@ function ensureAtlasSelectionSourceAndLayer(){
   if(!atlasMap.getSource(ATLAS_SELECTION_SOURCE_ID))atlasMap.addSource(ATLAS_SELECTION_SOURCE_ID,{type:'geojson',data:emptyFeatureCollection()});
   if(!atlasMap.getLayer(ATLAS_SELECTION_LAYER_ID))addAtlasLayer({id:ATLAS_SELECTION_LAYER_ID,type:'circle',source:ATLAS_SELECTION_SOURCE_ID,paint:{'circle-radius':['case',['==',['get','role'],'selected'],11,8],'circle-color':['case',['==',['get','role'],'selected'],'#ffffff','#c9a84c'],'circle-stroke-width':['case',['==',['get','role'],'selected'],4,2.5],'circle-stroke-color':['case',['==',['get','role'],'selected'],'#c9a84c','#f3ead5'],'circle-opacity':0.98}},undefined);
 }
-function clearAtlasLinks(reason='raison non précisée'){console.log('[Atlas links] Effacement des liens :',reason);atlasMap?.getSource(ATLAS_LINKS_SOURCE_ID)?.setData(emptyFeatureCollection());}
-function clearAtlasSelectionOverlay(){atlasMap?.getSource(ATLAS_SELECTION_SOURCE_ID)?.setData(emptyFeatureCollection());}
+function clearAtlasLinks(reason='raison non précisée'){console.log('[Atlas links] Effacement des liens :',reason);atlasFullLinksGeoJSON=emptyFeatureCollection();atlasMap?.getSource(ATLAS_LINKS_SOURCE_ID)?.setData(atlasFullLinksGeoJSON);}
+function clearAtlasSelectionOverlay(){atlasFullSelectionGeoJSON=emptyFeatureCollection();atlasMap?.getSource(ATLAS_SELECTION_SOURCE_ID)?.setData(atlasFullSelectionGeoJSON);}
 function drawAtlasLinksFrom(cardId){
   const id=normalizeCardId(cardId),cardsById=new Map(db.fiches.map(card=>[normalizeCardId(card.id),card])),selectedCard=cardsById.get(id);
   console.log('[Atlas links] Fiche sélectionnée :',id);
@@ -1593,9 +1605,10 @@ function drawAtlasLinksFrom(cardId){
   console.log('[Atlas links] Source MapLibre :',source);
   console.log('[Atlas links] Couche MapLibre :',atlasMap?.getLayer(ATLAS_LINKS_LAYER_ID));
   if(!source){console.error('[Atlas links] Source introuvable après initialisation.');return{allRelations:rawRelations,localizedRelations:localized};}
-  source.setData({type:'FeatureCollection',features:lines});
+  atlasFullLinksGeoJSON={type:'FeatureCollection',features:lines};source.setData(buildVisibleAtlasGeoJSON(atlasFullLinksGeoJSON));
   const selectionSource=atlasMap.getSource(ATLAS_SELECTION_SOURCE_ID);
-  if(!selectionSource)console.error('[Atlas links] Source de sélection introuvable après initialisation.');else selectionSource.setData({type:'FeatureCollection',features:overlay});
+  atlasFullSelectionGeoJSON={type:'FeatureCollection',features:overlay};
+  if(!selectionSource)console.error('[Atlas links] Source de sélection introuvable après initialisation.');else selectionSource.setData(buildVisibleAtlasGeoJSON(atlasFullSelectionGeoJSON));
   return{allRelations:rawRelations,localizedRelations:localized};
 }
 function bindAtlasInteractionsOnce(){
@@ -1627,11 +1640,10 @@ async function zoomAtlasCluster(feature){
   try{const zoom=await getAtlasClusterExpansionZoom(source,clusterId);atlasMap.easeTo({center,zoom:Math.min(zoom+1,18),duration:600,essential:true});}catch(error){console.error('[Atlas clusters] Développement impossible',error);}
 }
 function refreshAtlasData(){
-  const geojson=buildAtlasGeoJSON();
+  const geojson=buildAtlasGeoJSON();atlasFullGeoJSON=geojson;
   const count=atlasRoot?.querySelector('#atlas-count');if(count)count.textContent=`${geojson.features.length} fiche${geojson.features.length!==1?'s':''} localisée${geojson.features.length!==1?'s':''}`;
   const status=atlasRoot?.querySelector('#atlas-status');if(status&&!status.classList.contains('error')){status.hidden=geojson.features.length>0;status.textContent=geojson.features.length?'':'Aucune fiche localisée pour le moment. Ajoutez des coordonnées depuis “Modifier la fiche” pour l’afficher dans l’Atlas.';}
-  const source=atlasMap?.getSource(ATLAS_SOURCE);if(source)source.setData(geojson);
-  if(atlasMap?.isStyleLoaded())requestAnimationFrame(syncAtlasMarkerFallback);
+  const source=atlasMap?.getSource(ATLAS_SOURCE);if(source)source.setData(buildVisibleAtlasGeoJSON(atlasFullGeoJSON));
   if(atlasSelectedId){const selected=db.fiches.find(f=>String(f.id)===String(atlasSelectedId));if(!selected||!hasValidCoordinatePair(selected.location?.latitude,selected.location?.longitude))clearAtlasSelection();else drawAtlasLinksFrom(atlasSelectedId);}
 }
 function ficheSummary(fiche){
