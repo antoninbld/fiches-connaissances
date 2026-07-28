@@ -48,6 +48,13 @@ assert.match(layers, /'text-allow-overlap':true/);
 assert.match(layers, /'text-ignore-placement':true/);
 assert.match(layers, /'text-anchor':'center'/);
 assert.match(layers, /\['feature-state','selected'\]/);
+assert.match(layers, /'circle-radius':getAtlasClusterRadius\(\)/);
+assert.match(layers, /'text-size':atlasSettings\.clusters\.countSize/);
+
+const clusterRadius = extractFunction('getAtlasClusterRadius');
+assert.match(clusterRadius, /\['step',\['get','point_count'\],radius,10,radius\+4,50,radius\+8,100,radius\+12\]/);
+const applySettings = extractFunction('applyAtlasSettingsToMap');
+assert.match(applySettings, /setLayoutProperty\(ATLAS_CLUSTER_COUNT_LAYER_ID,'text-size',clusters\.countSize\)/);
 
 const recreateSource = extractFunction('recreateAtlasCardSource');
 assert.match(recreateSource, /ensureAtlasSourceAndLayers\(\{forceRecreate:true\}\)/);
