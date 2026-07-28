@@ -81,6 +81,21 @@ const fallbackFeatures = extractFunction('getAtlasFallbackFeatures');
 assert.match(fallbackFeatures, /querySourceFeatures\(ATLAS_SOURCE_ID\)/);
 assert.match(fallbackFeatures, /properties\.point_count!=null/);
 assert.match(fallbackFeatures, /cluster:\$\{properties\.cluster_id\}/);
+assert.match(fallbackFeatures, /clusterAtlasFallbackFeatures/);
+const fallbackClustering = extractFunction('clusterAtlasFallbackFeatures');
+assert.match(fallbackClustering, /atlasMap\.project/);
+assert.match(fallbackClustering, /atlasSettings\.clusters\.clusterRadius/);
+assert.match(fallbackClustering, /fallback_cluster:true/);
+const fallbackHelpers = new Function('atlasMap', 'atlasSettings', `${extractFunction('abbreviateAtlasClusterCount')}\n${fallbackClustering}; return {clusterAtlasFallbackFeatures};`)(
+  {project: ([longitude, latitude]) => ({x: longitude * 10, y: latitude * 10})},
+  {clusters: {clusterRadius: 50}},
+);
+const fallbackPoint = (id, coordinates) => ({type:'Feature', geometry:{type:'Point', coordinates}, properties:{id}});
+const groupedFallback = fallbackHelpers.clusterAtlasFallbackFeatures([
+  fallbackPoint('same-a', [2.3, 48.8]), fallbackPoint('same-b', [2.3, 48.8]), fallbackPoint('far', [40, -74]),
+]);
+assert.equal(groupedFallback.length, 2);
+assert.equal(groupedFallback.find(feature => feature.properties.fallback_cluster).properties.point_count, 2);
 assert.match(html, /\.atlas-marker-fallback\.cluster/);
 assert.match(html, /atlasMap\.on\('move',scheduleAtlasVisibilityRefresh\)/);
 assert.match(html, /atlasMap\.on\('moveend',\(\)=>\{refreshVisibleAtlasFeatures\(\);saveAtlasView\(\);\}\)/);
@@ -98,7 +113,9 @@ assert.ok(click.indexOf('ATLAS_SELECTION_LAYER_ID') < click.indexOf('point_count
 assert.match(click, /selectAtlasFiche\(normalizeCardId\(selection\.properties\?\.id\),selection\.geometry\.coordinates\)/);
 const expansion = extractFunction('getAtlasClusterExpansionZoom');
 assert.equal((expansion.match(/source\.getClusterExpansionZoom/g) || []).length, 1);
-assert.match(extractFunction('zoomAtlasCluster'), /Math\.min\(zoom\+1,18\)/);
+const zoomCluster = extractFunction('zoomAtlasCluster');
+assert.match(zoomCluster, /fallback_cluster/);
+assert.match(zoomCluster, /Math\.min\(zoom\+1,18\)/);
 
 const coordinateHelpers = new Function(`${extractFunction('getCardCoordinates')}\n${extractFunction('getCardsAtCoordinates')}; return {getCardsAtCoordinates};`)();
 const cards = [
