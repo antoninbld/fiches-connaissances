@@ -329,7 +329,8 @@
   .atlas-settings-control svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2}
   .atlas-settings{position:absolute;z-index:6;left:10px;top:50px;width:min(350px,calc(100% - 20px));max-height:calc(100% - 62px);overflow:auto;padding:16px;border:1px solid var(--border2);border-radius:12px;background:rgba(13,13,20,.96);color:var(--text);box-shadow:0 14px 38px rgba(0,0,0,.55);backdrop-filter:blur(10px)}
   .atlas-settings[hidden]{display:none}.atlas-settings-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.atlas-settings-head h3{font-family:'Playfair Display',serif;font-size:19px}
-  .atlas-marker-fallback{width:16px;height:16px;padding:0;border:3px solid var(--atlas-marker-stroke,#171722);border-radius:50%;background:var(--atlas-marker-color,#c9a84c);box-shadow:0 0 0 2px rgba(255,255,255,.78),0 2px 9px rgba(0,0,0,.75);cursor:pointer}
+  .atlas-marker-fallback{display:grid;place-items:center;width:16px;height:16px;padding:0;border:3px solid var(--atlas-marker-stroke,#171722);border-radius:50%;background:var(--atlas-marker-color,#c9a84c);box-shadow:0 0 0 2px rgba(255,255,255,.78),0 2px 9px rgba(0,0,0,.75);cursor:pointer}
+  .atlas-marker-fallback.cluster{width:var(--atlas-cluster-size,48px);height:var(--atlas-cluster-size,48px);border:2px solid #fff;color:var(--atlas-cluster-count-color,#0d0d14);font-family:'JetBrains Mono',monospace;font-size:var(--atlas-cluster-count-size,12px);font-weight:700;line-height:1;box-shadow:0 0 0 2px rgba(13,13,20,.32),0 3px 14px rgba(0,0,0,.72)}
   .atlas-settings details{border-top:1px solid var(--border);padding:9px 0}.atlas-settings summary{cursor:pointer;color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
   .atlas-setting{display:grid;grid-template-columns:minmax(110px,1fr) minmax(105px,1.15fr) auto;align-items:center;gap:8px;margin:10px 0;font-size:12px}.atlas-setting input[type="range"]{min-width:0;width:100%;accent-color:var(--gold)}.atlas-setting input[type="color"]{justify-self:end;width:42px;height:28px;padding:2px;border:1px solid var(--border2);border-radius:6px;background:var(--bg)}.atlas-setting input[type="checkbox"]{justify-self:end;accent-color:var(--gold)}.atlas-setting output{min-width:44px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:10px;text-align:right}.atlas-setting select{grid-column:2/4;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:6px}.atlas-settings-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--border)}
   @media(max-width:520px){.atlas-settings{left:6px;top:46px;width:calc(100% - 12px);max-height:calc(100% - 52px);padding:12px}.atlas-setting{grid-template-columns:minmax(100px,1fr) minmax(90px,1fr) auto}}
@@ -1555,20 +1556,36 @@ function ensureAtlasSourceAndLayers({forceRecreate=false}={}){
 }
 function recreateAtlasCardSource(){if(!atlasMap?.isStyleLoaded())return;const selected=atlasSelectedId;ensureAtlasSourceAndLayers({forceRecreate:true});applyAtlasSettingsToMap();raiseAtlasLayers();if(selected)drawAtlasLinksFrom(selected);}
 function clearAtlasFallbackMarkers(){atlasFallbackMarkers.forEach(marker=>marker.remove());atlasFallbackMarkers=[];atlasFallbackSignature='';}
+function getAtlasFallbackFeatures(visibleGeoJSON){
+  let sourceFeatures=[];
+  try{sourceFeatures=atlasMap.querySourceFeatures(ATLAS_SOURCE_ID)||[];}catch(error){console.warn('[Atlas] Lecture des clusters de secours impossible',error);}
+  const unique=new Map();
+  sourceFeatures.forEach(feature=>{
+    if(feature.geometry?.type!=='Point')return;
+    const properties=feature.properties||{},isCluster=properties.cluster===true||properties.cluster===1||properties.cluster==='true'||properties.point_count!=null;
+    const key=isCluster?`cluster:${properties.cluster_id}`:`point:${properties.id}`;
+    if(!unique.has(key))unique.set(key,{type:'Feature',geometry:{type:'Point',coordinates:feature.geometry.coordinates.slice()},properties:{...properties,cluster:isCluster}});
+  });
+  return unique.size?[...unique.values()]:(visibleGeoJSON?.features||[]);
+}
+function abbreviateAtlasClusterCount(count){const value=Number(count)||0;return value>=1000?`${Math.round(value/100)/10}k`:String(value);}
 function syncAtlasMarkerFallback(){
   if(!atlasMap?.isStyleLoaded())return;
   const visibleGeoJSON=buildVisibleAtlasGeoJSON(atlasFullGeoJSON),layers=[ATLAS_CLUSTERS_LAYER_ID,ATLAS_POINTS_LAYER_ID].filter(layerId=>atlasMap.getLayer(layerId));
   let rendered=[];
   try{rendered=layers.length?atlasMap.queryRenderedFeatures({layers}):[];}catch(error){console.warn('[Atlas] Vérification du rendu des points impossible',error);}
   if(!visibleGeoJSON.features.length||rendered.length){clearAtlasFallbackMarkers();return;}
-  const signature=JSON.stringify(visibleGeoJSON.features.map(feature=>[feature.properties.id,...feature.geometry.coordinates,atlasSettings.points.color,atlasSettings.points.strokeColor]));
+  const fallbackFeatures=getAtlasFallbackFeatures(visibleGeoJSON);
+  const signature=JSON.stringify(fallbackFeatures.map(feature=>[feature.properties.cluster_id,feature.properties.id,feature.properties.point_count,...feature.geometry.coordinates,atlasSettings.points.color,atlasSettings.points.strokeColor,atlasSettings.clusters.color,atlasSettings.clusters.radius,atlasSettings.clusters.countColor,atlasSettings.clusters.countSize]));
   if(signature===atlasFallbackSignature)return;
   clearAtlasFallbackMarkers();atlasFallbackSignature=signature;
   /* Secours DOM pour les moteurs qui chargent le globe et ses couches, mais ne
-     peignent pas les cercles GeoJSON. Seuls les points de la face visible sont
-     créés afin de ne laisser aucun marqueur traverser le globe. */
-  atlasFallbackMarkers=visibleGeoJSON.features.map(feature=>{
-    const element=document.createElement('button');element.type='button';element.className='atlas-marker-fallback';element.title=feature.properties.title;element.setAttribute('aria-label',`Ouvrir ${feature.properties.title}`);element.style.setProperty('--atlas-marker-color',atlasSettings.points.color);element.style.setProperty('--atlas-marker-stroke',atlasSettings.points.strokeColor);element.onclick=event=>{event.stopPropagation();selectAtlasFiche(feature.properties.id,feature.geometry.coordinates);};
+     peignent pas les cercles GeoJSON. Il reprend les features calculées par la
+     source (clusters compris), plutôt que de réafficher chaque point brut. */
+  atlasFallbackMarkers=fallbackFeatures.map(feature=>{
+    const properties=feature.properties||{},isCluster=properties.cluster===true||properties.point_count!=null,element=document.createElement('button');element.type='button';element.className=`atlas-marker-fallback${isCluster?' cluster':''}`;element.style.setProperty('--atlas-marker-color',isCluster?atlasSettings.clusters.color:atlasSettings.points.color);
+    if(isCluster){const count=Number(properties.point_count)||0,radius=Number(atlasSettings.clusters.radius)+(count>=100?12:count>=50?8:count>=10?4:0);element.style.setProperty('--atlas-cluster-size',`${radius*2}px`);element.style.setProperty('--atlas-cluster-count-color',atlasSettings.clusters.countColor);element.style.setProperty('--atlas-cluster-count-size',`${atlasSettings.clusters.countSize}px`);element.textContent=abbreviateAtlasClusterCount(count);element.title=`Zoomer sur les ${count} fiches`;element.setAttribute('aria-label',element.title);element.onclick=event=>{event.stopPropagation();zoomAtlasCluster(feature);};}
+    else{element.title=properties.title;element.setAttribute('aria-label',`Ouvrir ${properties.title}`);element.style.setProperty('--atlas-marker-stroke',atlasSettings.points.strokeColor);element.onclick=event=>{event.stopPropagation();selectAtlasPoint(feature);};}
     return new maplibregl.Marker({element,anchor:'center'}).setLngLat(feature.geometry.coordinates).addTo(atlasMap);
   });
 }
