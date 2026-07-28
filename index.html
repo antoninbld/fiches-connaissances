@@ -1566,7 +1566,22 @@ function getAtlasFallbackFeatures(visibleGeoJSON){
     const key=isCluster?`cluster:${properties.cluster_id}`:`point:${properties.id}`;
     if(!unique.has(key))unique.set(key,{type:'Feature',geometry:{type:'Point',coordinates:feature.geometry.coordinates.slice()},properties:{...properties,cluster:isCluster}});
   });
-  return unique.size?[...unique.values()]:(visibleGeoJSON?.features||[]);
+  return clusterAtlasFallbackFeatures(unique.size?[...unique.values()]:(visibleGeoJSON?.features||[]));
+}
+function clusterAtlasFallbackFeatures(features){
+  const points=(features||[]).filter(feature=>feature.geometry?.type==='Point'),clusters=points.filter(feature=>feature.properties?.point_count!=null),unclustered=points.filter(feature=>feature.properties?.point_count==null);
+  if(!atlasMap?.project||unclustered.length<2)return points;
+  const radius=Number(atlasSettings.clusters.clusterRadius)||50,groups=[];
+  unclustered.forEach(feature=>{
+    const projected=atlasMap.project(feature.geometry.coordinates),group=groups.find(candidate=>Math.hypot(candidate.x-projected.x,candidate.y-projected.y)<=radius);
+    if(group){group.features.push(feature);const count=group.features.length;group.x+=(projected.x-group.x)/count;group.y+=(projected.y-group.y)/count;}
+    else groups.push({x:projected.x,y:projected.y,features:[feature]});
+  });
+  return clusters.concat(groups.map((group,index)=>{
+    if(group.features.length===1)return group.features[0];
+    const coordinates=group.features.reduce((sum,feature)=>[sum[0]+Number(feature.geometry.coordinates[0]),sum[1]+Number(feature.geometry.coordinates[1])],[0,0]).map(value=>value/group.features.length);
+    return{type:'Feature',geometry:{type:'Point',coordinates},properties:{cluster:true,fallback_cluster:true,cluster_id:`fallback-${index}`,point_count:group.features.length,point_count_abbreviated:abbreviateAtlasClusterCount(group.features.length)}};
+  }));
 }
 function abbreviateAtlasClusterCount(count){const value=Number(count)||0;return value>=1000?`${Math.round(value/100)/10}k`:String(value);}
 function syncAtlasMarkerFallback(){
@@ -1674,7 +1689,9 @@ function getAtlasClusterExpansionZoom(source,clusterId){
 }
 async function zoomAtlasCluster(feature){
   const source=atlasMap.getSource(ATLAS_SOURCE_ID),clusterId=feature.properties?.cluster_id,center=feature.geometry?.coordinates;
-  if(clusterId===undefined||!Array.isArray(center))return;
+  if(!Array.isArray(center))return;
+  if(feature.properties?.fallback_cluster){atlasMap.easeTo({center,zoom:Math.min(atlasMap.getZoom()+2,18),duration:500,essential:true});return;}
+  if(clusterId===undefined)return;
   if(!source?.getClusterExpansionZoom){atlasMap.easeTo({center,zoom:atlasMap.getZoom()+1,duration:500,essential:true});return;}
   try{const zoom=await getAtlasClusterExpansionZoom(source,clusterId);atlasMap.easeTo({center,zoom:Math.min(zoom+1,18),duration:600,essential:true});}catch(error){console.error('[Atlas clusters] Développement impossible',error);}
 }
