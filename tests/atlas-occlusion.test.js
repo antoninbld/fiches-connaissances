@@ -50,7 +50,8 @@ assert.equal(visibleLines.length, 1);
 assert.ok(visibleLines[0].geometry.coordinates.every(([lon, lat]) => helpers.isCoordinateOnVisibleHemisphere(lon, lat, center.lng, center.lat)));
 
 assert.match(html, /#atlas-map \.maplibregl-canvas,#atlas-map \.maplibregl-canvas-container\{opacity:1;mix-blend-mode:normal;filter:none\}/);
-assert.doesNotMatch(html, /new maplibregl\.Marker|syncAtlasMarkerFallback/);
+assert.match(extractFunction('syncAtlasMarkerFallback'), /buildVisibleAtlasGeoJSON\(atlasFullGeoJSON\)/);
+assert.match(html, /\.atlas-marker-fallback\{/);
 assert.match(extractFunction('refreshVisibleAtlasFeatures'), /ATLAS_SOURCE_ID.*ATLAS_LINKS_SOURCE_ID.*ATLAS_SELECTION_SOURCE_ID/s);
 assert.match(extractFunction('scheduleAtlasVisibilityRefresh'), /requestAnimationFrame/);
 assert.match(html, /projection:'globe'/);
