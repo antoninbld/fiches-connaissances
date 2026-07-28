@@ -73,8 +73,15 @@ assert.match(html, /atlasMap\.on\('idle',syncAtlasMarkerFallback\)/);
 const markerFallback = extractFunction('syncAtlasMarkerFallback');
 assert.match(markerFallback, /buildVisibleAtlasGeoJSON\(atlasFullGeoJSON\)/);
 assert.match(markerFallback, /queryRenderedFeatures\(\{layers\}\)/);
+assert.match(markerFallback, /getAtlasFallbackFeatures\(visibleGeoJSON\)/);
 assert.match(markerFallback, /new maplibregl\.Marker/);
-assert.match(markerFallback, /selectAtlasFiche\(feature\.properties\.id,feature\.geometry\.coordinates\)/);
+assert.match(markerFallback, /zoomAtlasCluster\(feature\)/);
+assert.match(markerFallback, /selectAtlasPoint\(feature\)/);
+const fallbackFeatures = extractFunction('getAtlasFallbackFeatures');
+assert.match(fallbackFeatures, /querySourceFeatures\(ATLAS_SOURCE_ID\)/);
+assert.match(fallbackFeatures, /properties\.point_count!=null/);
+assert.match(fallbackFeatures, /cluster:\$\{properties\.cluster_id\}/);
+assert.match(html, /\.atlas-marker-fallback\.cluster/);
 assert.match(html, /atlasMap\.on\('move',scheduleAtlasVisibilityRefresh\)/);
 assert.match(html, /atlasMap\.on\('moveend',\(\)=>\{refreshVisibleAtlasFeatures\(\);saveAtlasView\(\);\}\)/);
 
