@@ -62,7 +62,12 @@ assert.match(raiseLayers, /styleOrder\.slice\(-present\.length\)/);
 assert.match(raiseLayers, /atlasRaisingLayers=true/);
 assert.match(raiseLayers, /present\.forEach\(layerId=>atlasMap\.moveLayer\(layerId\)\)/);
 assert.match(html, /atlasMap\.on\('styledata',raiseAtlasLayers\)/);
-assert.doesNotMatch(html, /maplibregl\.Marker|syncAtlasMarkerFallback|atlas-marker-fallback/);
+assert.match(html, /atlasMap\.on\('idle',syncAtlasMarkerFallback\)/);
+const markerFallback = extractFunction('syncAtlasMarkerFallback');
+assert.match(markerFallback, /buildVisibleAtlasGeoJSON\(atlasFullGeoJSON\)/);
+assert.match(markerFallback, /queryRenderedFeatures\(\{layers\}\)/);
+assert.match(markerFallback, /new maplibregl\.Marker/);
+assert.match(markerFallback, /selectAtlasFiche\(feature\.properties\.id,feature\.geometry\.coordinates\)/);
 assert.match(html, /atlasMap\.on\('move',scheduleAtlasVisibilityRefresh\)/);
 assert.match(html, /atlasMap\.on\('moveend',\(\)=>\{refreshVisibleAtlasFeatures\(\);saveAtlasView\(\);\}\)/);
 
