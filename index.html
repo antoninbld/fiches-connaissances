@@ -158,6 +158,21 @@
   .cortex-node.active .cortex-node-sub-ring{stroke:rgba(255,236,176,.96);stroke-width:2.6}
   .cortex-node.active .cortex-node-label{fill:#f0e7cc;font-weight:600}
   .cortex-link{fill:none;stroke:rgba(90,184,224,.45);stroke-width:1.3;stroke-linecap:round}
+  .cortex-filters{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)}
+  .cortex-search-wrap{position:relative;flex:1 1 260px;min-width:210px}
+  .cortex-search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-dim);pointer-events:none}
+  .cortex-search{width:100%;height:36px;padding:0 36px 0 34px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font:12px 'JetBrains Mono',monospace;outline:none}
+  .cortex-search:focus{border-color:var(--gold-dim);box-shadow:0 0 0 3px var(--gold-glow)}
+  .cortex-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--text-muted);cursor:pointer;font-size:16px}
+  .cortex-category-filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap;flex:1 1 100%}
+  .cortex-filter-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid var(--border);border-radius:999px;background:var(--surface2);color:var(--text-muted);font-size:11px;cursor:pointer;transition:all .15s;user-select:none}
+  .cortex-filter-chip:hover{border-color:var(--chip-color,var(--gold-dim));color:var(--text)}
+  .cortex-filter-chip.is-active{border-color:var(--chip-color,var(--gold));background:color-mix(in srgb,var(--chip-color,var(--gold)) 13%,transparent);color:var(--text)}
+  .cortex-filter-chip input{position:absolute;opacity:0;pointer-events:none}
+  .cortex-filter-dot{width:7px;height:7px;border-radius:50%;background:var(--chip-color,var(--gold))}
+  .cortex-filter-reset{margin-left:auto;border:0;background:transparent;color:var(--gold);font:10px 'JetBrains Mono',monospace;cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+  .cortex-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:var(--text-dim);padding:24px;z-index:1}
+  .cortex-empty strong{font-family:'Playfair Display',serif;font-size:20px;color:var(--text)}
   
   /* Level 1 */
   .n1{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none}
@@ -1070,6 +1085,8 @@ let cortexFocusAnimFrame=null;
 let cortexPanelWidth=320;
 let isCortexResizing=false;
 let cortexResizerResizeBound=false;
+let cortexCategoryFilters=new Set();
+let cortexSearchQuery='';
 let openCats=new Set(),openSubs=new Set();
 
 const CORTEX_VIEW_DEFAULTS={panX:0,panY:0,zoom:1};
@@ -1728,8 +1745,15 @@ function closeAtlasPanel(){clearAtlasSelection();requestAnimationFrame(()=>atlas
 
 function renderCortex(){
   cortexSelectedId=null;
-  const nbLinks=getKnowledgeGraphRelations().length;
-  document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="section-count">${db.fiches.length} fiche${db.fiches.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div></div>
+  const filtered=getFilteredCortexFiches();
+  const filteredIds=new Set(filtered.map(f=>String(f.id)));
+  const nbLinks=getKnowledgeGraphRelations().filter(r=>filteredIds.has(String(r.sourceId))&&filteredIds.has(String(r.targetId))).length;
+  const categoryControls=db.categories.map(cat=>`<label class="cortex-filter-chip ${cortexCategoryFilters.has(cat.id)?'is-active':''}" style="--chip-color:${cat.color}"><input type="checkbox" ${cortexCategoryFilters.has(cat.id)?'checked':''} onchange="toggleCortexCategory('${cat.id}',this.checked)"><span class="cortex-filter-dot"></span>${escH(cat.name)} <span class="badge">${cntFiches({catId:cat.id})}</span></label>`).join('');
+  document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="section-count" id="cortex-result-count">${filtered.length} fiche${filtered.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div></div>
+  <div class="cortex-filters" aria-label="Filtres du Cortex">
+    <div class="cortex-search-wrap"><span class="cortex-search-icon">⌕</span><input class="cortex-search" id="cortex-search" type="search" value="${escH(cortexSearchQuery)}" placeholder="Rechercher dans les fiches…" aria-label="Rechercher dans le Cortex" oninput="updateCortexSearch(this.value)">${cortexSearchQuery?'<button class="cortex-search-clear" type="button" onclick="clearCortexSearch()" aria-label="Effacer la recherche">×</button>':''}</div>
+    <div class="cortex-category-filters"><span class="voir-aussi-label" style="margin:0">Catégories</span>${categoryControls}<button class="cortex-filter-reset" type="button" onclick="resetCortexFilters()">Tout afficher</button></div>
+  </div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)">
     <label for="cortex-size-strength" class="voir-aussi-label" style="margin:0">Taille selon liens</label>
     <input id="cortex-size-strength" type="range" min="0" max="100" step="1" value="${Math.round(cortexSizeStrength*100)}" oninput="setCortexSizeStrength(this.value)">
@@ -1747,6 +1771,38 @@ function renderCortex(){
   installCortexResizer();
   requestAnimationFrame(drawCortexGraph);
 }
+
+function normalizeCortexText(value){
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+
+function getCortexSearchText(fiche){
+  const readableHtml=String(fiche.html||'').replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi,' ').replace(/<[^>]+>/g,' ');
+  const cat=getCat(fiche.catId);
+  return normalizeCortexText([fiche.title,cat?.name,buildPath(fiche),readableHtml].join(' '));
+}
+
+function getFilteredCortexFiches(){
+  const terms=normalizeCortexText(cortexSearchQuery).trim().split(/\s+/).filter(Boolean);
+  return db.fiches.filter(fiche=>{
+    if(cortexCategoryFilters.size&&!cortexCategoryFilters.has(fiche.catId))return false;
+    if(!terms.length)return true;
+    const searchable=getCortexSearchText(fiche);
+    return terms.every(term=>searchable.includes(term));
+  });
+}
+
+function refreshCortexGraph(){
+  if(state.view!=='cortex')return;
+  const visibleIds=new Set(getFilteredCortexFiches().map(f=>String(f.id)));
+  if(cortexSelectedId&&!visibleIds.has(String(cortexSelectedId)))cortexSelectedId=null;
+  renderCortex();
+}
+
+function updateCortexSearch(value){cortexSearchQuery=value;refreshCortexGraph();requestAnimationFrame(()=>{const input=document.getElementById('cortex-search');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}});}
+function clearCortexSearch(){cortexSearchQuery='';refreshCortexGraph();}
+function toggleCortexCategory(catId,checked){if(checked)cortexCategoryFilters.add(catId);else cortexCategoryFilters.delete(catId);refreshCortexGraph();}
+function resetCortexFilters(){cortexCategoryFilters.clear();cortexSearchQuery='';refreshCortexGraph();}
 
 function getCortexPanelBounds(){
   const main=document.getElementById('main');
@@ -1904,14 +1960,16 @@ function drawCortexGraph(){
   const graphEl=document.getElementById('cortex-graph');
   if(!graphEl)return;
   const width=Math.max(graphEl.clientWidth,680),height=Math.max(graphEl.clientHeight,520);
-  const nodes=db.fiches.map(f=>{
+  const filteredFiches=getFilteredCortexFiches();
+  const visibleIds=new Set(filteredFiches.map(f=>String(f.id)));
+  const nodes=filteredFiches.map(f=>{
     const cat=getCat(f.catId);
     const sub=cat?getSub(cat,f.subcatId):null;
     const subIndex=cat?(cat.subcats||[]).findIndex(s=>s.id===f.subcatId):-1;
     const subBorderColor=sub?getSubBorderColor(cat,sub,subIndex):adjustHexColor(cat?.color||'#888',42);
     return{id:f.id,label:f.title,color:cat?.color||'#888',subBorderColor,ref:f};
   });
-  const edges=getKnowledgeGraphRelations().map(relation=>({source:relation.sourceId,target:relation.targetId}));
+  const edges=getKnowledgeGraphRelations().filter(relation=>visibleIds.has(String(relation.sourceId))&&visibleIds.has(String(relation.targetId))).map(relation=>({source:relation.sourceId,target:relation.targetId}));
   const nodeDeg={};
   nodes.forEach(n=>nodeDeg[n.id]=0);
   edges.forEach(e=>{nodeDeg[e.source]=(nodeDeg[e.source]||0)+1;nodeDeg[e.target]=(nodeDeg[e.target]||0)+1;});
@@ -1940,6 +1998,7 @@ function drawCortexGraph(){
   };
   installCortexInteractions();
   renderCortexScene();
+  if(!nodes.length)graphEl.insertAdjacentHTML('beforeend','<div class="cortex-empty"><strong>Aucune fiche trouvée</strong><span>Modifiez votre recherche ou réinitialisez les catégories.</span></div>');
 }
 
 function applyCortexZoom(factor){
