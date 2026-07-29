@@ -2504,9 +2504,9 @@ function buildPath(f){
 
 /* ── §7c · Recherche ───────────────────────────────────────────── */
 function handleSearch(q){state.search=q.trim();render();}
+function titleMatchesSearch(fiche,query){return fiche.title.toLowerCase().includes(query.toLowerCase());}
 function renderSearch(){
-  const q=state.search.toLowerCase();
-  const results=db.fiches.filter(f=>f.title.toLowerCase().includes(q)||buildPath(f).toLowerCase().includes(q));
+  const results=db.fiches.filter(f=>titleMatchesSearch(f,state.search));
   let html=`<div class="section-header">
     <div class="section-title">Résultats pour <em style="color:var(--gold)">"${escH(state.search)}"</em></div>
     <div class="section-count">${results.length} résultat${results.length!==1?'s':''}</div>
