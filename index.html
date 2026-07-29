@@ -1778,9 +1778,7 @@ function normalizeCortexText(value){
 }
 
 function getCortexSearchText(fiche){
-  const headings=[...String(fiche.html||'').matchAll(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/gi)]
-    .map(match=>match[1].replace(/<[^>]+>/g,' '));
-  return normalizeCortexText([fiche.title,...headings].join(' '));
+  return normalizeCortexText(fiche.title);
 }
 
 function getFilteredCortexFiches(){
