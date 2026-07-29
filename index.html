@@ -1814,7 +1814,16 @@ function selectAtlasFiche(id,coordinates,{animate=true}={}){
   const panel=document.getElementById('atlas-panel');if(!panel)return;
   const relationNote=!relationState?.allRelations.length?'Aucun lien associé à cette fiche.':!relationState.localizedRelations.length?'Cette fiche possède des liens, mais aucune des fiches liées n’est encore localisée dans l’Atlas.':'';
   panel.hidden=false;panel.innerHTML=`<div class="atlas-panel-head"><h3>${escH(fiche.title)}</h3><button class="atlas-panel-close" type="button" onclick="closeAtlasPanel()" aria-label="Fermer le panneau">✕</button></div><div class="atlas-location">${escH(fiche.location?.name||'Lieu non nommé')}</div><div class="atlas-category">${buildPath(fiche)||'Sans catégorie'}</div><p class="atlas-summary">${escH(ficheSummary(fiche))}</p>${relationNote?`<p class="atlas-relations-note">${relationNote}</p>`:''}<button class="btn btn-gold btn-sm" type="button" onclick="viewFiche('${fiche.id}')">Ouvrir la fiche complète</button>`;
-  requestAnimationFrame(()=>atlasMap?.resize());
+  /* L'ouverture du panneau réduit la largeur réelle de la carte. MapLibre peut
+     alors recalculer sa caméra pendant resize (et, au premier affichage, après
+     style.load), ce qui annulait le jumpTo effectué ci-dessus. Rejouer le
+     cadrage seulement après la mise en page garantit que la fiche demandée
+     reste au centre de la surface Atlas finale. Le contrôle de l'identifiant
+     évite qu'un ancien callback recentre une sélection plus récente. */
+  requestAnimationFrame(()=>{
+    atlasMap?.resize();
+    if(!animate&&atlasSelectedId===id){atlasMap?.stop?.();atlasMap?.jumpTo(camera);refreshVisibleAtlasFeatures();}
+  });
 }
 function focusPendingAtlasFiche(){
   if(!pendingAtlasSelectionId||!atlasMapLoaded||!atlasMap?.isStyleLoaded()||!atlasMap.getSource(ATLAS_SOURCE))return false;
