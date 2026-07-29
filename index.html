@@ -1120,7 +1120,9 @@ let cortexSearchQuery='';
 let cortexPanorama=false;
 let openCats=new Set(),openSubs=new Set();
 
-const CORTEX_VIEW_DEFAULTS={panX:0,panY:0,zoom:1};
+/* Une vue d'arrivée légèrement reculée garde la silhouette complète du nuage
+   visible, même avant toute interaction avec les contrôles de zoom. */
+const CORTEX_VIEW_DEFAULTS={panX:0,panY:0,zoom:0.75};
 const CORTEX_PANEL_MIN_WIDTH=260;
 const CORTEX_PANEL_MAX_WIDTH=560;
 
