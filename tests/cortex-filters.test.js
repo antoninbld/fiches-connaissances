@@ -30,18 +30,22 @@ const highlightCortexTitle = new Function('normalizeCortexText', 'escH', `${extr
 const getFilteredFactory = new Function('db', 'getCortexSearchText', 'normalizeCortexText', 'cortexCategoryFilters', 'cortexSearchQuery', `${extractFunction('getFilteredCortexFiches')}; return getFilteredCortexFiches;`);
 
 let categories = new Set();
-let query = 'administration';
+let query = 'service public';
 let filter = getFilteredFactory(db, getCortexSearchText, normalizeCortexText, categories, query);
 assert.deepEqual(filter().map(fiche => fiche.id), ['1']);
+
+query = 'administration';
+filter = getFilteredFactory(db, getCortexSearchText, normalizeCortexText, categories, query);
+assert.deepEqual(filter(), [], 'un terme présent uniquement dans un intertitre ne doit pas trouver la fiche');
 
 categories = new Set(['cat-a']);
 query = 'histoire';
 filter = getFilteredFactory(db, getCortexSearchText, normalizeCortexText, categories, query);
 assert.deepEqual(filter(), [], 'la recherche doit rester limitée aux catégories cochées');
 
-query = 'reseau electrique';
+query = 'energie';
 filter = getFilteredFactory(db, getCortexSearchText, normalizeCortexText, categories, query);
-assert.deepEqual(filter().map(fiche => fiche.id), ['2'], 'la recherche doit ignorer les accents et accepter plusieurs termes');
+assert.deepEqual(filter().map(fiche => fiche.id), ['2'], 'la recherche dans le titre doit ignorer les accents');
 
 query = 'venezuela';
 filter = getFilteredFactory(db, getCortexSearchText, normalizeCortexText, categories, query);
