@@ -1751,7 +1751,7 @@ function renderCortex(){
   const categoryControls=db.categories.map(cat=>`<label class="cortex-filter-chip ${cortexCategoryFilters.has(cat.id)?'is-active':''}" style="--chip-color:${cat.color}"><input type="checkbox" ${cortexCategoryFilters.has(cat.id)?'checked':''} onchange="toggleCortexCategory('${cat.id}',this.checked)"><span class="cortex-filter-dot"></span>${escH(cat.name)} <span class="badge">${cntFiches({catId:cat.id})}</span></label>`).join('');
   document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="section-count" id="cortex-result-count">${filtered.length} fiche${filtered.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div></div>
   <div class="cortex-filters" aria-label="Filtres du Cortex">
-    <div class="cortex-search-wrap"><span class="cortex-search-icon">⌕</span><input class="cortex-search" id="cortex-search" type="search" value="${escH(cortexSearchQuery)}" placeholder="Rechercher dans les fiches…" aria-label="Rechercher dans le Cortex" oninput="updateCortexSearch(this.value)">${cortexSearchQuery?'<button class="cortex-search-clear" type="button" onclick="clearCortexSearch()" aria-label="Effacer la recherche">×</button>':''}</div>
+    <div class="cortex-search-wrap"><span class="cortex-search-icon">⌕</span><input class="cortex-search" id="cortex-search" type="search" value="${escH(cortexSearchQuery)}" placeholder="Rechercher dans les titres…" aria-label="Rechercher dans les titres des fiches du Cortex" oninput="updateCortexSearch(this.value)">${cortexSearchQuery?'<button class="cortex-search-clear" type="button" onclick="clearCortexSearch()" aria-label="Effacer la recherche">×</button>':''}</div>
     <div class="cortex-category-filters"><span class="voir-aussi-label" style="margin:0">Catégories</span>${categoryControls}<button class="cortex-filter-reset" type="button" onclick="resetCortexFilters()">Tout afficher</button></div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)">
@@ -1777,9 +1777,9 @@ function normalizeCortexText(value){
 }
 
 function getCortexSearchText(fiche){
-  const readableHtml=String(fiche.html||'').replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi,' ').replace(/<[^>]+>/g,' ');
-  const cat=getCat(fiche.catId);
-  return normalizeCortexText([fiche.title,cat?.name,buildPath(fiche),readableHtml].join(' '));
+  const headings=[...String(fiche.html||'').matchAll(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/gi)]
+    .map(match=>match[1].replace(/<[^>]+>/g,' '));
+  return normalizeCortexText([fiche.title,...headings].join(' '));
 }
 
 function getFilteredCortexFiches(){
