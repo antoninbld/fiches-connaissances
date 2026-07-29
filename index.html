@@ -1334,7 +1334,7 @@ const ATLAS_LINKS_SOURCE_ID='atlas-links',ATLAS_LINKS_LAYER_ID='atlas-links-line
 const ATLAS_SELECTION_SOURCE_ID='atlas-selection',ATLAS_SELECTION_LAYER_ID='atlas-selection-points';
 const ATLAS_LAYER_ORDER=[ATLAS_LINKS_LAYER_ID,ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID,ATLAS_SELECTION_LAYER_ID];
 const GLOBE_CENTER=[0,20],GLOBE_ZOOM=2.65,GLOBE_PITCH=25;
-const ATLAS_GLOBE_TILE_SIZE=512,ATLAS_GLOBE_PADDING=40;
+const ATLAS_GLOBE_TILE_SIZE=512,ATLAS_GLOBE_PADDING=40,ATLAS_GLOBE_PITCH_MARGIN=.25;
 const ATLAS_SETTINGS_STORAGE_KEY='atlas-settings-v2',ATLAS_VIEW_STORAGE_KEY='atlas-view-v2';
 const DEFAULT_ATLAS_SETTINGS=Object.freeze({
   points:{color:'#c9a84c',radius:7,opacity:1,strokeColor:'#171722',strokeWidth:2,selectedColor:'#ffffff',selectedRadius:11,linkedColor:'#c9a84c',linkedRadius:8,linkedStrokeColor:'#f3ead5'},
@@ -1393,9 +1393,10 @@ function getAtlasGlobeFitZoom(width,height,pitch=0,preferredZoom=atlasSettings.g
   const padding=Math.min(ATLAS_GLOBE_PADDING,Math.max(12,Math.min(width,height)*.08));
   const availableWidth=Math.max(1,width-padding*2),availableHeight=Math.max(1,height-padding*2);
   /* En projection globe, son diamètre à l'écran vaut approximativement
-     tileSize * 2^zoom / PI. Le pitch décale en plus la sphère verticalement :
-     cette marge la garde donc entièrement dans le cadre, même sur un écran bas. */
-  const pitchOffset=1+Math.abs(Math.tan(Math.min(60,Math.max(0,pitch))*Math.PI/180));
+     tileSize * 2^zoom / PI. Le pitch ne décale qu'une fraction de la sphère :
+     une marge proportionnelle conserve son contour tout en utilisant mieux
+     la hauteur disponible qu'une compensation d'un diamètre complet. */
+  const pitchOffset=1+ATLAS_GLOBE_PITCH_MARGIN*Math.abs(Math.tan(Math.min(60,Math.max(0,pitch))*Math.PI/180));
   const diameter=Math.min(availableWidth,availableHeight/pitchOffset);
   return Math.min(preferredZoom,Math.log2(diameter*Math.PI/ATLAS_GLOBE_TILE_SIZE));
 }

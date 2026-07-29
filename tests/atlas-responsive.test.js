@@ -19,13 +19,15 @@ const fitSource = extractFunction('getAtlasGlobeFitZoom');
 const getAtlasGlobeFitZoom = new Function(
   'ATLAS_GLOBE_PADDING',
   'ATLAS_GLOBE_TILE_SIZE',
+  'ATLAS_GLOBE_PITCH_MARGIN',
   'atlasSettings',
   `${fitSource}; return getAtlasGlobeFitZoom;`,
-)(40, 512, {globe: {initialZoom: 2.65}});
+)(40, 512, 0.25, {globe: {initialZoom: 2.65}});
 
 assert.equal(getAtlasGlobeFitZoom(1600, 1200, 0, 2.65), 2.65, 'le zoom choisi reste le plafond sur un grand écran');
 assert.ok(getAtlasGlobeFitZoom(800, 500, 0, 2.65) < 1.6, 'le globe est réduit sur un écran bas');
 assert.ok(getAtlasGlobeFitZoom(800, 500, 25, 2.65) < getAtlasGlobeFitZoom(800, 500, 0, 2.65), 'le pitch réserve la place nécessaire au décalage vertical');
+assert.ok(getAtlasGlobeFitZoom(800, 500, 25, 2.65) > 1.15, 'le pitch ne réduit pas excessivement le globe');
 assert.equal(getAtlasGlobeFitZoom(0, 0, 25, 2.65), 2.65, 'un conteneur pas encore mesuré conserve le zoom demandé');
 
 assert.match(html, /function recenterAtlasGlobe[\s\S]*?zoom:getAtlasGlobeFitZoom/);
