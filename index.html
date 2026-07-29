@@ -1118,6 +1118,7 @@ let cortexResizerResizeBound=false;
 let cortexCategoryFilters=new Set();
 let cortexSearchQuery='';
 let cortexPanorama=false;
+let pendingAtlasSelectionId=null;
 let openCats=new Set(),openSubs=new Set();
 
 /* Une vue d'arrivée légèrement reculée garde la silhouette complète du nuage
@@ -1134,6 +1135,13 @@ function expandSidebarByDefault(){
 function goHome(){state={view:'home',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
 function goCortex(){state={view:'cortex',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
 function goAtlas(){state={view:'atlas',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
+function openFicheInAtlas(id){
+  const normalizedId=normalizeCardId(id),fiche=db.fiches.find(card=>normalizeCardId(card.id)===normalizedId);
+  if(!fiche||!getCardCoordinates(fiche))return false;
+  pendingAtlasSelectionId=normalizedId;
+  goAtlas();
+  return true;
+}
 function goChronos(){state={view:'chronos',catId:null,subcatId:null,themeId:null,search:''};document.getElementById('search').value='';render();}
 function goCat(catId){state={view:'cat',catId,subcatId:null,themeId:null,search:''};openCats.add(catId);render();}
 function goSub(catId,subcatId){state={view:'sub',catId,subcatId,themeId:null,search:''};openCats.add(catId);openSubs.add(subcatId);render();}
@@ -1324,6 +1332,7 @@ function renderAtlas(){
     else{
       atlasMap.resize();
       if(!atlasHasBeenDisplayed){recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}
+      focusPendingAtlasFiche();
     }
   });
 }
@@ -1608,7 +1617,7 @@ function initAtlasMap(){
     atlasMap.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
     atlasSettingsControl=new AtlasSettingsControl();atlasMap.addControl(atlasSettingsControl,'top-left');renderAtlasSettingsPanel();
     atlasMap.on('load',()=>{atlasMapLoaded=true;atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});else constrainAtlasGlobeToViewport();atlasHasBeenDisplayed=true;}});
-    atlasMap.on('style.load',()=>{setupAtlasGlobe();ensureNoTerrain();ensureAtlasSourceAndLayers({forceRecreate:true});ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();applyAtlasSettingsToMap();raiseAtlasLayers();refreshAtlasData();if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);refreshVisibleAtlasFeatures();});
+    atlasMap.on('style.load',()=>{setupAtlasGlobe();ensureNoTerrain();ensureAtlasSourceAndLayers({forceRecreate:true});ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();applyAtlasSettingsToMap();raiseAtlasLayers();refreshAtlasData();if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);refreshVisibleAtlasFeatures();focusPendingAtlasFiche();});
     /* Certains fonds ajoutent leurs couches de décor après style.load. Vérifier
        aussi styledata empêche ces ajouts tardifs de recouvrir les marqueurs. */
     atlasMap.on('styledata',raiseAtlasLayers);
@@ -1801,6 +1810,14 @@ function selectAtlasFiche(id,coordinates){
   const relationNote=!relationState?.allRelations.length?'Aucun lien associé à cette fiche.':!relationState.localizedRelations.length?'Cette fiche possède des liens, mais aucune des fiches liées n’est encore localisée dans l’Atlas.':'';
   panel.hidden=false;panel.innerHTML=`<div class="atlas-panel-head"><h3>${escH(fiche.title)}</h3><button class="atlas-panel-close" type="button" onclick="closeAtlasPanel()" aria-label="Fermer le panneau">✕</button></div><div class="atlas-location">${escH(fiche.location?.name||'Lieu non nommé')}</div><div class="atlas-category">${buildPath(fiche)||'Sans catégorie'}</div><p class="atlas-summary">${escH(ficheSummary(fiche))}</p>${relationNote?`<p class="atlas-relations-note">${relationNote}</p>`:''}<button class="btn btn-gold btn-sm" type="button" onclick="viewFiche('${fiche.id}')">Ouvrir la fiche complète</button>`;
   requestAnimationFrame(()=>atlasMap?.resize());
+}
+function focusPendingAtlasFiche(){
+  if(!pendingAtlasSelectionId||!atlasMap?.isStyleLoaded()||!atlasMap.getSource(ATLAS_SOURCE))return false;
+  const id=pendingAtlasSelectionId,fiche=db.fiches.find(card=>normalizeCardId(card.id)===id),coordinates=getCardCoordinates(fiche);
+  pendingAtlasSelectionId=null;
+  if(!fiche||!coordinates)return false;
+  selectAtlasFiche(id,[coordinates.lon,coordinates.lat]);
+  return true;
 }
 function clearAtlasSelection(){
   if(atlasSelectedId&&atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id:atlasSelectedId},{selected:false});
@@ -2051,7 +2068,8 @@ function showCortexSelection(fiche){
   if(!info||!fiche)return;
   const cardsById=new Map(db.fiches.map(card=>[String(card.id),card]));
   const related=getCardRelations(fiche.id).map(relation=>cardsById.get(relation.linkedId)).filter(Boolean);
-  info.innerHTML=`<div class="cortex-info-head"><div class="voir-aussi-label">Fiche sélectionnée</div><button class="cortex-clear-btn" onclick="clearCortexSelection()" title="Désélectionner" aria-label="Désélectionner">×</button></div><h3>${escH(fiche.title)}</h3><div class="view-subtitle">${buildPath(fiche)||'Sans catégorie'}</div><div class="view-subtitle">${related.length} lien${related.length!==1?'s':''}</div><div style="display:flex;gap:8px;margin-top:4px"><button class="btn btn-outline btn-sm" onclick="viewFiche('${fiche.id}')">👁 Voir</button><button class="btn btn-gold btn-sm" onclick="editFiche('${fiche.id}')">✏ Modifier</button></div>`;
+  const atlasButton=getCardCoordinates(fiche)?`<button class="btn btn-outline btn-sm" onclick="openFicheInAtlas('${fiche.id}')" title="Localiser cette fiche dans l’Atlas">◎ Atlas</button>`:'';
+  info.innerHTML=`<div class="cortex-info-head"><div class="voir-aussi-label">Fiche sélectionnée</div><button class="cortex-clear-btn" onclick="clearCortexSelection()" title="Désélectionner" aria-label="Désélectionner">×</button></div><h3>${escH(fiche.title)}</h3><div class="view-subtitle">${buildPath(fiche)||'Sans catégorie'}</div><div class="view-subtitle">${related.length} lien${related.length!==1?'s':''}</div><div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="viewFiche('${fiche.id}')">👁 Voir</button><button class="btn btn-gold btn-sm" onclick="editFiche('${fiche.id}')">✏ Modifier</button>${atlasButton}</div>`;
   if(related.length){
     const label=document.createElement('div');label.className='voir-aussi-label';label.style.marginTop='6px';label.textContent='Reliée à';
     const chips=document.createElement('div');chips.className='voir-aussi-chips';
