@@ -1334,6 +1334,7 @@ const ATLAS_LINKS_SOURCE_ID='atlas-links',ATLAS_LINKS_LAYER_ID='atlas-links-line
 const ATLAS_SELECTION_SOURCE_ID='atlas-selection',ATLAS_SELECTION_LAYER_ID='atlas-selection-points';
 const ATLAS_LAYER_ORDER=[ATLAS_LINKS_LAYER_ID,ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID,ATLAS_SELECTION_LAYER_ID];
 const GLOBE_CENTER=[0,20],GLOBE_ZOOM=2.65,GLOBE_PITCH=25;
+const ATLAS_GLOBE_TILE_SIZE=512,ATLAS_GLOBE_PADDING=40;
 const ATLAS_SETTINGS_STORAGE_KEY='atlas-settings-v2',ATLAS_VIEW_STORAGE_KEY='atlas-view-v2';
 const DEFAULT_ATLAS_SETTINGS=Object.freeze({
   points:{color:'#c9a84c',radius:7,opacity:1,strokeColor:'#171722',strokeWidth:2,selectedColor:'#ffffff',selectedRadius:11,linkedColor:'#c9a84c',linkedRadius:8,linkedStrokeColor:'#f3ead5'},
@@ -1370,7 +1371,7 @@ let atlasSettings=loadAtlasSettings();
 let atlasRoot=null,atlasMap=null,atlasMapLoaded=false,atlasHasBeenDisplayed=false,atlasInteractionsBound=false,atlasSelectedId=null,atlasSettingsControl=null,atlasRotationFrame=null,atlasRotationTime=0,atlasRaisingLayers=false,atlasVisibilityRefreshFrame=null,atlasFallbackMarkers=[],atlasFallbackSignature='';
 let atlasFullGeoJSON=emptyFeatureCollection(),atlasFullLinksGeoJSON=emptyFeatureCollection(),atlasFullSelectionGeoJSON=emptyFeatureCollection();
 const ATLAS_INTERACTIVE_LAYERS=[ATLAS_SELECTION_LAYER_ID,ATLAS_CLUSTERS_LAYER_ID,ATLAS_CLUSTER_COUNT_LAYER_ID,ATLAS_POINTS_LAYER_ID];
-window.addEventListener('resize',()=>{if(state.view==='atlas')requestAnimationFrame(()=>atlasMap?.resize());});
+window.addEventListener('resize',()=>{if(state.view==='atlas')requestAnimationFrame(()=>{atlasMap?.resize();constrainAtlasGlobeToViewport();});});
 
 function getAtlasStyleURL(style='streets'){return ATLAS_STYLES[style]||ATLAS_STYLES.streets;}
 function setupAtlasGlobe(){
@@ -1387,9 +1388,26 @@ function ensureNoTerrain(){
   try{if(atlasMap.getLayer('terrain-hillshade'))atlasMap.removeLayer('terrain-hillshade');}catch(error){console.warn('[Atlas] Suppression du relief impossible :',error);}
   ['terrain-dem','terrain-dem-hs'].forEach(sourceId=>{try{if(atlasMap.getSource(sourceId))atlasMap.removeSource(sourceId);}catch(error){console.warn(`[Atlas] Suppression de ${sourceId} impossible :`,error);}});
 }
+function getAtlasGlobeFitZoom(width,height,pitch=0,preferredZoom=atlasSettings.globe.initialZoom){
+  if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)return preferredZoom;
+  const padding=Math.min(ATLAS_GLOBE_PADDING,Math.max(12,Math.min(width,height)*.08));
+  const availableWidth=Math.max(1,width-padding*2),availableHeight=Math.max(1,height-padding*2);
+  /* En projection globe, son diamètre à l'écran vaut approximativement
+     tileSize * 2^zoom / PI. Le pitch décale en plus la sphère verticalement :
+     cette marge la garde donc entièrement dans le cadre, même sur un écran bas. */
+  const pitchOffset=1+Math.abs(Math.tan(Math.min(60,Math.max(0,pitch))*Math.PI/180));
+  const diameter=Math.min(availableWidth,availableHeight/pitchOffset);
+  return Math.min(preferredZoom,Math.log2(diameter*Math.PI/ATLAS_GLOBE_TILE_SIZE));
+}
+function getAtlasViewportSize(){const container=atlasMap?.getContainer?.();return {width:container?.clientWidth||0,height:container?.clientHeight||0};}
+function constrainAtlasGlobeToViewport(){
+  if(!atlasMap)return;
+  const {width,height}=getAtlasViewportSize(),fitZoom=getAtlasGlobeFitZoom(width,height,atlasMap.getPitch(),atlasSettings.globe.initialZoom);
+  if(atlasMap.getZoom()>fitZoom)atlasMap.jumpTo({zoom:fitZoom});
+}
 function recenterAtlasGlobe({animate=true}={}){
   if(!atlasMap)return;
-  const globe=atlasSettings.globe,target={center:[globe.initialLongitude,globe.initialLatitude],zoom:globe.initialZoom,pitch:globe.initialPitch,bearing:0};
+  const globe=atlasSettings.globe,{width,height}=getAtlasViewportSize(),target={center:[globe.initialLongitude,globe.initialLatitude],zoom:getAtlasGlobeFitZoom(width,height,globe.initialPitch,globe.initialZoom),pitch:globe.initialPitch,bearing:0};
   if(animate)atlasMap.easeTo({...target,duration:800,essential:true});else atlasMap.jumpTo(target);
 }
 
@@ -1586,7 +1604,7 @@ function initAtlasMap(){
     setupAtlasGlobe();
     atlasMap.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
     atlasSettingsControl=new AtlasSettingsControl();atlasMap.addControl(atlasSettingsControl,'top-left');renderAtlasSettingsPanel();
-    atlasMap.on('load',()=>{atlasMapLoaded=true;atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});atlasHasBeenDisplayed=true;}});
+    atlasMap.on('load',()=>{atlasMapLoaded=true;atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});else constrainAtlasGlobeToViewport();atlasHasBeenDisplayed=true;}});
     atlasMap.on('style.load',()=>{setupAtlasGlobe();ensureNoTerrain();ensureAtlasSourceAndLayers({forceRecreate:true});ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();applyAtlasSettingsToMap();raiseAtlasLayers();refreshAtlasData();if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);refreshVisibleAtlasFeatures();});
     /* Certains fonds ajoutent leurs couches de décor après style.load. Vérifier
        aussi styledata empêche ces ajouts tardifs de recouvrir les marqueurs. */
