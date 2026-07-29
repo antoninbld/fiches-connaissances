@@ -1138,6 +1138,13 @@ function goAtlas(){state={view:'atlas',catId:null,subcatId:null,themeId:null,sea
 function openFicheInAtlas(id){
   const normalizedId=normalizeCardId(id),fiche=db.fiches.find(card=>normalizeCardId(card.id)===normalizedId);
   if(!fiche||!getCardCoordinates(fiche))return false;
+  /* Activer la fiche avant de changer de vue, comme le fait un clic sur son
+     point dans l'Atlas. Cette sélection immédiate empêche les callbacks de
+     chargement de restaurer entre-temps le cadrage par défaut du globe ; la
+     sélection en attente rejouera ensuite le clic dès que la source MapLibre
+     sera disponible afin d'ouvrir le panneau et de centrer la caméra. */
+  if(atlasSelectedId&&atlasSelectedId!==normalizedId&&atlasMap?.getSource(ATLAS_SOURCE))atlasMap.setFeatureState({source:ATLAS_SOURCE,id:atlasSelectedId},{selected:false});
+  atlasSelectedId=normalizedId;
   pendingAtlasSelectionId=normalizedId;
   goAtlas();
   return true;

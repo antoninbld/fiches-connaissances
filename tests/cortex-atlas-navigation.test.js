@@ -39,17 +39,22 @@ const db = {fiches: [
 ]};
 const normalizeCardId = id => String(id ?? '').trim();
 const getCardCoordinates = card => card?.location ? {lat: card.location.latitude, lon: card.location.longitude} : null;
-const openHelpers = new Function('db', 'normalizeCardId', 'getCardCoordinates', 'goAtlas', `let pendingAtlasSelectionId=null;${openSource};return {openFicheInAtlas,getPending:()=>pendingAtlasSelectionId};`)(
+const atlasFeatureStates = [];
+const openHelpers = new Function('db', 'normalizeCardId', 'getCardCoordinates', 'goAtlas', 'atlasMap', 'ATLAS_SOURCE', `let pendingAtlasSelectionId=null,atlasSelectedId='ancienne';${openSource};return {openFicheInAtlas,getPending:()=>pendingAtlasSelectionId,getSelected:()=>atlasSelectedId};`)(
   db,
   normalizeCardId,
   getCardCoordinates,
   () => { navigations += 1; },
+  {getSource: () => ({}), setFeatureState: (...args) => atlasFeatureStates.push(args)},
+  'knowledge-cards',
 );
 
 assert.equal(openHelpers.openFicheInAtlas('sans-coordonnees'), false);
 assert.equal(navigations, 0, 'une fiche absente de l’Atlas ne doit pas déclencher de navigation');
 assert.equal(openHelpers.openFicheInAtlas(' localisee '), true);
 assert.equal(openHelpers.getPending(), 'localisee');
+assert.equal(openHelpers.getSelected(), 'localisee', 'la fiche doit être activée dans l’Atlas avant même le changement de vue');
+assert.deepEqual(atlasFeatureStates, [[{source: 'knowledge-cards', id: 'ancienne'}, {selected: false}]], 'l’ancienne fiche Atlas doit être désactivée immédiatement');
 assert.equal(navigations, 1);
 
 const focusSource = extractFunction('focusPendingAtlasFiche');
