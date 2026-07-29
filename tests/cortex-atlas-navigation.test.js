@@ -72,6 +72,12 @@ assert.equal(focusHelpers.focusPendingAtlasFiche(), true);
 assert.deepEqual(selections, [['localisee', [2.3522, 48.8566], {animate: false}]], 'la navigation inter-vues doit imposer immédiatement le cadrage, avant le filtrage du globe');
 assert.equal(focusHelpers.focusPendingAtlasFiche(), false, 'la sélection en attente doit être consommée une seule fois');
 
+assert.match(
+  html,
+  /requestAnimationFrame\(\(\)=>\{\s*atlasMap\?\.resize\(\);\s*if\(!animate&&atlasSelectedId===id\)\{atlasMap\?\.stop\?\.\(\);atlasMap\?\.jumpTo\(camera\);refreshVisibleAtlasFeatures\(\);\}/,
+  'le cadrage non animé doit être rejoué après le redimensionnement causé par le panneau Atlas',
+);
+
 const initSource = extractFunction('initAtlasMap');
 const loadHandler = initSource.slice(initSource.indexOf("atlasMap.on('load'"), initSource.indexOf("atlasMap.on('style.load'"));
 assert.ok(
