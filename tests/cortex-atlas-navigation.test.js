@@ -54,20 +54,19 @@ assert.equal(navigations, 1);
 
 const focusSource = extractFunction('focusPendingAtlasFiche');
 const selections = [];
-let atlasMapLoaded = false;
-const focusHelpers = new Function('db', 'normalizeCardId', 'getCardCoordinates', 'atlasMap', 'ATLAS_SOURCE', 'selectAtlasFiche', 'isLoaded', `let pendingAtlasSelectionId='localisee',atlasMapLoaded=isLoaded();${focusSource};return {focusPendingAtlasFiche,setLoaded:value=>{atlasMapLoaded=value},getPending:()=>pendingAtlasSelectionId};`)(
+let atlasStyleLoaded = false;
+const focusHelpers = new Function('db', 'normalizeCardId', 'getCardCoordinates', 'atlasMap', 'ATLAS_SOURCE', 'selectAtlasFiche', `let pendingAtlasSelectionId='localisee';${focusSource};return {focusPendingAtlasFiche,getPending:()=>pendingAtlasSelectionId};`)(
   db,
   normalizeCardId,
   getCardCoordinates,
-  {isStyleLoaded: () => true, getSource: () => ({})},
+  {isStyleLoaded: () => atlasStyleLoaded, getSource: () => ({})},
   'knowledge-cards',
   (...args) => selections.push(args),
-  () => atlasMapLoaded,
 );
 
-assert.equal(focusHelpers.focusPendingAtlasFiche(), false, 'la vue ne doit pas être ciblée avant la fin du chargement, car le recentrage initial l’écraserait');
-assert.equal(focusHelpers.getPending(), 'localisee', 'la sélection doit rester en attente pendant le chargement');
-focusHelpers.setLoaded(true);
+assert.equal(focusHelpers.focusPendingAtlasFiche(), false, 'la vue ne doit pas être ciblée avant que le style et la source soient prêts');
+assert.equal(focusHelpers.getPending(), 'localisee', 'la sélection doit rester en attente pendant le chargement du style');
+atlasStyleLoaded = true;
 assert.equal(focusHelpers.focusPendingAtlasFiche(), true);
 assert.deepEqual(selections, [['localisee', [2.3522, 48.8566], {animate: false}]], 'la navigation inter-vues doit imposer immédiatement le cadrage, avant le filtrage du globe');
 assert.equal(focusHelpers.focusPendingAtlasFiche(), false, 'la sélection en attente doit être consommée une seule fois');
@@ -84,5 +83,11 @@ assert.ok(
   loadHandler.indexOf('focusPendingAtlasFiche()') > loadHandler.indexOf('atlasHasBeenDisplayed=true'),
   'la fiche en attente doit être ciblée après le recentrage initial du globe',
 );
+assert.match(
+  loadHandler,
+  /if\(!atlasSelectedId&&!pendingAtlasSelectionId\)/,
+  'le chargement complet ne doit pas restaurer la vue par défaut par-dessus une sélection déjà appliquée à style.load',
+);
+assert.doesNotMatch(focusSource, /atlasMapLoaded/, 'le ciblage ne doit pas attendre les ressources distantes après style.load');
 
 console.log('Navigation Cortex vers Atlas : tests réussis');
