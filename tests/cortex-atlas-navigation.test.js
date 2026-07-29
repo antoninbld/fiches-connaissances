@@ -54,17 +54,29 @@ assert.equal(navigations, 1);
 
 const focusSource = extractFunction('focusPendingAtlasFiche');
 const selections = [];
-const focusPending = new Function('db', 'normalizeCardId', 'getCardCoordinates', 'atlasMap', 'ATLAS_SOURCE', 'selectAtlasFiche', `let pendingAtlasSelectionId='localisee';${focusSource};return focusPendingAtlasFiche;`)(
+let atlasMapLoaded = false;
+const focusHelpers = new Function('db', 'normalizeCardId', 'getCardCoordinates', 'atlasMap', 'ATLAS_SOURCE', 'selectAtlasFiche', 'isLoaded', `let pendingAtlasSelectionId='localisee',atlasMapLoaded=isLoaded();${focusSource};return {focusPendingAtlasFiche,setLoaded:value=>{atlasMapLoaded=value},getPending:()=>pendingAtlasSelectionId};`)(
   db,
   normalizeCardId,
   getCardCoordinates,
   {isStyleLoaded: () => true, getSource: () => ({})},
   'knowledge-cards',
   (...args) => selections.push(args),
+  () => atlasMapLoaded,
 );
 
-assert.equal(focusPending(), true);
+assert.equal(focusHelpers.focusPendingAtlasFiche(), false, 'la vue ne doit pas être ciblée avant la fin du chargement, car le recentrage initial l’écraserait');
+assert.equal(focusHelpers.getPending(), 'localisee', 'la sélection doit rester en attente pendant le chargement');
+focusHelpers.setLoaded(true);
+assert.equal(focusHelpers.focusPendingAtlasFiche(), true);
 assert.deepEqual(selections, [['localisee', [2.3522, 48.8566]]]);
-assert.equal(focusPending(), false, 'la sélection en attente doit être consommée une seule fois');
+assert.equal(focusHelpers.focusPendingAtlasFiche(), false, 'la sélection en attente doit être consommée une seule fois');
+
+const initSource = extractFunction('initAtlasMap');
+const loadHandler = initSource.slice(initSource.indexOf("atlasMap.on('load'"), initSource.indexOf("atlasMap.on('style.load'"));
+assert.ok(
+  loadHandler.indexOf('focusPendingAtlasFiche()') > loadHandler.indexOf('atlasHasBeenDisplayed=true'),
+  'la fiche en attente doit être ciblée après le recentrage initial du globe',
+);
 
 console.log('Navigation Cortex vers Atlas : tests réussis');

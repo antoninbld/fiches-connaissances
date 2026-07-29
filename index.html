@@ -1616,7 +1616,7 @@ function initAtlasMap(){
     setupAtlasGlobe();
     atlasMap.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
     atlasSettingsControl=new AtlasSettingsControl();atlasMap.addControl(atlasSettingsControl,'top-left');renderAtlasSettingsPanel();
-    atlasMap.on('load',()=>{atlasMapLoaded=true;atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});else constrainAtlasGlobeToViewport();atlasHasBeenDisplayed=true;}});
+    atlasMap.on('load',()=>{atlasMapLoaded=true;atlasMap.resize();if(!atlasHasBeenDisplayed){if(!restoreAtlasView())recenterAtlasGlobe({animate:false});else constrainAtlasGlobeToViewport();atlasHasBeenDisplayed=true;}focusPendingAtlasFiche();});
     atlasMap.on('style.load',()=>{setupAtlasGlobe();ensureNoTerrain();ensureAtlasSourceAndLayers({forceRecreate:true});ensureAtlasLinksSourceAndLayer();ensureAtlasSelectionSourceAndLayer();applyAtlasSettingsToMap();raiseAtlasLayers();refreshAtlasData();if(atlasSelectedId)drawAtlasLinksFrom(atlasSelectedId);refreshVisibleAtlasFeatures();focusPendingAtlasFiche();});
     /* Certains fonds ajoutent leurs couches de décor après style.load. Vérifier
        aussi styledata empêche ces ajouts tardifs de recouvrir les marqueurs. */
@@ -1812,7 +1812,7 @@ function selectAtlasFiche(id,coordinates){
   requestAnimationFrame(()=>atlasMap?.resize());
 }
 function focusPendingAtlasFiche(){
-  if(!pendingAtlasSelectionId||!atlasMap?.isStyleLoaded()||!atlasMap.getSource(ATLAS_SOURCE))return false;
+  if(!pendingAtlasSelectionId||!atlasMapLoaded||!atlasMap?.isStyleLoaded()||!atlasMap.getSource(ATLAS_SOURCE))return false;
   const id=pendingAtlasSelectionId,fiche=db.fiches.find(card=>normalizeCardId(card.id)===id),coordinates=getCardCoordinates(fiche);
   pendingAtlasSelectionId=null;
   if(!fiche||!coordinates)return false;
