@@ -69,7 +69,7 @@ assert.equal(focusHelpers.focusPendingAtlasFiche(), false, 'la vue ne doit pas �
 assert.equal(focusHelpers.getPending(), 'localisee', 'la sélection doit rester en attente pendant le chargement');
 focusHelpers.setLoaded(true);
 assert.equal(focusHelpers.focusPendingAtlasFiche(), true);
-assert.deepEqual(selections, [['localisee', [2.3522, 48.8566]]]);
+assert.deepEqual(selections, [['localisee', [2.3522, 48.8566], {animate: false}]], 'la navigation inter-vues doit imposer immédiatement le cadrage, avant le filtrage du globe');
 assert.equal(focusHelpers.focusPendingAtlasFiche(), false, 'la sélection en attente doit être consommée une seule fois');
 
 const initSource = extractFunction('initAtlasMap');
