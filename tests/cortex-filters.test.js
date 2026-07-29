@@ -25,6 +25,8 @@ const db = {
 };
 const normalizeCortexText = new Function(`${extractFunction('normalizeCortexText')}; return normalizeCortexText;`)();
 const getCortexSearchText = new Function('normalizeCortexText', `${extractFunction('getCortexSearchText')}; return getCortexSearchText;`)(normalizeCortexText);
+const escH = value => String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const highlightCortexTitle = new Function('normalizeCortexText', 'escH', `${extractFunction('highlightCortexTitle')}; return highlightCortexTitle;`)(normalizeCortexText, escH);
 const getFilteredFactory = new Function('db', 'getCortexSearchText', 'normalizeCortexText', 'cortexCategoryFilters', 'cortexSearchQuery', `${extractFunction('getFilteredCortexFiches')}; return getFilteredCortexFiches;`);
 
 let categories = new Set();
@@ -52,4 +54,14 @@ assert.deepEqual(filter(), [], 'le nom de la catégorie ne doit pas être inclus
 assert.match(html, /id="cortex-search"[^>]+oninput="updateCortexSearch/);
 assert.match(html, /placeholder="Rechercher dans les titres…"/);
 assert.match(html, /onchange="toggleCortexCategory/);
+assert.equal(
+  highlightCortexTitle('Le Venezuela, vital pour l’énergie', 'vene energie'),
+  'Le <tspan class="cortex-node-label-match">Vene</tspan>zuela, vital pour l’<tspan class="cortex-node-label-match">énergie</tspan>',
+  'les termes recherchés doivent être surlignés dans le titre sans tenir compte des accents',
+);
+assert.equal(
+  highlightCortexTitle('Une fiche <test>', 'absent'),
+  'Une fiche &lt;test&gt;',
+  'un titre sans correspondance doit rester échappé et sans surlignage',
+);
 console.log('Cortex filters: tests réussis');

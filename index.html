@@ -152,6 +152,7 @@
   .cortex-clear-btn:hover{background:rgba(224,96,96,.2);border-color:var(--red)}
   .cortex-info h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--text)}
   .cortex-node-label{fill:var(--text);font-size:12px;pointer-events:none}
+  .cortex-node-label-match{fill:#ffc84a;font-weight:800;paint-order:stroke;stroke:rgba(20,14,4,.9);stroke-width:2px;stroke-linejoin:round}
   .cortex-node{cursor:pointer;transition:filter .15s}
   .cortex-node:hover{filter:brightness(1.2)}
   .cortex-node.active .cortex-node-circle{stroke:var(--gold);stroke-width:2.5}
@@ -1792,6 +1793,46 @@ function getFilteredCortexFiches(){
   });
 }
 
+function highlightCortexTitle(title,query){
+  const source=String(title||'').slice(0,100);
+  const terms=[...new Set(normalizeCortexText(query).trim().split(/\s+/).filter(Boolean))];
+  if(!source||!terms.length)return escH(source);
+  const characters=Array.from(source);
+  const normalized=[];
+  const sourceIndexes=[];
+  characters.forEach((character,index)=>{
+    const folded=normalizeCortexText(character);
+    Array.from(folded).forEach(normalizedCharacter=>{
+      normalized.push(normalizedCharacter);
+      sourceIndexes.push(index);
+    });
+  });
+  const matches=new Array(characters.length).fill(false);
+  const searchable=normalized.join('');
+  terms.forEach(term=>{
+    let start=0;
+    while((start=searchable.indexOf(term,start))!==-1){
+      const first=sourceIndexes[start];
+      const last=sourceIndexes[start+term.length-1];
+      for(let index=first;index<=last;index++)matches[index]=true;
+      start+=Math.max(1,term.length);
+    }
+  });
+  let output='';
+  let segment='';
+  let highlighted=matches[0];
+  characters.forEach((character,index)=>{
+    if(matches[index]!==highlighted){
+      output+=highlighted?`<tspan class="cortex-node-label-match">${escH(segment)}</tspan>`:escH(segment);
+      segment='';
+      highlighted=matches[index];
+    }
+    segment+=character;
+  });
+  output+=highlighted?`<tspan class="cortex-node-label-match">${escH(segment)}</tspan>`:escH(segment);
+  return output;
+}
+
 function refreshCortexGraph(){
   if(state.view!=='cortex')return;
   const visibleIds=new Set(getFilteredCortexFiches().map(f=>String(f.id)));
@@ -2214,7 +2255,7 @@ function renderCortexScene(){
     const nodeRadius=isActive?r*1.34:(isHighlighted?r*1.08:r);
     const haze=Math.max(0.3,Math.min(1.15,(p.scale-0.35)/1.65));
     const labelOpacity=isActive?1:(isHighlighted?Math.max(0.6,Math.min(1,p.scale*0.95)):0.22);
-    const labelText=escH(n.label.slice(0,100));
+    const labelText=highlightCortexTitle(n.label,cortexSearchQuery);
     const shouldAttemptLabel=isActive||(!denseGraph&&labelOpacity>=0.52)||(denseGraph&&(deg>=2||isHighlighted)&&labelOpacity>=0.74);
     let drawLabel=shouldAttemptLabel;
     let labelX=(p.x+nodeRadius+5),labelY=(p.y+4);
