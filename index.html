@@ -2082,8 +2082,11 @@ function drawCortexGraph(){
   edges.forEach(e=>{nodeDeg[e.source]=(nodeDeg[e.source]||0)+1;nodeDeg[e.target]=(nodeDeg[e.target]||0)+1;});
   const maxDeg=nodes.reduce((m,n)=>Math.max(m,nodeDeg[n.id]||0),0);
   const pos=computeCortexLayout(nodes,edges,width,height,nodeDeg,maxDeg);
-  const depthRange=Math.max(width,height)*0.48;
-  const sphereRadius=Math.min(width,height)*0.34;
+  /* Le nuage suit les proportions réelles de l'encart plutôt que de rester
+     enfermé dans une petite sphère basée sur sa dimension la plus courte. */
+  const depthRange=Math.max(width,height)*0.36;
+  const cloudRadiusX=width*0.46;
+  const cloudRadiusY=height*0.43;
   cortexGraphState={
     graphEl,width,height,nodes,edges,nodeDeg,maxDeg,
     nodes3d:nodes.map((n,i)=>{
@@ -2093,15 +2096,16 @@ function drawCortexGraph(){
       const ratio=maxDeg>0?Math.log1p(nodeDeg[n.id]||0)/Math.log1p(maxDeg):0;
       const theta=u*Math.PI*2;
       const phi=Math.acos((v*2)-1);
-      const radial=sphereRadius*(0.55+(1-ratio)*0.45);
-      const sx=Math.sin(phi)*Math.cos(theta)*radial;
-      const sy=Math.cos(phi)*radial*0.9;
-      const sz=Math.sin(phi)*Math.sin(theta)*radial;
-      const planarX=(pos[n.id].x-width/2)*0.48;
-      const planarY=(pos[n.id].y-height/2)*0.42;
-      return{id:n.id,x:sx+planarX,y:sy+planarY,z:sz+((u-0.5)*depthRange*0.38)};
+      const radial=0.68+(1-ratio)*0.32;
+      const organicWave=1+Math.sin(theta*3+phi*2)*0.09;
+      const sx=Math.sin(phi)*Math.cos(theta)*cloudRadiusX*radial*organicWave;
+      const sy=Math.cos(phi)*cloudRadiusY*radial*(1+(u-0.5)*0.14);
+      const sz=Math.sin(phi)*Math.sin(theta)*depthRange*radial;
+      const planarX=(pos[n.id].x-width/2)*0.58;
+      const planarY=(pos[n.id].y-height/2)*0.56;
+      return{id:n.id,x:sx*0.74+planarX,y:sy*0.78+planarY,z:sz+((u-0.5)*depthRange*0.28)};
     }),
-    orbitX:-0.38,orbitY:0.62,orbitZ:0.12,panX:CORTEX_VIEW_DEFAULTS.panX,panY:CORTEX_VIEW_DEFAULTS.panY,zoom:CORTEX_VIEW_DEFAULTS.zoom,perspective:760,isDragging:false,dragMoved:false,lastX:0,lastY:0,blockClickUntil:0,screenPosById:{}
+    orbitX:-0.3,orbitY:0.38,orbitZ:0.08,panX:CORTEX_VIEW_DEFAULTS.panX,panY:CORTEX_VIEW_DEFAULTS.panY,zoom:CORTEX_VIEW_DEFAULTS.zoom,perspective:900,isDragging:false,dragMoved:false,lastX:0,lastY:0,blockClickUntil:0,screenPosById:{}
   };
   installCortexInteractions();
   renderCortexScene();
@@ -2233,7 +2237,7 @@ function renderCortexScene(){
     const z2=n.y*sinX+z1*cosX;
     const x2=x1*cosZ-y2*sinZ;
     const y3=x1*sinZ+y2*cosZ;
-    const depthOffset=420;
+    const depthOffset=260;
     const scale=s.zoom*s.perspective/(s.perspective+z2+depthOffset);
     projected[n.id]={
       x:s.width/2+s.panX+x2*scale,
