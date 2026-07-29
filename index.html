@@ -174,6 +174,16 @@
   .cortex-filter-reset{margin-left:auto;border:0;background:transparent;color:var(--gold);font:10px 'JetBrains Mono',monospace;cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
   .cortex-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:var(--text-dim);padding:24px;z-index:1}
   .cortex-empty strong{font-family:'Playfair Display',serif;font-size:20px;color:var(--text)}
+  .cortex-header-actions{display:flex;align-items:center;gap:10px}
+  .cortex-panorama-btn[aria-pressed="true"]{border-color:var(--gold-dim);background:var(--gold-glow);color:var(--gold)}
+  body.cortex-panorama #sidebar{width:250px;min-width:250px}
+  body.cortex-panorama #main{padding:14px 16px 16px}
+  body.cortex-panorama #breadcrumb{margin-bottom:8px}
+  body.cortex-panorama .section-header{margin-bottom:8px}
+  body.cortex-panorama .cortex-category-filters{display:none}
+  body.cortex-panorama .cortex-filters{padding:8px;margin-bottom:8px}
+  body.cortex-panorama .cortex-size-help{display:none}
+  body.cortex-panorama .cortex-size-toolbar{display:none!important}
   
   /* Level 1 */
   .n1{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none}
@@ -1088,6 +1098,7 @@ let isCortexResizing=false;
 let cortexResizerResizeBound=false;
 let cortexCategoryFilters=new Set();
 let cortexSearchQuery='';
+let cortexPanorama=false;
 let openCats=new Set(),openSubs=new Set();
 
 const CORTEX_VIEW_DEFAULTS={panX:0,panY:0,zoom:1};
@@ -1122,7 +1133,7 @@ function collapseAllSidebar(){
 /* ════════════════════════════════════════════════════════════════════
    §6 · RENDU — sidebar, breadcrumb, orchestration
 ════════════════════════════════════════════════════════════════════ */
-function render(){renderSidebar();renderBreadcrumb();if(state.search)renderSearch();else if(state.view==='home')renderHome();else if(state.view==='cortex')renderCortex();else if(state.view==='atlas')renderAtlas();else if(state.view==='chronos')renderChronos();else renderView();}
+function render(){document.body.classList.toggle('cortex-panorama',state.view==='cortex'&&cortexPanorama);renderSidebar();renderBreadcrumb();if(state.search)renderSearch();else if(state.view==='home')renderHome();else if(state.view==='cortex')renderCortex();else if(state.view==='atlas')renderAtlas();else if(state.view==='chronos')renderChronos();else renderView();}
   
 function cntFiches(f){return db.fiches.filter(x=>{
   if(f.catId&&x.catId!==f.catId)return false;
@@ -1750,16 +1761,16 @@ function renderCortex(){
   const filteredIds=new Set(filtered.map(f=>String(f.id)));
   const nbLinks=getKnowledgeGraphRelations().filter(r=>filteredIds.has(String(r.sourceId))&&filteredIds.has(String(r.targetId))).length;
   const categoryControls=db.categories.map(cat=>`<label class="cortex-filter-chip ${cortexCategoryFilters.has(cat.id)?'is-active':''}" style="--chip-color:${cat.color}"><input type="checkbox" ${cortexCategoryFilters.has(cat.id)?'checked':''} onchange="toggleCortexCategory('${cat.id}',this.checked)"><span class="cortex-filter-dot"></span>${escH(cat.name)} <span class="badge">${cntFiches({catId:cat.id})}</span></label>`).join('');
-  document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="section-count" id="cortex-result-count">${filtered.length} fiche${filtered.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div></div>
+  document.getElementById('content').innerHTML=`<div class="section-header"><div class="section-title">Cortex</div><div class="cortex-header-actions"><div class="section-count" id="cortex-result-count">${filtered.length} fiche${filtered.length!==1?'s':''} · ${nbLinks} lien${nbLinks!==1?'s':''}</div><button class="btn btn-outline btn-sm cortex-panorama-btn" type="button" aria-pressed="${cortexPanorama}" onclick="toggleCortexPanorama()" title="Agrandir le graphe en conservant les panneaux latéraux">${cortexPanorama?'⊡ Vue normale':'⛶ Mode panorama'}</button></div></div>
   <div class="cortex-filters" aria-label="Filtres du Cortex">
     <div class="cortex-search-wrap"><span class="cortex-search-icon">⌕</span><input class="cortex-search" id="cortex-search" type="search" value="${escH(cortexSearchQuery)}" placeholder="Rechercher dans les titres…" aria-label="Rechercher dans les titres des fiches du Cortex" oninput="updateCortexSearch(this.value)">${cortexSearchQuery?'<button class="cortex-search-clear" type="button" onclick="clearCortexSearch()" aria-label="Effacer la recherche">×</button>':''}</div>
     <div class="cortex-category-filters"><span class="voir-aussi-label" style="margin:0">Catégories</span>${categoryControls}<button class="cortex-filter-reset" type="button" onclick="resetCortexFilters()">Tout afficher</button></div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)">
+  <div class="cortex-size-toolbar" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)">
     <label for="cortex-size-strength" class="voir-aussi-label" style="margin:0">Taille selon liens</label>
     <input id="cortex-size-strength" type="range" min="0" max="100" step="1" value="${Math.round(cortexSizeStrength*100)}" oninput="setCortexSizeStrength(this.value)">
     <span id="cortex-size-strength-val" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)">${Math.round(cortexSizeStrength*100)}%</span>
-    <span class="view-subtitle" style="margin:0">Plus une fiche est reliée, plus son cercle grandit.</span>
+    <span class="view-subtitle cortex-size-help" style="margin:0">Plus une fiche est reliée, plus son cercle grandit.</span>
   </div>
   <div class="cortex-layout" id="cortex-layout">
     <div class="cortex-map-wrap">
@@ -1843,6 +1854,12 @@ function clearCortexSearch(){cortexSearchQuery='';refreshCortexGraph();}
 function toggleCortexCategory(catId,checked){if(checked)cortexCategoryFilters.add(catId);else cortexCategoryFilters.delete(catId);refreshCortexGraph();}
 function resetCortexFilters(){cortexCategoryFilters.clear();cortexSearchQuery='';refreshCortexGraph();}
 
+function toggleCortexPanorama(){
+  cortexPanorama=!cortexPanorama;
+  document.body.classList.toggle('cortex-panorama',cortexPanorama);
+  renderCortex();
+}
+
 function getCortexPanelBounds(){
   const main=document.getElementById('main');
   const total=main?main.clientWidth:1200;
@@ -1860,8 +1877,8 @@ function applyCortexPanelWidth(){
     layout.style.height='';
     return;
   }
-  const sidebar=document.getElementById('sidebar');
-  layout.style.height=sidebar?`${Math.round(sidebar.clientHeight)}px`:'';
+  const viewportSpace=window.innerHeight-layout.getBoundingClientRect().top-16;
+  layout.style.height=`${Math.max(520,Math.round(viewportSpace))}px`;
   const bounds=getCortexPanelBounds();
   cortexPanelWidth=Math.max(bounds.min,Math.min(bounds.max,cortexPanelWidth));
   info.style.width=`${Math.round(cortexPanelWidth)}px`;
