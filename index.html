@@ -146,6 +146,7 @@
   .cortex-zoom-btn:hover{border-color:rgba(124,157,255,.42);color:#ffffff;background:rgba(110,138,255,.18)}
   .cortex-zoom-btn:active{transform:translateY(1px) scale(.98);background:rgba(110,138,255,.26)}
   .cortex-info{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0;overflow:auto}
+  .cortex-size-toolbar{display:flex;align-items:center;gap:10px;margin-top:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)}
   #cortex-size-strength{accent-color:var(--gold)}
   .cortex-info-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
   .cortex-clear-btn{width:24px;height:24px;border-radius:50%;border:1px solid rgba(224,96,96,.45);background:rgba(224,96,96,.08);color:var(--red);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
@@ -1766,18 +1767,18 @@ function renderCortex(){
     <div class="cortex-search-wrap"><span class="cortex-search-icon">⌕</span><input class="cortex-search" id="cortex-search" type="search" value="${escH(cortexSearchQuery)}" placeholder="Rechercher dans les titres…" aria-label="Rechercher dans les titres des fiches du Cortex" oninput="updateCortexSearch(this.value)">${cortexSearchQuery?'<button class="cortex-search-clear" type="button" onclick="clearCortexSearch()" aria-label="Effacer la recherche">×</button>':''}</div>
     <div class="cortex-category-filters"><span class="voir-aussi-label" style="margin:0">Catégories</span>${categoryControls}<button class="cortex-filter-reset" type="button" onclick="resetCortexFilters()">Tout afficher</button></div>
   </div>
-  <div class="cortex-size-toolbar" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface)">
+  <div class="cortex-layout" id="cortex-layout">
+    <div class="cortex-map-wrap">
+      <div class="cortex-graph" id="cortex-graph"><div class="cortex-hud"><div class="cortex-zoom-controls" aria-label="Contrôles de zoom"><button type="button" class="cortex-zoom-btn" data-cortex-zoom="in" aria-label="Zoom avant" title="Zoom avant">+</button><button type="button" class="cortex-zoom-btn" data-cortex-zoom="out" aria-label="Zoom arrière" title="Zoom arrière">−</button></div></div></div>
+    </div>
+    <div class="cortex-resizer" id="cortex-resizer" role="separator" aria-label="Redimensionner le panneau de fiche" aria-orientation="vertical" tabindex="0"></div>
+    <div class="cortex-info" id="cortex-info"><div class="voir-aussi-label">Sélection</div><h3>Aucune fiche</h3><div class="view-subtitle">Clique sur un point pour voir ses détails et accéder à la fiche.</div></div>
+  </div>
+  <div class="cortex-size-toolbar">
     <label for="cortex-size-strength" class="voir-aussi-label" style="margin:0">Taille selon liens</label>
     <input id="cortex-size-strength" type="range" min="0" max="100" step="1" value="${Math.round(cortexSizeStrength*100)}" oninput="setCortexSizeStrength(this.value)">
     <span id="cortex-size-strength-val" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)">${Math.round(cortexSizeStrength*100)}%</span>
     <span class="view-subtitle cortex-size-help" style="margin:0">Plus une fiche est reliée, plus son cercle grandit.</span>
-  </div>
-  <div class="cortex-layout" id="cortex-layout">
-    <div class="cortex-map-wrap">
-      <div class="cortex-graph" id="cortex-graph"><div class="cortex-hud"><span class="cortex-hud-text">Glisser: orbite 3D · Shift + glisser: déplacer · Molette: zoom</span><div class="cortex-zoom-controls" aria-label="Contrôles de zoom"><button type="button" class="cortex-zoom-btn" data-cortex-zoom="in" aria-label="Zoom avant" title="Zoom avant">+</button><button type="button" class="cortex-zoom-btn" data-cortex-zoom="out" aria-label="Zoom arrière" title="Zoom arrière">−</button></div></div></div>
-    </div>
-    <div class="cortex-resizer" id="cortex-resizer" role="separator" aria-label="Redimensionner le panneau de fiche" aria-orientation="vertical" tabindex="0"></div>
-    <div class="cortex-info" id="cortex-info"><div class="voir-aussi-label">Sélection</div><h3>Aucune fiche</h3><div class="view-subtitle">Clique sur un point pour voir ses détails et accéder à la fiche.</div></div>
   </div>`;
   applyCortexPanelWidth();
   installCortexResizer();
